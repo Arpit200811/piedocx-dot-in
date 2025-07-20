@@ -2,7 +2,7 @@ import React, { Suspense, useEffect } from "react";
 import NavBar from "./Components/NavBar";
 import Slider from "./Components/Slider";
 import Card from "./Components/Card";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter,HashRouter, Route, Routes } from "react-router-dom";
 import AboutUs from "./Components/Aboutus1";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -48,7 +48,7 @@ function App() {
   }, []);
   return (
     <>
-      <BrowserRouter>
+      <HashRouter>
         <div className="overflow-x-hidden">
           
             <Routes>
@@ -94,7 +94,7 @@ function App() {
 
           
         </div>
-      </BrowserRouter>
+      </HashRouter>
     </>
   );
 }
