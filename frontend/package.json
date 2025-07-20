@@ -1,0 +1,49 @@
+{
+  "name": "piedocx",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "@tailwindcss/vite": "^4.0.5",
+    "aos": "^2.3.4",
+    "axios": "^1.9.0",
+    "bootstrap": "^5.3.3",
+    "framer-motion": "^12.15.0",
+    "gsap": "^3.13.0",
+    "lottie-react": "^2.4.1",
+    "lucide-react": "^0.511.0",
+    "react": "^18.3.1",
+    "react-countup": "^6.5.3",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.55.0",
+    "react-icons": "^5.5.0",
+    "react-intersection-observer": "^9.15.1",
+    "react-parallax-tilt": "^1.7.296",
+    "react-router-dom": "^7.1.5",
+    "sweetalert2": "^11.6.13",
+    "swiper": "^11.2.7",
+    "tailwindcss": "^4.0.5",
+    "typewriter-effect": "^2.22.0",
+    "uglify-js": "^3.19.3",
+    "yup": "^1.6.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.19.0",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.18",
+    "globals": "^15.14.0",
+    "vite": "^6.1.0"
+  }
+}
