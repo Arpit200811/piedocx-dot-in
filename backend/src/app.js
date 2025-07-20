@@ -12,7 +12,7 @@ const app = express()
 config()
 
 app.use(cors({
-    origin:"http://localhost:5173",
+    origin:"https://piedocx-dot-in-1.onrender.com/",
     credentials:true
 }))
 app.use(parser())
@@ -34,7 +34,6 @@ app.use(taskRoutes)
 
 
 app.listen(process.env.PORT, ()=>{
-    console.log(`Server is running on http://localhost:${process.env.PORT}`);
     connectDB()
 })
 
