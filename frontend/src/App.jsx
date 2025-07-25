@@ -11,6 +11,9 @@ import Counter from "./Components/Counter";
 import TeamSection from "./Components/TeamSection";
 import Project from "./Components/Project";
 
+import AdminPanel from './Components/AdminPanel';
+import StudentDetails from './Components/StudentDetails';
+
 // const Pricing = React.lazy(()=> { import("./Components/Pricing") })
 import Pricing from "./Components/Pricing";
 import Home from "./Components/Home";
@@ -38,9 +41,7 @@ import Domain from "./Components/Domain";
 import CustomSoftware from "./Components/CustomSoftware";
 import ErpSolution from "./Components/ErpSolution";
 import CMSSolution from "./Components/CMSSolution";
-
 import "./App.css";
-
 
 function App() {
   useEffect(() => {
@@ -60,10 +61,12 @@ function App() {
               <Route path="/contact" element={<RootLayout><Contact /> </RootLayout>} />
               <Route path="/emp-signup" element={<RootLayout><Empsignup /> </RootLayout>} />
               <Route path="/emp-login" element={<RootLayout><Emplogin /> </RootLayout>} />
+              <Route path="/student/:id" element={<StudentDetails />} />
               <Route path="/profile" element={<Dashboard><Profile /></Dashboard>} />
               <Route path="/task" element={<Dashboard><Task /></Dashboard>} />
               <Route path="/dashboard-project" element={<Dashboard><DashboardProject /></Dashboard>} />
-              
+              <Route path="/Admin-ST25" element={<AdminPanel />} />
+
               <Route path="full-stackdev" element={<RootLayout><FullStackdev /></RootLayout>} />
               <Route path="android-ios" element={<RootLayout><AndroidDev /></RootLayout>} />
               <Route path="DigitalMarketing" element={<RootLayout><DigitalMarketing /></RootLayout>} />
