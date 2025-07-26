@@ -10,6 +10,7 @@ import empRoutes from "./routes/employee.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import taskRoutes from "./routes/task.route.js";
 import studentRoutes from "./routes/student.route.js";
+import { UI_URL } from "../../frontend/src/utils/info.js";
 
 config(); // Load environment variables
 
@@ -18,7 +19,7 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: "https://piedocx-dot-in-1.onrender.com",
+    origin: `${UI_URL}`,
     credentials: true,
   })
 );
