@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import QRCode from 'react-qr-code';
-import { base_url } from '../utils/info';
+import { base_url, UI_URL } from '../utils/info';
 
 function AdminPanel() {
   const [student, setStudent] = useState({
