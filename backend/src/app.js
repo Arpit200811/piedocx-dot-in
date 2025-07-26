@@ -18,7 +18,7 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: "https://piedocx-dot-in-1.onrender.com/",
+    origin: "https://piedocx-dot-in-1.onrender.com",
     credentials: true,
   })
 );
