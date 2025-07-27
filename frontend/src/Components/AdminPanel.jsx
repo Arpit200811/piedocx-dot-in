@@ -56,7 +56,7 @@ function AdminPanel() {
       {generatedId && (
         <div className="mt-4">
           <h4>Scan QR to View Info</h4>
-          <QRCode value={`${UI_URL}/student/${generatedId}`} size={200} />
+          <QRCode value={`${UI_URL}/#/student/${generatedId}`} size={200} />
           <p className="mt-2">URL: <code>/student/{generatedId}</code></p>
         </div>
       )}

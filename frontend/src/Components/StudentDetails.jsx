@@ -24,53 +24,17 @@ function StudentDetails() {
   if (!student) return <p className="text-center text-lg mt-10">⏳ Loading student details...</p>;
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-50 to-white px-4 py-10">
-      <div
-        className="w-full max-w-xl bg-white shadow-2xl rounded-3xl p-8"
-        data-aos="zoom-in"
-      >
-        <h2
-          className="text-3xl font-bold text-center text-blue-600 mb-6 font-sans"
-          data-aos="fade-down"
-        >
-          🎓 Student Information
-        </h2>
-
-        <ul className="space-y-4 text-lg text-gray-800" data-aos="fade-up" data-aos-delay="200">
-          <li className="flex justify-between border-b pb-2">
-            <span>👤 <strong>Name:</strong></span>
-            <span>{student.name}</span>
-          </li>
-           <li className="flex justify-between border-b pb-2">
-            <span>👤 <strong>Registration-No:</strong></span>
-            <span>{student.registration}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2">
-            <span>🏫 <strong>College:</strong></span>
-            <span>{student.college}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2">
-            <span>📚 <strong>Branch:</strong></span>
-            <span>{student.branch}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2">
-            <span>📅 <strong>Year:</strong></span>
-            <span>{student.year}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2">
-            <span>💻 <strong>Technology:</strong></span>
-            <span>{student.technology}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2">
-            <span>🚀 <strong>Start Date:</strong></span>
-            <span>{student.startDate}</span>
-          </li>
-          <li className="flex justify-between">
-            <span>🏁 <strong>End Date:</strong></span>
-            <span>{student.endDate}</span>
-          </li>
-        </ul>
-      </div>
+    <div className="container mt-4">
+      <h2>Student Information</h2>
+      <ul className="list-group">
+        <li className="list-group-item"><strong>Name:</strong> {student.name}</li>
+        <li className="list-group-item"><strong>College:</strong> {student.college}</li>
+        <li className="list-group-item"><strong>Branch:</strong> {student.branch}</li>
+        <li className="list-group-item"><strong>Year:</strong> {student.year}</li>
+        <li className="list-group-item"><strong>Technology:</strong> {student.technology}</li>
+        <li className="list-group-item"><strong>Start Date:</strong> {student.startDate}</li>
+        <li className="list-group-item"><strong>End Date:</strong> {student.endDate}</li>
+      </ul>
     </div>
   );
 }
