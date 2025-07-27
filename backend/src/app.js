@@ -2,7 +2,7 @@ import express from "express";
 import { config } from "dotenv";
 import connectDB from "./config/db.js";
 import cors from "cors";
-import cookieParser from "cookie-parser";
+import parser from "cookie-parser";
 
 // Route imports
 import router from "./routes/user.route.js";
@@ -10,6 +10,7 @@ import empRoutes from "./routes/employee.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import taskRoutes from "./routes/task.route.js";
 import studentRoutes from "./routes/student.route.js";
+import { UI_URL } from "../../frontend/src/utils/info.js";
 
 config(); // Load environment variables
 
@@ -18,7 +19,7 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: "https://piedocx-dot-in-1.onrender.com/",
+    origin: `${UI_URL}`,
     credentials: true,
   })
 );
@@ -47,8 +48,8 @@ app.get("/", (req, res) => {
 });
 
 // Connect DB and start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+// const PORT = process.env.PORT || 5000;
+app.listen(5002, () => {
+  console.log(`✅ Server running at http://localhost:${5001}`);
   connectDB(); // Connect to MongoDB
 });
