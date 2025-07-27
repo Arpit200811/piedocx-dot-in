@@ -50,6 +50,6 @@ app.get("/", (req, res) => {
 // Connect DB and start server
 // const PORT = process.env.PORT || 5000;
 app.listen(5002, () => {
-  console.log(`✅ Server running at http://localhost:${5001}`);
+  console.log(`✅ Server running at http://localhost:${5002}`);
   connectDB(); // Connect to MongoDB
 });

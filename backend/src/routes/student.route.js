@@ -7,24 +7,32 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   console.log('📥 Incoming data:', req.body); // log form data
 
-  try {
+  const { registration } = req.body; // ✅ Extract registration number
 
-     const existing = await Student.findOne({ registration });
+  try {
+    // ✅ Check for existing student with same registration number
+    const existing = await Student.findOne({ registration });
+
     if (existing) {
       return res.status(409).json({ message: 'Registration number already exists' });
     }
 
+    // ✅ Save new student
     const student = new Student(req.body);
     await student.save();
-    
+
     console.log('✅ Student saved:', student);
 
-    res.status(201).json({ student, qrUrl: `https://piedocx.com/student/${student._id}` });
+    res.status(201).json({
+      student,
+      qrUrl: `https://piedocx.com/student/${student._id}`,
+    });
   } catch (error) {
     console.error('❌ Error saving student:', error); // detailed error
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
 
 
 
