@@ -8,9 +8,15 @@ router.post('/', async (req, res) => {
   console.log('📥 Incoming data:', req.body); // log form data
 
   try {
+
+     const existing = await Student.findOne({ registration });
+    if (existing) {
+      return res.status(409).json({ message: 'Registration number already exists' });
+    }
+
     const student = new Student(req.body);
     await student.save();
-
+    
     console.log('✅ Student saved:', student);
 
     res.status(201).json({ student, qrUrl: `https://piedocx.com/student/${student._id}` });
