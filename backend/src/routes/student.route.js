@@ -25,7 +25,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({
       student,
-      qrUrl: `https://piedocx.in/student/${student._id}`,
+      qrUrl: `https://piedocx-dot-in-1.onrender.com/student/${student._id}`,
     });
   } catch (error) {
     console.error('❌ Error saving student:', error); // detailed error
