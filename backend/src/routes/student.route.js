@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
 // Get student by ID
 router.get('/:id', async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findOne({_id: req.params.id});
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }

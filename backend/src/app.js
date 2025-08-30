@@ -31,9 +31,9 @@ app.use(empRoutes);
 app.use(adminRoutes);
 app.use(taskRoutes);
 
-app.listen(process.env.PORT, () => {
-  connectDB();
-});
+// app.listen(process.env.PORT, () => {
+//   connectDB();
+// });
 
 // Routes
 app.use("/api/users", router);
