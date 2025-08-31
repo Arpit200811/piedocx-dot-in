@@ -76,8 +76,6 @@
 // }
 
 // export default StudentDetails;
-
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -96,6 +94,7 @@ function StudentDetails() {
     AOS.init({ duration: 1000, once: true });
   }, []);
 
+  // ✅ Simplified data fetch
   useEffect(() => {
     const fetchStudent = async () => {
       const res = await axios.get(`${base_url}/api/students/${id}`);
@@ -104,35 +103,21 @@ function StudentDetails() {
     fetchStudent();
   }, [id]);
 
+  // ✅ Simple Loading UI
   if (!student)
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-white px-4">
-        {/* Animated Piedocx Logo Spinner */}
-        <div className="relative w-32 h-32">
-          <img
-            src="/logo.png"
-            alt="Piedocx Loading Logo"
-            className="absolute inset-0 w-full h-full animate-spin-slow"
-          />
-          <img
-            src="/logo.png"
-            alt="Piedocx Loading Overlay"
-            className="absolute inset-0 w-full h-full animate-ping-slow opacity-30"
-          />
-        </div>
-
-        {/* Text below spinner */}
-        <p className="mt-8 text-center text-lg sm:text-xl font-semibold text-blue-700 animate-pulse">
-          ⏳ Loading student details...
-        </p>
-      </div>
+      <p className="text-center text-lg sm:text-xl font-semibold text-blue-700 mt-10">
+        ⏳ Loading student details...
+      </p>
     );
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative px-4 py-10 sm:px-6 md:px-10 lg:px-20 bg-gradient-to-br from-blue-50 to-white">
-      
       {/* Home Icon */}
-      <div className="absolute top-6 left-6 sm:left-10 cursor-pointer z-20" onClick={() => navigate("/")}>
+      <div
+        className="absolute top-6 left-6 sm:left-10 cursor-pointer z-20"
+        onClick={() => navigate("/")}
+      >
         <FaHome className="text-blue-600 text-3xl hover:text-blue-800 transition-colors" />
       </div>
 
@@ -181,43 +166,30 @@ function StudentDetails() {
           🎓 Student Information
         </h2>
 
+        {/* Responsive Student Info List */}
         <ul
-          className="relative space-y-3 sm:space-y-4 text-base sm:text-lg text-gray-800"
+          className="relative space-y-3 sm:space-y-4 text-sm sm:text-base md:text-lg text-gray-800"
           data-aos="fade-up"
           data-aos-delay="200"
         >
-          <li className="flex justify-between border-b pb-2 sm:pb-3 hover:pl-2 transition-all">
-            <span>👤 <strong>Name:</strong></span>
-            <span>{student.name}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2 sm:pb-3 hover:pl-2 transition-all">
-            <span>🆔 <strong>Registration No:</strong></span>
-            <span>{student.registration}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2 sm:pb-3 hover:pl-2 transition-all">
-            <span>🏫 <strong>College:</strong></span>
-            <span>{student.college}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2 sm:pb-3 hover:pl-2 transition-all">
-            <span>📚 <strong>Branch:</strong></span>
-            <span>{student.branch}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2 sm:pb-3 hover:pl-2 transition-all">
-            <span>📅 <strong>Year:</strong></span>
-            <span>{student.year}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2 sm:pb-3 hover:pl-2 transition-all">
-            <span>💻 <strong>Technology:</strong></span>
-            <span>{student.technology}</span>
-          </li>
-          <li className="flex justify-between border-b pb-2 sm:pb-3 hover:pl-2 transition-all">
-            <span>🚀 <strong>Start Date:</strong></span>
-            <span>{student.startDate}</span>
-          </li>
-          <li className="flex justify-between hover:pl-2 transition-all">
-            <span>🏁 <strong>End Date:</strong></span>
-            <span>{student.endDate}</span>
-          </li>
+          {[
+            { label: "👤 Name", value: student.name },
+            { label: "🆔 Registration No", value: student.registration },
+            { label: "🏫 College", value: student.college },
+            { label: "📚 Branch", value: student.branch },
+            { label: "📅 Year", value: student.year },
+            { label: "💻 Technology", value: student.technology },
+            { label: "🚀 Start Date", value: student.startDate },
+            { label: "🏁 End Date", value: student.endDate },
+          ].map((item, idx) => (
+            <li
+              key={idx}
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b pb-2 sm:pb-3 hover:pl-2 transition-all gap-1 sm:gap-2"
+            >
+              <span className="font-medium text-blue-700">{item.label}:</span>
+              <span className="break-words text-gray-800">{item.value}</span>
+            </li>
+          ))}
         </ul>
       </div>
 
@@ -226,16 +198,17 @@ function StudentDetails() {
         className="max-w-full sm:max-w-3xl text-center mt-8 sm:mt-12 px-4 sm:px-6 py-6 bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-blue-100"
         data-aos="fade-up"
       >
-        <h3 className="text-xl sm:text-2xl font-bold text-blue-600 mb-3">
+        <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600 mb-3">
           About Piedocx Technologies 🚀
         </h3>
-        <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed">
+        <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed break-words">
           <strong>Piedocx Technologies Pvt. Ltd., Lucknow</strong> is a
           next-generation software development and training company
           specializing in web, mobile, and enterprise solutions. We empower
           students and professionals with{" "}
           <span className="text-blue-600 font-semibold">
-            hands-on projects, Summer training, Winter training, industrial training, internships,
+            hands-on projects, Summer training, Winter training, industrial
+            training, internships,
           </span>{" "}
           and cutting-edge technologies to build a successful career in IT.
         </p>
