@@ -19,10 +19,11 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: "*",
+    origin:["https://piedocx-dot-in.onrender.com", "https://216.24.57.1","https://piedocx-dot-in-1.onrender.com", "https://localhost:5173"] ,
     credentials: true,
   })
 );
+
 app.use(parser());
 app.use(express.json());
 
