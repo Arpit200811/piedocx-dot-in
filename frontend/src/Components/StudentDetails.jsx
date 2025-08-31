@@ -15,7 +15,7 @@ function StudentDetails() {
 
   useEffect(() => {
     const fetchStudent = async () => {
-      const res = await axios.get(`${base_url}/api/students/${id}`, { withCredentials: true });
+      const res = await axios.get(`${base_url}/api/students/${id}`);
       setStudent(res.data);
     };
     fetchStudent();
