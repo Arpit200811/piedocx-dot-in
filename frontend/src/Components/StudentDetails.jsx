@@ -78,17 +78,18 @@
 // export default StudentDetails;
 
 
-
-
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { base_url } from "../utils/info";
+import Typewriter from "typewriter-effect";
+import { FaHome } from "react-icons/fa";
 
 function StudentDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [student, setStudent] = useState(null);
 
   useEffect(() => {
@@ -104,39 +105,61 @@ function StudentDetails() {
   }, [id]);
 
   if (!student)
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-white px-4">
-      {/* Animated Piedocx Logo Spinner */}
-      <div className="relative w-32 h-32">
-        <img
-          src="/logo.png"
-          alt="Piedocx Loading Logo"
-          className="absolute inset-0 w-full h-full animate-spin-slow"
-        />
-        <img
-          src="/logo.png"
-          alt="Piedocx Loading Overlay"
-          className="absolute inset-0 w-full h-full animate-ping-slow opacity-30"
-        />
-      </div>
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-white px-4">
+        {/* Animated Piedocx Logo Spinner */}
+        <div className="relative w-32 h-32">
+          <img
+            src="/logo.png"
+            alt="Piedocx Loading Logo"
+            className="absolute inset-0 w-full h-full animate-spin-slow"
+          />
+          <img
+            src="/logo.png"
+            alt="Piedocx Loading Overlay"
+            className="absolute inset-0 w-full h-full animate-ping-slow opacity-30"
+          />
+        </div>
 
-      {/* Text below spinner */}
-      <p className="mt-8 text-center text-lg sm:text-xl font-semibold text-blue-700 animate-pulse">
-        ⏳ Loading student details...
-      </p>
-    </div>
-  );
+        {/* Text below spinner */}
+        <p className="mt-8 text-center text-lg sm:text-xl font-semibold text-blue-700 animate-pulse">
+          ⏳ Loading student details...
+        </p>
+      </div>
+    );
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative px-4 py-10 sm:px-6 md:px-10 lg:px-20 bg-gradient-to-br from-blue-50 to-white">
+      
+      {/* Home Icon */}
+      <div className="absolute top-6 left-6 sm:left-10 cursor-pointer z-20" onClick={() => navigate("/")}>
+        <FaHome className="text-blue-600 text-3xl hover:text-blue-800 transition-colors" />
+      </div>
+
       {/* Top Logo */}
       <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
         <img
-          src="/logo.png" // public folder logo
+          src="/logo.png"
           alt="Piedocx Logo"
           className="h-16 sm:h-20 w-auto drop-shadow-lg"
           data-aos="fade-down"
         />
+      </div>
+
+      {/* Typewriter Effect */}
+      <div className="relative z-10 mb-6 text-center">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-600">
+          <Typewriter
+            options={{
+              strings: ["Piedocx Technologies Pvt. Ltd."],
+              autoStart: true,
+              loop: true,
+              delay: 75,
+              deleteSpeed: 50,
+              cursor: "_",
+            }}
+          />
+        </h1>
       </div>
 
       {/* Info Card with Logo Background */}
@@ -146,7 +169,7 @@ function StudentDetails() {
       >
         {/* Background Logo inside Card */}
         <img
-          src="/Logo_Pie.png" // public folder logo
+          src="/Logo_Pie.png"
           alt="Piedocx Background Logo"
           className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-10 w-64 sm:w-80"
         />
@@ -212,7 +235,7 @@ function StudentDetails() {
           specializing in web, mobile, and enterprise solutions. We empower
           students and professionals with{" "}
           <span className="text-blue-600 font-semibold">
-            hands-on projects, Summer training, industrial training, Winter training,  internships,
+            hands-on projects, Summer training, Winter training, industrial training, internships,
           </span>{" "}
           and cutting-edge technologies to build a successful career in IT.
         </p>
