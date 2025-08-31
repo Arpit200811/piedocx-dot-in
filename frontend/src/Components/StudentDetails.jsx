@@ -112,7 +112,7 @@ function StudentDetails() {
     <div
       className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-4 py-10"
       style={{
-        backgroundImage: `url(/pie_logo.png)`,
+        backgroundImage: `url(/https://www.piedocx.com/assets/img/Logo_Pie.png)`,
         backgroundRepeat: "no-repeat",
         backgroundSize: "400px",
         backgroundPosition: "center",
@@ -187,10 +187,10 @@ function StudentDetails() {
         data-aos="fade-up"
       >
         <h3 className="text-2xl font-bold text-blue-600 mb-3">
-          About Piedocx.in 🚀
+          About Piedocx Technologies 🚀
         </h3>
         <p className="text-gray-700 text-lg leading-relaxed">
-          <strong>Piedocx.in</strong> is a next-generation software development
+          <strong>Piedocx Technologies Pvt. Ltd. Lucknow </strong> is a next-generation software development
           and training company specializing in web, mobile, and enterprise
           solutions. We empower students and professionals with{" "}
           <span className="text-blue-600 font-semibold">
