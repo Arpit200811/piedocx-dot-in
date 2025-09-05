@@ -26,54 +26,63 @@ const Services = () => {
       path: "/Full-Stackdev",
       icon: <FaLaptopCode />,
       color: "text-blue-600",
+      description: "Build scalable and efficient web applications with modern technologies including React, Node.js, MongoDB, and more.",
     },
     {
       title: "Android & iOS App Development",
       path: "/Android-iOS",
       icon: <FaMobileAlt />,
       color: "text-green-600",
+      description: "Create responsive, user-friendly mobile apps for Android and iOS platforms with seamless performance.",
     },
     {
       title: "Digital Marketing",
       path: "/DigitalMarketing",
       icon: <FaBullhorn />,
       color: "text-pink-500",
+      description: "Boost your online presence with targeted campaigns, SEO, social media marketing, and conversion optimization.",
     },
     {
       title: "Graphic Designing",
       path: "/Graphic-design",
       icon: <FaPaintBrush />,
       color: "text-yellow-500",
+      description: "Craft stunning visuals, branding, and UI/UX designs that resonate with your audience and elevate your brand.",
     },
     {
       title: "Web Development",
       path: "/Web-Development",
       icon: <FaGlobe />,
       color: "text-indigo-600",
+      description: "Develop dynamic websites with responsive layouts, fast loading times, and modern design standards.",
     },
     {
       title: "Domain & Web Hosting",
       path: "/Domain & Web Hosting",
       icon: <FaServer />,
       color: "text-red-500",
+      description: "Secure reliable domain registration and hosting solutions with high uptime and performance for your website.",
     },
     {
       title: "Custom Software Solutions",
       path: "/Custom-Software-Development",
       icon: <FaCogs />,
       color: "text-purple-600",
+      description: "Design tailor-made software solutions to streamline your business processes and improve efficiency.",
     },
     {
       title: "ERP Solutions",
       path: "/ERP-Solutions",
       icon: <FaProjectDiagram />,
       color: "text-cyan-600",
+      description: "Integrate enterprise resource planning systems to manage your business operations seamlessly.",
     },
     {
       title: "CMS Solutions",
       path: "/cms-Solution",
       icon: <FaWpforms />,
       color: "text-orange-500",
+      description: "Implement content management systems like WordPress, Joomla, or custom CMS for easy website updates.",
     },
   ];
 
@@ -114,7 +123,7 @@ const Services = () => {
                   {service.title}
                 </h3>
                 <p className="text-gray-700 group-hover:text-white transition duration-700 text-sm">
-                  Lorem ipsum dolor sit amet, consectetur adipisicing elit. Repellat officiis, eius quos.
+                  {service.description}
                 </p>
               </div>
             </Link>

@@ -76,6 +76,10 @@
 // }
 
 // export default StudentDetails;
+
+
+
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -104,12 +108,36 @@ function StudentDetails() {
   }, [id]);
 
   // ✅ Simple Loading UI
-  if (!student)
-    return (
-      <p className="text-center text-lg sm:text-xl font-semibold text-blue-700 mt-10">
-        ⏳ Loading student details...
-      </p>
-    );
+ if (!student)
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-white px-4">
+      {/* Logo with bounce animation */}
+      <img
+        src="/logo.png"
+        alt="Piedocx Logo"
+        className="h-20 sm:h-24 w-auto mb-6 animate-bounce"
+      />
+
+      {/* Typewriter effect during loading */}
+      <h2 className="text-center text-lg sm:text-xl font-semibold text-blue-700">
+        <Typewriter
+          options={{
+            strings: [
+              "⏳ Loading student details...",
+              "🔹 Fetching your data...",
+              "💻 Preparing the dashboard..."
+            ],
+            autoStart: true,
+            loop: true,
+            delay: 50,
+            deleteSpeed: 25,
+            cursor: "|",
+          }}
+        />
+      </h2>
+    </div>
+  );
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative px-4 py-10 sm:px-6 md:px-10 lg:px-20 bg-gradient-to-br from-blue-50 to-white">
