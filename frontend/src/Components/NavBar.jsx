@@ -179,6 +179,9 @@
 
 // export default NavBar;
 
+
+
+
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -188,7 +191,7 @@ const NavBar = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [hasBeenHidden, setHasBeenHidden] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const isOpenRef = useRef(isOpen); // ref to track latest isOpen
+  const isOpenRef = useRef(isOpen);
   const location = useLocation();
 
   const navLinks = [
@@ -202,7 +205,6 @@ const NavBar = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  // Update ref whenever isOpen changes
   useEffect(() => {
     isOpenRef.current = isOpen;
   }, [isOpen]);
@@ -232,7 +234,7 @@ const NavBar = () => {
 
       setLastScrollY(currentScrollY);
 
-      // Close mobile menu on scroll
+      // Smooth close mobile menu on scroll
       if (isOpenRef.current) {
         setIsOpen(false);
       }
@@ -242,17 +244,14 @@ const NavBar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY, isLocked, hasBeenHidden]);
 
-  // Close menu on route change
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);
 
-  // Lock scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
   }, [isOpen]);
 
-  // Close menu on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -270,9 +269,7 @@ const NavBar = () => {
   return (
     <nav
       className={`fixed top-0 w-full z-50 bg-white shadow-md transition-transform duration-500 ease-in-out`}
-      style={{
-        transform: showNav ? "translateY(0)" : "translateY(-100%)",
-      }}
+      style={{ transform: showNav ? "translateY(0)" : "translateY(-100%)" }}
     >
       <div
         className={`max-w-screen-xl mx-auto px-4 flex items-center justify-between lg:justify-center font-poppins relative`}
@@ -351,13 +348,14 @@ const NavBar = () => {
         </button>
       </div>
 
-      {/* Mobile Nav */}
+      {/* Mobile Nav with smooth animation */}
       <div
-        className={`mobile-menu lg:hidden absolute top-full left-0 w-full bg-white shadow-md px-4 font-poppins z-40 transition-all duration-500 overflow-hidden`}
+        className={`mobile-menu lg:hidden absolute top-full left-0 w-full bg-white shadow-md px-4 font-poppins z-40 overflow-hidden`}
         style={{
           maxHeight: isOpen ? "500px" : "0px",
           paddingTop: isOpen ? "0.8rem" : "0",
           paddingBottom: isOpen ? "0.8rem" : "0",
+          transition: "max-height 0.5s ease, padding 0.5s ease",
         }}
       >
         <ul className="flex flex-col items-start gap-2 font-medium text-left">
