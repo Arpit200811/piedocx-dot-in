@@ -191,6 +191,7 @@ const NavBar = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [hasBeenHidden, setHasBeenHidden] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const isOpenRef = useRef(isOpen);
   const location = useLocation();
 
@@ -205,57 +206,64 @@ const NavBar = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  // Update ref on isOpen change
   useEffect(() => {
     isOpenRef.current = isOpen;
   }, [isOpen]);
 
-  // Scroll handler
+  // Handle scroll for hide/show nav
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      if (isLocked) return;
 
-      // Hide/show navbar
-      if (!isLocked) {
-        if (currentScrollY <= 5) {
-          setShowNav(true);
-          setHasBeenHidden(false);
-        } else if (currentScrollY > lastScrollY && currentScrollY > 5) {
-          setShowNav(false);
-          setHasBeenHidden(true);
-        } else if (
-          currentScrollY < lastScrollY &&
-          currentScrollY >= 40 &&
-          hasBeenHidden
-        ) {
-          setShowNav(true);
-          setIsLocked(true);
-        }
+      if (currentScrollY <= 5) {
+        setShowNav(true);
+        setHasBeenHidden(false);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 5) {
+        setShowNav(false);
+        setHasBeenHidden(true);
+      } else if (
+        currentScrollY < lastScrollY &&
+        currentScrollY >= 40 &&
+        hasBeenHidden
+      ) {
+        setShowNav(true);
+        setIsLocked(true);
       }
+
+      // Close mobile menu on scroll
+      if (isOpenRef.current) setIsOpen(false);
 
       setLastScrollY(currentScrollY);
-
-      // Smooth close mobile menu on scroll
-      if (isOpenRef.current) {
-        setIsOpen(false);
-      }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY, isLocked, hasBeenHidden]);
 
+  // Update windowWidth on resize
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Close menu on route change
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);
 
+  // Lock scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
   }, [isOpen]);
 
+  // Close menu on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        isOpenRef.current &&
+        isOpen &&
         !event.target.closest(".mobile-menu") &&
         !event.target.closest(".menu-toggle")
       ) {
@@ -264,21 +272,28 @@ const NavBar = () => {
     };
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   return (
     <nav
-      className={`fixed top-0 w-full z-50 bg-white shadow-md transition-transform duration-500 ease-in-out`}
+      className="fixed top-0 w-full z-50 bg-white shadow-md transition-transform duration-500 ease-in-out"
       style={{ transform: showNav ? "translateY(0)" : "translateY(-100%)" }}
     >
       <div
-        className={`max-w-screen-xl mx-auto px-4 flex items-center justify-between lg:justify-center font-poppins relative`}
+        className="max-w-screen-xl mx-auto px-4 flex items-center justify-between lg:justify-center font-poppins relative transition-all duration-300"
         style={{
           paddingTop:
-            isOpen || window.innerWidth < 1024 ? "1.5rem" : "0.8rem",
+            windowWidth < 1024
+              ? "1.5rem"
+              : isOpen
+              ? "1.2rem"
+              : "0.8rem",
           paddingBottom:
-            isOpen || window.innerWidth < 1024 ? "1.5rem" : "0.8rem",
-          transition: "padding 0.3s ease, height 0.3s ease",
+            windowWidth < 1024
+              ? "1.5rem"
+              : isOpen
+              ? "1.2rem"
+              : "0.8rem",
         }}
       >
         {/* Logo */}
@@ -313,10 +328,10 @@ const NavBar = () => {
           ))}
         </ul>
 
-        {/* Hamburger / Page-Up Arrow Icon */}
+        {/* Hamburger / Page-Up Icon */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="menu-toggle lg:hidden text-gray-800 absolute right-4"
+          className="menu-toggle lg:hidden text-gray-800 absolute right-4 z-50"
         >
           {isOpen ? (
             <svg
@@ -327,7 +342,11 @@ const NavBar = () => {
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 15l7-7 7 7"
+              />
             </svg>
           ) : (
             <svg
@@ -348,14 +367,13 @@ const NavBar = () => {
         </button>
       </div>
 
-      {/* Mobile Nav with smooth animation */}
+      {/* Mobile Nav */}
       <div
-        className={`mobile-menu lg:hidden absolute top-full left-0 w-full bg-white shadow-md px-4 font-poppins z-40 overflow-hidden`}
+        className={`mobile-menu lg:hidden absolute top-full left-0 w-full bg-white shadow-md px-4 font-poppins z-40 overflow-hidden transition-all duration-500 ease-in-out`}
         style={{
           maxHeight: isOpen ? "500px" : "0px",
           paddingTop: isOpen ? "0.8rem" : "0",
           paddingBottom: isOpen ? "0.8rem" : "0",
-          transition: "max-height 0.5s ease, padding 0.5s ease",
         }}
       >
         <ul className="flex flex-col items-start gap-2 font-medium text-left">
@@ -380,3 +398,4 @@ const NavBar = () => {
 };
 
 export default NavBar;
+
