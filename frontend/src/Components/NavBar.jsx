@@ -179,8 +179,7 @@
 
 // export default NavBar;
 
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const NavBar = () => {
@@ -189,6 +188,7 @@ const NavBar = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [hasBeenHidden, setHasBeenHidden] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const isOpenRef = useRef(isOpen); // ref to track latest isOpen
   const location = useLocation();
 
   const navLinks = [
@@ -202,28 +202,40 @@ const NavBar = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  // Hide/show nav on scroll
+  // Update ref whenever isOpen changes
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  // Scroll handler
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (isLocked) return;
 
-      if (currentScrollY <= 5) {
-        setShowNav(true);
-        setHasBeenHidden(false);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 5) {
-        setShowNav(false);
-        setHasBeenHidden(true);
-      } else if (
-        currentScrollY < lastScrollY &&
-        currentScrollY >= 40 &&
-        hasBeenHidden
-      ) {
-        setShowNav(true);
-        setIsLocked(true);
+      // Hide/show navbar
+      if (!isLocked) {
+        if (currentScrollY <= 5) {
+          setShowNav(true);
+          setHasBeenHidden(false);
+        } else if (currentScrollY > lastScrollY && currentScrollY > 5) {
+          setShowNav(false);
+          setHasBeenHidden(true);
+        } else if (
+          currentScrollY < lastScrollY &&
+          currentScrollY >= 40 &&
+          hasBeenHidden
+        ) {
+          setShowNav(true);
+          setIsLocked(true);
+        }
       }
 
       setLastScrollY(currentScrollY);
+
+      // Close mobile menu on scroll
+      if (isOpenRef.current) {
+        setIsOpen(false);
+      }
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -244,7 +256,7 @@ const NavBar = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        isOpen &&
+        isOpenRef.current &&
         !event.target.closest(".mobile-menu") &&
         !event.target.closest(".menu-toggle")
       ) {
@@ -253,16 +265,7 @@ const NavBar = () => {
     };
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, [isOpen]);
-
-  // Close menu on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      if (isOpen) setIsOpen(false);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isOpen]);
+  }, []);
 
   return (
     <nav
@@ -274,17 +277,10 @@ const NavBar = () => {
       <div
         className={`max-w-screen-xl mx-auto px-4 flex items-center justify-between lg:justify-center font-poppins relative`}
         style={{
-          // Mobile & tablet: increased height, Desktop: normal
-          paddingTop: isOpen
-            ? "1.2rem"
-            : window.innerWidth < 1024
-            ? "1.5rem"
-            : "0.8rem",
-          paddingBottom: isOpen
-            ? "1.2rem"
-            : window.innerWidth < 1024
-            ? "1.5rem"
-            : "0.8rem",
+          paddingTop:
+            isOpen || window.innerWidth < 1024 ? "1.5rem" : "0.8rem",
+          paddingBottom:
+            isOpen || window.innerWidth < 1024 ? "1.5rem" : "0.8rem",
           transition: "padding 0.3s ease, height 0.3s ease",
         }}
       >
@@ -345,7 +341,11 @@ const NavBar = () => {
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           )}
         </button>
