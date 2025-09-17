@@ -1,23 +1,13 @@
 import React, { Suspense, useEffect } from "react";
-import NavBar from "./Components/NavBar";
-import Slider from "./Components/Slider";
-import Card from "./Components/Card";
-import { BrowserRouter,HashRouter, Route, Routes } from "react-router-dom";
-import AboutUs from "./Components/Aboutus1";
+import { HashRouter, Route, Routes } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import Aboutus2 from "./Components/Aboutus2";
-import Counter from "./Components/Counter";
 import TeamSection from "./Components/TeamSection";
 import Project from "./Components/Project";
 
 import AdminPanel from './Components/AdminPanel';
 import StudentDetails from './Components/StudentDetails';
-
-// const Pricing = React.lazy(()=> { import("./Components/Pricing") })
-import Pricing from "./Components/Pricing";
 import Home from "./Components/Home";
-import Footer from "./Components/Footer";
 import AboutUscompany from "./Components/AboutUscompany";
 import Contact from "./Components/Contact";
 import Empsignup from "./Components/Empsignup";
@@ -36,11 +26,18 @@ import DigitalMarketing from "./Components/DigitalMarketing";
 // import termsconditions from './Components/termsconditions'
 import PageNotfound from "./Components/PageNotfound";
 import GraphicsDev from "./Components/GraphicsDev";
+import Mern from "./Components/Mern";
 import WebDevelopment from "./Components/WebDevelopment";
 import Domain from "./Components/Domain";
 import CustomSoftware from "./Components/CustomSoftware";
 import ErpSolution from "./Components/ErpSolution";
 import CMSSolution from "./Components/CMSSolution";
+import DotNetCoreServices from "./Components/DotNet-core";
+import PhpCoreServices from "./Components/PHP-core";
+import PythonServices from "./Components/Python";
+import AdvanceJavaServices from "./Components/Advance-java";
+import FlutterKotlinServices from "./Components/Flutter-kotlin";
+
 import "./App.css";
 
 function App() {
@@ -85,6 +82,13 @@ function App() {
               <Route path="/services/Custom-Software-Development" element={<RootLayout><CustomSoftware /></RootLayout>} />
               <Route path="/services/ERP-Solutions" element={<RootLayout><ErpSolution /></RootLayout>} />
               <Route path="/services/cms-Solution" element={<RootLayout><CMSSolution /></RootLayout>} />
+              <Route path="/aboutus1/mern" element={<RootLayout><Mern /></RootLayout>} />
+              <Route path="/aboutus1/.net-core" element={<RootLayout><DotNetCoreServices /></RootLayout>} />
+              <Route path="/aboutus1/php-core" element={<RootLayout><PhpCoreServices /></RootLayout>} />
+              <Route path="/aboutus1/python" element={<RootLayout><PythonServices /></RootLayout>} />
+              <Route path="/aboutus1/advance-java" element={<RootLayout><AdvanceJavaServices /></RootLayout>} />
+              <Route path="/aboutus1/flutter-kotlin" element={<RootLayout><FlutterKotlinServices /></RootLayout>} />
+
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/gen-task" element={<Dashboard><GenTask /></Dashboard>} />
               <Route path="*" element={<RootLayout><PageNotfound /></RootLayout>} />

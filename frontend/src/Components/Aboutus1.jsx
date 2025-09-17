@@ -16,12 +16,12 @@ import { SiDotnet, SiFlutter } from "react-icons/si";
 const AboutUs = () => {
   // Topics with corresponding icons
   const topics = [
-    { name: "MERN STACK", link: "/mern", aos: "fade-up-right", icon: <FaNodeJs size={20} /> },
-    { name: ".Net Core", link: "/dotnet", aos: "fade-up", icon: <SiDotnet size={20} /> },
-    { name: "PHP Core", link: "/php", aos: "fade-up-left", icon: <FaPhp size={20} /> },
-    { name: "Python", link: "/python", aos: "zoom-in-right", icon: <FaPython size={20} /> },
-    { name: "Advance JAVA", link: "/java", aos: "zoom-in", icon: <FaJava size={20} /> },
-    { name: "Flutter/Kotlin", link: "/flutter-kotlin", aos: "zoom-in-left", icon: <SiFlutter size={20} /> },
+    { name: "MERN STACK", link: "/aboutus1/mern", aos: "fade-up-right", icon: <FaNodeJs size={20} /> },
+    { name: ".Net Core", link: "/aboutus1/.net-core", aos: "fade-up", icon: <SiDotnet size={20} /> },
+    { name: "PHP Core", link: "/aboutus1/php-core", aos: "fade-up-left", icon: <FaPhp size={20} /> },
+    { name: "Python", link: "/aboutus1/python", aos: "zoom-in-right", icon: <FaPython size={20} /> },
+    { name: "Advance JAVA", link: "/aboutus1/advance-java", aos: "zoom-in", icon: <FaJava size={20} /> },
+    { name: "Flutter/Kotlin", link: "/aboutus1/flutter-kotlin", aos: "zoom-in-left", icon: <SiFlutter size={20} /> },
   ];
 
   useEffect(() => {
