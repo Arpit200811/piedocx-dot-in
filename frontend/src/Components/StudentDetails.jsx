@@ -79,7 +79,6 @@
 
 
 
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -98,7 +97,6 @@ function StudentDetails() {
     AOS.init({ duration: 1000, once: true });
   }, []);
 
-  // ✅ Simplified data fetch
   useEffect(() => {
     const fetchStudent = async () => {
       const res = await axios.get(`${base_url}/api/students/${id}`);
@@ -107,46 +105,41 @@ function StudentDetails() {
     fetchStudent();
   }, [id]);
 
-  // ✅ Simple Loading UI
- if (!student)
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-white px-4">
-      {/* Logo with bounce animation */}
-      <img
-        src="/logo.png"
-        alt="Piedocx Logo"
-        className="h-20 sm:h-24 w-auto mb-6 animate-bounce"
-      />
-
-      {/* Typewriter effect during loading */}
-      <h2 className="text-center text-lg sm:text-xl font-semibold text-blue-700">
-        <Typewriter
-          options={{
-            strings: [
-              "⏳ Loading student details...",
-              "🔹 Fetching your data...",
-              "💻 Preparing the dashboard..."
-            ],
-            autoStart: true,
-            loop: true,
-            delay: 50,
-            deleteSpeed: 25,
-            cursor: "|",
-          }}
+  if (!student)
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-white px-4">
+        <img
+          src="/pie_logo.png"
+          alt="Piedocx Logo"
+          className="h-20 sm:h-24 w-auto mb-6 animate-bounce"
         />
-      </h2>
-    </div>
-  );
-
+        <h2 className="text-center text-lg sm:text-xl font-semibold text-blue-700">
+          <Typewriter
+            options={{
+              strings: [
+                "⏳ Loading student details...",
+                "🔹 Fetching your data...",
+                "💻 Preparing the dashboard...",
+              ],
+              autoStart: true,
+              loop: true,
+              delay: 50,
+              deleteSpeed: 25,
+              cursor: "|",
+            }}
+          />
+        </h2>
+      </div>
+    );
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative px-4 py-10 sm:px-6 md:px-10 lg:px-20 bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen flex flex-col items-center justify-start relative px-4 py-20 sm:py-24 md:py-28 lg:py-32 bg-gradient-to-br from-blue-50 to-white">
       {/* Home Icon */}
       <div
-        className="absolute top-6 left-6 sm:left-10 cursor-pointer z-20"
+        className="absolute top-6 left-4 sm:left-6 md:left-10 cursor-pointer z-20"
         onClick={() => navigate("/")}
       >
-        <FaHome className="text-blue-600 text-3xl hover:text-blue-800 transition-colors" />
+        <FaHome className="text-blue-600 text-2xl sm:text-3xl hover:text-blue-800 transition-colors" />
       </div>
 
       {/* Top Logo */}
@@ -154,14 +147,14 @@ function StudentDetails() {
         <img
           src="/logo.png"
           alt="Piedocx Logo"
-          className="h-16 sm:h-20 w-auto drop-shadow-lg"
+          className="h-14 sm:h-16 md:h-20 w-auto drop-shadow-lg"
           data-aos="fade-down"
         />
       </div>
 
       {/* Typewriter Effect */}
-      <div className="relative z-10 mb-6 text-center">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-600">
+      <div className="relative z-10 mb-6 text-center mt-20 sm:mt-24">
+        <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-blue-600">
           <Typewriter
             options={{
               strings: ["Piedocx Technologies Pvt. Ltd."],
@@ -175,28 +168,27 @@ function StudentDetails() {
         </h1>
       </div>
 
-      {/* Info Card with Logo Background */}
+      {/* Info Card */}
       <div
-        className="relative z-10 w-full max-w-xl sm:max-w-2xl lg:max-w-3xl bg-white/80 backdrop-blur-lg shadow-2xl rounded-3xl p-6 sm:p-10 border border-blue-100 overflow-hidden"
+        className="relative z-10 w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl bg-white/90 backdrop-blur-md shadow-xl rounded-3xl p-6 sm:p-10 border border-blue-100 overflow-hidden"
         data-aos="zoom-in"
       >
-        {/* Background Logo inside Card */}
+        {/* Background Logo */}
         <img
           src="/Logo_Pie.png"
           alt="Piedocx Background Logo"
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-10 w-64 sm:w-80"
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-10 w-40 sm:w-64 md:w-72 lg:w-80 pointer-events-none"
         />
 
         <h2
-          className="relative text-2xl sm:text-3xl md:text-4xl font-extrabold text-center text-blue-700 mb-6 sm:mb-8 font-sans drop-shadow-md"
+          className="relative text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-center text-blue-700 mb-6 sm:mb-8 font-sans drop-shadow-md"
           data-aos="fade-down"
         >
           🎓 Student Information
         </h2>
 
-        {/* Responsive Student Info List */}
         <ul
-          className="relative space-y-3 sm:space-y-4 text-sm sm:text-base md:text-lg text-gray-800"
+          className="relative space-y-2 sm:space-y-3 md:space-y-4 text-sm sm:text-base md:text-lg text-gray-800"
           data-aos="fade-up"
           data-aos-delay="200"
         >
@@ -212,10 +204,10 @@ function StudentDetails() {
           ].map((item, idx) => (
             <li
               key={idx}
-              className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b pb-2 sm:pb-3 hover:pl-2 transition-all gap-1 sm:gap-2"
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b pb-2 sm:pb-3 hover:pl-2 transition-all gap-1 sm:gap-2 break-words"
             >
               <span className="font-medium text-blue-700">{item.label}:</span>
-              <span className="break-words text-gray-800">{item.value}</span>
+              <span className="text-gray-800">{item.value}</span>
             </li>
           ))}
         </ul>
@@ -223,7 +215,7 @@ function StudentDetails() {
 
       {/* Piedocx Description */}
       <div
-        className="max-w-full sm:max-w-3xl text-center mt-8 sm:mt-12 px-4 sm:px-6 py-6 bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-blue-100"
+        className="max-w-full sm:max-w-2xl md:max-w-3xl text-center mt-8 sm:mt-10 md:mt-12 px-4 sm:px-6 py-6 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-blue-100 break-words"
         data-aos="fade-up"
       >
         <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600 mb-3">

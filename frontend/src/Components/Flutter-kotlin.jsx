@@ -25,7 +25,6 @@ const FlutterKotlinServices = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);
 
-  // Combined 9 services (Flutter + Kotlin mix)
   const services = [
     {
       title: "Flutter Development",
@@ -33,9 +32,6 @@ const FlutterKotlinServices = () => {
         "Cross-platform mobile apps with high performance using Flutter SDK.",
       icon: <SiFlutter />,
       animation: "flip-left",
-      color: "text-blue-600",
-      border: "hover:border-blue-400",
-      underline: "after:bg-blue-500",
     },
     {
       title: "Dart Programming",
@@ -43,9 +39,6 @@ const FlutterKotlinServices = () => {
         "Efficient coding with Dart for smooth and reactive mobile apps.",
       icon: <SiDart />,
       animation: "fade-up-right",
-      color: "text-blue-600",
-      border: "hover:border-blue-400",
-      underline: "after:bg-blue-500",
     },
     {
       title: "Firebase Integration",
@@ -53,9 +46,6 @@ const FlutterKotlinServices = () => {
         "Real-time database, authentication, and cloud functions with Firebase.",
       icon: <SiFirebase />,
       animation: "zoom-in-up",
-      color: "text-yellow-600",
-      border: "hover:border-yellow-400",
-      underline: "after:bg-yellow-500",
     },
     {
       title: "Kotlin Development",
@@ -63,9 +53,6 @@ const FlutterKotlinServices = () => {
         "Modern, concise, and powerful Android app development with Kotlin.",
       icon: <SiKotlin />,
       animation: "flip-up",
-      color: "text-purple-600",
-      border: "hover:border-purple-400",
-      underline: "after:bg-purple-500",
     },
     {
       title: "Android Native Apps",
@@ -73,9 +60,6 @@ const FlutterKotlinServices = () => {
         "High-performance Android apps using Kotlin & Jetpack libraries.",
       icon: <FaAndroid />,
       animation: "fade-down",
-      color: "text-green-600",
-      border: "hover:border-green-400",
-      underline: "after:bg-green-500",
     },
     {
       title: "Kotlin Multiplatform",
@@ -83,28 +67,18 @@ const FlutterKotlinServices = () => {
         "Share code across Android, iOS, and backend with Kotlin Multiplatform.",
       icon: <SiJetbrains />,
       animation: "zoom-out",
-      color: "text-purple-600",
-      border: "hover:border-purple-400",
-      underline: "after:bg-purple-500",
     },
     {
       title: "Cloud Deployment",
       description: "Deploy and scale apps using Firebase, AWS, and Google Cloud.",
       icon: <SiGooglecloud />,
       animation: "zoom-in-left",
-      color: "text-blue-600",
-      border: "hover:border-blue-400",
-      underline: "after:bg-blue-500",
     },
     {
       title: "Database Integration",
-      description:
-        "SQLite, Room, Firestore, and MySQL integration for apps.",
+      description: "SQLite, Room, Firestore, and MySQL integration for apps.",
       icon: <FaDatabase />,
       animation: "fade-left",
-      color: "text-indigo-600",
-      border: "hover:border-indigo-400",
-      underline: "after:bg-indigo-500",
     },
     {
       title: "Performance & Tools",
@@ -112,18 +86,15 @@ const FlutterKotlinServices = () => {
         "Optimize apps with DevTools, Gradle, Jetpack Compose, and debugging tools.",
       icon: <FaTools />,
       animation: "flip-right",
-      color: "text-gray-700",
-      border: "hover:border-gray-400",
-      underline: "after:bg-gray-500",
     },
   ];
 
   return (
-    <div className="relative min-h-screen py-20 bg-gradient-to-r from-blue-50 via-cyan-100 to-blue-200">
+    <div className="relative min-h-screen py-20 bg-gradient-to-r from-[#163F81]/10 via-[#163F81]/20 to-[#163F81]/30">
       <div className="max-w-7xl mx-auto px-6">
         {/* Title Section */}
         <h1
-          className="text-4xl md:text-5xl font-extrabold text-center text-blue-700 mb-6 tracking-wide"
+          className="text-4xl md:text-5xl font-extrabold text-center text-[#163F81] mb-6 tracking-wide"
           data-aos="fade-down"
         >
           Flutter & Kotlin Services
@@ -141,19 +112,17 @@ const FlutterKotlinServices = () => {
           {services.map((service, index) => (
             <div
               key={index}
-              className={`relative group rounded-2xl p-8 shadow-lg bg-white/30 backdrop-blur-lg border border-white/40 
-              transition-transform transform hover:-translate-y-2 hover:shadow-2xl ${service.border}`}
+              className="relative group rounded-2xl p-8 shadow-lg bg-white/30 backdrop-blur-lg border border-white/40 
+              transition-transform transform hover:-translate-y-2 hover:shadow-2xl hover:border-[#163F81]"
               data-aos={service.animation}
               data-aos-delay={index * 120}
             >
-              <div
-                className={`text-5xl mb-6 flex justify-center group-hover:scale-110 transition-transform duration-300 ${service.color}`}
-              >
+              <div className="text-5xl text-[#163F81] mb-6 flex justify-center group-hover:scale-110 transition-transform duration-300">
                 {service.icon}
               </div>
               <h2
-                className={`text-xl font-semibold text-center text-gray-800 mb-3 relative inline-block 
-                after:content-[''] after:block after:h-[3px] after:w-0 ${service.underline} after:transition-all after:duration-300 group-hover:after:w-full mx-auto`}
+                className="text-xl font-semibold text-center text-gray-800 mb-3 relative inline-block 
+                after:content-[''] after:block after:h-[3px] after:w-0 after:bg-[#163F81] after:transition-all after:duration-300 group-hover:after:w-full mx-auto"
               >
                 {service.title}
               </h2>

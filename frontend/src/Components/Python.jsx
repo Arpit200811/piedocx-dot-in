@@ -81,7 +81,6 @@ const PythonServices = () => {
       icon: <FaDocker />,
       animation: "fade-down",
     },
-   
     {
       title: "AI-Powered Bots",
       description:
@@ -92,36 +91,44 @@ const PythonServices = () => {
   ];
 
   return (
-    <div className="bg-gray-50 min-h-screen py-16">
+    <div className="relative bg-gradient-to-r from-[#163F81]/10 via-[#163F81]/20 to-[#163F81]/30 min-h-screen py-20">
       <div className="max-w-7xl mx-auto px-6">
         <h1
-          className="text-4xl md:text-5xl font-bold text-center text-blue-600 mb-12"
+          className="text-4xl md:text-5xl font-extrabold text-center text-[#163F81] mb-12 tracking-wide"
           data-aos="fade-down"
         >
-           Python Services
+          Python Services
         </h1>
         <p
-          className="text-center text-gray-600 mb-12"
-          data-aos="fade-down"
+          className="text-center text-gray-700 mb-14 max-w-2xl mx-auto"
+          data-aos="fade-up"
           data-aos-delay="200"
         >
           We use the latest Python technologies to deliver AI, web, and data-driven solutions for modern businesses.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {services.map((service, index) => (
-            <article
+            <div
               key={index}
-              className="bg-white rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:scale-105 transition duration-300 text-center"
+              className="relative group rounded-2xl p-8 shadow-lg bg-white/30 backdrop-blur-lg border border-white/40 
+                transition-transform transform hover:-translate-y-2 hover:shadow-2xl hover:border-[#163F81]"
               data-aos={service.animation}
               data-aos-delay={index * 120}
             >
-              <div className="text-5xl text-blue-600 mb-4 flex justify-center">
+              <div className="text-5xl text-[#163F81] mb-6 flex justify-center group-hover:scale-110 transition-transform duration-300">
                 {service.icon}
               </div>
-              <h2 className="text-xl font-semibold mb-2">{service.title}</h2>
-              <p className="text-gray-700">{service.description}</p>
-            </article>
+              <h2
+                className="text-xl font-semibold text-center text-gray-800 mb-3 relative inline-block
+                  after:content-[''] after:block after:h-[3px] after:w-0 after:bg-[#163F81] after:transition-all after:duration-300 group-hover:after:w-full mx-auto"
+              >
+                {service.title}
+              </h2>
+              <p className="text-gray-700 text-center leading-relaxed">
+                {service.description}
+              </p>
+            </div>
           ))}
         </div>
       </div>

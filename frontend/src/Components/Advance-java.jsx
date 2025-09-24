@@ -84,11 +84,11 @@ const AdvanceJavaServices = () => {
   ];
 
   return (
-    <div className="relative bg-gradient-to-r from-orange-50 via-yellow-100 to-orange-200 min-h-screen py-20">
+    <div className="relative bg-gradient-to-r from-[#163F81]/10 via-[#163F81]/20 to-[#163F81]/30 min-h-screen py-20">
       <div className="max-w-7xl mx-auto px-6">
         {/* Title Section */}
         <h1
-          className="text-4xl md:text-5xl font-extrabold text-center text-orange-700 mb-6 tracking-wide"
+          className="text-4xl md:text-5xl font-extrabold text-center text-[#163F81] mb-6 tracking-wide"
           data-aos="fade-down"
         >
           Advance Java Services
@@ -107,17 +107,20 @@ const AdvanceJavaServices = () => {
             <div
               key={index}
               className="relative group rounded-2xl p-8 shadow-lg bg-white/30 backdrop-blur-lg border border-white/40 
-              transition-transform transform hover:-translate-y-2 hover:shadow-2xl hover:border-orange-400"
+              transition-transform transform hover:-translate-y-2 hover:shadow-2xl hover:border-[#163F81]"
               data-aos={service.animation}
               data-aos-delay={index * 120}
             >
               {/* Icon */}
-              <div className="text-5xl text-orange-600 mb-6 flex justify-center group-hover:scale-110 transition-transform duration-300">
+              <div className="text-5xl text-[#163F81] mb-6 flex justify-center group-hover:scale-110 transition-transform duration-300">
                 {service.icon}
               </div>
 
               {/* Title */}
-              <h2 className="text-xl font-semibold text-center text-gray-800 mb-3 relative inline-block after:content-[''] after:block after:h-[3px] after:w-0 after:bg-orange-500 after:transition-all after:duration-300 group-hover:after:w-full mx-auto">
+              <h2 className="text-xl font-semibold text-center text-gray-800 mb-3 relative inline-block
+                after:content-[''] after:block after:h-[3px] after:w-0 after:bg-[#163F81] after:transition-all after:duration-300
+                group-hover:after:w-full mx-auto"
+              >
                 {service.title}
               </h2>
 

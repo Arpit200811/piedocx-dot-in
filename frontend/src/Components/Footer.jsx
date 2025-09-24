@@ -124,11 +124,15 @@ const Footer = () => {
               <p className="text-sm font-bold text-white mb-1 uppercase tracking-wide">Download the App</p>
               <div className="flex flex-col gap-3 mt-2">
                 <Link to="#" target="_blank" className="hover:scale-105 transition duration-300">
-                  <img src="play.png" width={168} height={50} />
+                  <img src="gem.png" width={168} height={50} />
                 </Link>
                 <Link to="#" target="_blank" className="hover:scale-105 transition duration-300">
                   <img src="start.png" width={168} height={50} />
                 </Link>
+                <Link to="#" target="_blank" className="hover:scale-105 transition duration-300">
+                  <img src="play.png" width={168} height={50} />
+                </Link>
+                
               </div>
             </div>
           </div>
