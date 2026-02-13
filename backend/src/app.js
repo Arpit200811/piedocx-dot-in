@@ -5,6 +5,7 @@ import express from "express";
 import connectDB from "./config/db.js";
 import cors from "cors";
 import parser from "cookie-parser";
+import helmet from "helmet";
 
 // Route imports
 import router from "./routes/user.route.js";
@@ -26,13 +27,41 @@ initSocket(httpServer);
 initRedis();
 
 
-// Middleware
-app.use(
-  cors({
-    origin:["*"] ,
-    credentials: true,
-  })
-);
+// Production Middleware
+app.set("trust proxy", 1);
+
+const allowedOrigins = [
+  "https://piedocx-dot-in-1.onrender.com",
+  "https://piedocx-dot-in.onrender.com",
+  "http://localhost:5173"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('CORS Policy: This origin is not allowed'), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+}));
+
+app.use(helmet({
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://widget.tidiochat.com"],
+      "frame-src": ["'self'", "https://accounts.google.com", "https://widget.tidiochat.com"],
+      "connect-src": ["'self'", "https://accounts.google.com", "https://*.tidiochat.com", "*.onrender.com"],
+      "img-src": ["'self'", "data:", "https://*.googleusercontent.com"],
+    },
+  },
+}));
 
 app.use(parser());
 app.use(express.json({ limit: '50mb' }));
