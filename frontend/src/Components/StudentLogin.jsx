@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { base_url } from '../utils/info';
 import Swal from 'sweetalert2';
@@ -10,15 +10,9 @@ import { useStudentAuth } from '../context/StudentAuthContext';
 
 const StudentLogin = () => {
     const navigate = useNavigate();
-    const { login, isAuthenticated } = useStudentAuth();
+    const location = useLocation();
+    const { login } = useStudentAuth();
     const [loading, setLoading] = useState(false);
-
-    // Redirect if already authenticated
-    React.useEffect(() => {
-        if (isAuthenticated) {
-            navigate('/student-dashboard', { replace: true });
-        }
-    }, [isAuthenticated, navigate]);
 
     const handleSuccess = async (response) => {
         setLoading(true);
@@ -41,8 +35,9 @@ const StudentLogin = () => {
                 customClass: { popup: 'rounded-[1.5rem] border border-slate-100 shadow-2xl' }
             });
 
-            // Use replace: true so they can't go back to login
-            setTimeout(() => navigate('/student-dashboard', { replace: true }), 1500);
+            // Redirect to intended page or dashboard
+            const from = location.state?.from?.pathname || '/student-dashboard';
+            setTimeout(() => navigate(from, { replace: true }), 1500);
         } catch (err) {
 
             Swal.fire({

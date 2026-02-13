@@ -45,10 +45,10 @@ export const StudentAuthProvider = ({ children }) => {
     }, []);
 
     const login = (studentData, token) => {
-        localStorage.setItem('studentToken', token);
         if (!studentData.firstName && studentData.fullName) {
             studentData.firstName = studentData.fullName.split(' ')[0];
         }
+        localStorage.setItem('studentToken', token);
         localStorage.setItem('studentData', JSON.stringify(studentData));
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         setStudent(studentData);

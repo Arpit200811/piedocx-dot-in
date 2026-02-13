@@ -14,6 +14,10 @@ const VerifyCertificate = lazy(() => import("../Components/VerifyCertificate"));
 const ProtectedStudentRoute = lazy(() => import("../Components/ProtectedStudentRoute"));
 const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
 
+const RedirectIfAuthenticated = lazy(() => import("../Components/RedirectIfAuthenticated"));
+const StudentRegistration = lazy(() => import("../Components/StudentRegistration"));
+const StudentLogin = lazy(() => import("../Components/StudentLogin"));
+
 const MainRouter = () => {
   return (
     <Suspense fallback={
@@ -22,8 +26,15 @@ const MainRouter = () => {
         </div>
     }>
         <Routes>
+          {/* Main Website Wrapper */}
           <Route path="/" element={<RootLayout />}>
             {PublicRoutes}
+            
+            {/* Guest Only Routes (Redirect to dashboard if logged in) */}
+            <Route element={<RedirectIfAuthenticated />}>
+              <Route path="student-login" element={<StudentLogin />} />
+              <Route path="student-registration" element={<StudentRegistration />} />
+            </Route>
           </Route>
     
           {/* Student Portal (Protected) */}
@@ -45,6 +56,8 @@ const MainRouter = () => {
           <Route path="/student/:id" element={<StudentDetails />} />
           {EmployeeRoutes}
           {AdminRoutes}
+          
+          {/* Universal Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     </Suspense>

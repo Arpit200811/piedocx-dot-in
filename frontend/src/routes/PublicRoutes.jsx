@@ -83,7 +83,5 @@ export const PublicRoutes = (
     <Route path="faq" element={<FAQ />} />
     
     {/* Student Related (Public entry points) */}
-    <Route path="student-registration" element={<StudentRegistration />} />
-    <Route path="student-login" element={<StudentLogin />} />
   </>
 );
