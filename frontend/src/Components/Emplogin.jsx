@@ -111,7 +111,7 @@ const SignupForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 flex justify-center">
+    <div className="min-h-[calc(100vh-3.5rem)] md:min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-5rem)] bg-gray-100 text-gray-900 flex justify-center pt-14 md:pt-16 lg:pt-20">
       <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex justify-center flex-1">
         <div className="lg:w-1/2 xl:w-5/12 p-6 sm:p-12">
           <div>

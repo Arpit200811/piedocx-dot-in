@@ -1,12 +1,15 @@
 
 import express from 'express'
-import userInfo from '../controllers/user.controller.js'
+import userInfo, { getAllSubmissions, deleteSubmission } from '../controllers/user.controller.js'
+import { adminAuth } from '../middlewares/auth.middleware.js';
 
 const router = express.Router()
 
-router.post('/user',userInfo)
-
-
+router.post('/user', userInfo)
+router.get('/all-data', adminAuth, getAllSubmissions)
+router.delete('/delete/:id', adminAuth, deleteSubmission)
 
 export default router
+
+
 

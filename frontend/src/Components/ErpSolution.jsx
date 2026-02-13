@@ -1,210 +1,166 @@
-import React, { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import {
-  FaCode,
-  FaPuzzlePiece,
-  FaClipboardCheck,
-  FaExpandArrowsAlt,
-  FaStar,
-  FaHandshake,
-  FaCogs,
-  FaPlug,
-  FaShieldAlt,
-} from "react-icons/fa";
+import { 
+  Building2, 
+  Workflow, 
+  BarChart3, 
+  Users2, 
+  ShieldCheck, 
+  Database, 
+  Network, 
+  Layers,
+  ChevronRight,
+  Zap,
+  Globe,
+  Settings,
+  Cpu,
+  ArrowUpRight
+} from "lucide-react";
 
 const ErpSolutions = () => {
   useEffect(() => {
-    AOS.init({ duration: 1200, once: true });
+    AOS.init({ duration: 1000, once: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  const features = [
+    {
+      title: "Unified Nerve Center",
+      desc: "Centralized database architecture eliminates data silos across departments.",
+      icon: <Network className="w-5 h-5" />,
+      delay: 0
+    },
+    {
+      title: "Process Automation",
+      desc: "Zero-touch workflows for inventory and payroll to reduce human error.",
+      icon: <Zap className="w-5 h-5" />,
+      delay: 50
+    },
+    {
+      title: "Real-time Intel",
+      desc: "Interactive BI dashboards providing executive-level insights.",
+      icon: <BarChart3 className="w-5 h-5" />,
+      delay: 100
+    },
+    {
+      title: "Scalable Ecosystem",
+      desc: "Modular design allows you to add features as your enterprise expands.",
+      icon: <Layers className="w-5 h-5" />,
+      delay: 150
+    },
+    {
+      title: "Secure Governance",
+      desc: "Role-based access controls and military-grade encryption for data.",
+      icon: <ShieldCheck className="w-5 h-5" />,
+      delay: 200
+    },
+    {
+      title: "API First Design",
+      desc: "Integrate with SaaS tools, payment gateways, and logistics providers.",
+      icon: <Globe className="w-5 h-5" />,
+      delay: 250
+    }
+  ];
+
   return (
-    <>
+    <main className="bg-white min-h-screen font-sans selection:bg-blue-100 selection:text-blue-600 overflow-x-hidden pt-0">
+      
+      {/* Compact Hero */}
+      <section className="relative pt-14 md:pt-16 lg:pt-20 pb-12 px-6 overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-slate-50 opacity-40 transform skew-x-[-12deg] origin-top-right"></div>
+        
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center relative z-10">
+          <div data-aos="fade-right">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 mb-4 text-[10px] font-black uppercase tracking-widest">
+              <Cpu size={12} /> Enterprise Orchestration
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-6 tracking-tighter italic">
+              Control your <br /> <span className="text-blue-600 underline decoration-blue-100 underline-offset-4">Empire Core.</span>
+            </h1>
+            <p className="text-base text-slate-600 leading-relaxed mb-8 max-w-lg font-medium">
+              We build harmonized ERP solutions that synchronize every department into a high-performance digital engine.
+            </p>
+            <div className="flex gap-4">
+              <Link to="/contact" className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg flex items-center gap-2">
+                 Request Demo <ArrowUpRight size={16} />
+              </Link>
+              <Link to="/services" className="px-6 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all">
+                The Modules
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative group scale-90 md:scale-100" data-aos="zoom-in">
+             <div className="absolute -inset-4 bg-blue-100 rounded-full blur-3xl opacity-20"></div>
+             <div className="relative bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-2xl overflow-hidden grid grid-cols-2 gap-4 max-w-sm mx-auto">
+                <div className="bg-slate-900 rounded-2xl p-6 h-28 flex flex-col justify-between text-white">
+                   <Settings size={24} className="animate-spin-slow" />
+                   <p className="text-[9px] font-black uppercase tracking-widest">Global Automation</p>
+                </div>
+                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 h-28 flex flex-col justify-between translate-y-4">
+                   <BarChart3 size={24} className="text-blue-600" />
+                   <p className="text-blue-900 font-black text-[10px] uppercase">Telemetry</p>
+                </div>
+                <div className="col-span-2 bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                   <div className="h-1 w-full bg-white rounded-full overflow-hidden mb-1">
+                      <div className="h-full bg-blue-600 w-[99%] animate-pulse"></div>
+                   </div>
+                   <p className="text-[8px] font-black text-slate-400 text-center uppercase tracking-widest">System Sync: 100%</p>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Tighter Grid */}
+      <section className="py-16 px-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, idx) => (
+            <div 
+              key={idx} 
+              className="p-8 rounded-[2rem] bg-slate-50 hover:bg-white border border-transparent hover:border-blue-100 transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-blue-600/5 group"
+              data-aos="fade-up"
+              data-aos-delay={feature.delay}
+            >
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all border border-slate-100 text-blue-600">
+                {feature.icon}
+              </div>
+              <h4 className="text-xl font-black text-slate-800 mb-2 group-hover:text-blue-700 transition-colors uppercase tracking-tighter leading-tight italic">{feature.title}</h4>
+              <p className="text-sm text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Refined CTA */}
+      <section className="py-12 px-6">
+        <div className="max-w-5xl mx-auto rounded-[3rem] bg-blue-600 p-12 text-center text-white relative shadow-2xl overflow-hidden group">
+           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.1),transparent)] pointer-events-none"></div>
+           <div className="relative z-10" data-aos="zoom-up">
+              <h3 className="text-3xl md:text-4xl font-black mb-6 tracking-tighter italic uppercase text-shadow-sm">FUTURE-PROOF YOUR EMPIRE.</h3>
+              <p className="text-blue-100 text-base mb-10 max-w-lg mx-auto font-medium">
+                 Consult with our ERP architects and map your transition to a centralized intelligence system.
+              </p>
+              <Link to="/contact" className="inline-block px-10 py-4 bg-white text-blue-600 rounded-2xl font-black text-sm hover:scale-105 transition-all shadow-xl">
+                 Consult Our Architects
+              </Link>
+           </div>
+        </div>
+      </section>
+
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
-
-        * { box-sizing: border-box; }
-
-        body, html, #root {
-          margin: 0;
-          padding: 0;
-          font-family: 'Poppins', sans-serif;
-          background: #f0f4f8;
-          color: #111827;
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
-
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 4rem 1rem;
-        }
-
-        header {
-          text-align: center;
-          padding-bottom: 3rem;
-        }
-
-        header h1 {
-          font-size: 3rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        header h1::after {
-          content: '';
-          width: 60px;
-          height: 4px;
-          background: #3b82f6;
-          display: block;
-          margin: 0.5rem auto 0;
-          border-radius: 3px;
-          animation: underline 2s infinite alternate;
-        }
-
-        @keyframes underline {
-          0% { width: 60px; }
-          100% { width: 120px; background-color: #1e40af; }
-        }
-
-        header p {
-          font-size: 1.2rem;
-          max-width: 640px;
-          margin: 1rem auto 0;
-          font-weight: 300;
-          color: #4b5563;
-        }
-
-        main {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 2rem;
-        }
-
-        article {
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 1.5rem;
-          padding: 2rem 1.5rem;
-          text-align: center;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        article:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
-        }
-
-        .icon-box {
-          background: #3b82f6;
-          width: 70px;
-          height: 70px;
-          margin: 0 auto 1rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .icon-box svg {
-          font-size: 2rem;
-          color: #ffffff;
-        }
-
-        article h2 {
-          font-size: 1.3rem;
-          margin-bottom: 0.7rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        article h3 {
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: #1e40af;
-          margin-bottom: 0.5rem;
-        }
-
-        article p {
-          font-size: 1rem;
-          color: #374151;
-          font-weight: 300;
-        }
-
-        @media (max-width: 600px) {
-          header h1 {
-            font-size: 2.3rem;
-          }
+        .animate-spin-slow {
+          animation: spin-slow 15s linear infinite;
         }
       `}</style>
 
-      <div className="container">
-        <header data-aos="fade-down">
-          <h1>ERP Solutions</h1>
-          <p>
-            Integrated Enterprise Resource Planning systems designed to streamline your entire business operations.
-          </p>
-        </header>
-
-        <main>
-          <article data-aos="fade-up" data-aos-delay="0">
-            <div className="icon-box"><FaCode /></div>
-            <h2>Comprehensive ERP Systems</h2>
-            <p>Unified platforms connecting all departments and functions in your company.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="100">
-            <div className="icon-box"><FaPuzzlePiece /></div>
-            <h3>Centralized Data</h3>
-            <p>Eliminates data silos by storing all key information in one system.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="200">
-            <div className="icon-box"><FaClipboardCheck /></div>
-            <h3>Process Automation</h3>
-            <p>Automates finance, HR, inventory, manufacturing, and more.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="300">
-            <div className="icon-box"><FaExpandArrowsAlt /></div>
-            <h3>Scalable & Customizable</h3>
-            <p>Grows with your business and fits your exact needs.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="400">
-            <div className="icon-box"><FaStar /></div>
-            <h3>Improved Decision Making</h3>
-            <p>Real-time data and dashboards help you make smarter business decisions.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="500">
-            <div className="icon-box"><FaHandshake /></div>
-            <h3>Enhanced Collaboration</h3>
-            <p>Boosts teamwork across departments with shared data access.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="600">
-            <div className="icon-box"><FaCogs /></div>
-            <h3>Efficiency & Productivity</h3>
-            <p>Streamlines workflows to reduce effort, waste, and cost.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="700">
-            <div className="icon-box"><FaPlug /></div>
-            <h3>Integration Friendly</h3>
-            <p>Seamlessly connects with your existing tools, apps, and software.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="800">
-            <div className="icon-box"><FaShieldAlt /></div>
-            <h3>Enterprise-Grade Security</h3>
-            <p>Keeps your data safe with encryption, access controls, and audit logs.</p>
-          </article>
-        </main>
-      </div>
-    </>
+    </main>
   );
 };
 

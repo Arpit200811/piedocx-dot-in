@@ -1,5 +1,7 @@
-import express from "express";
 import { config } from "dotenv";
+config(); // Load environment variables first!
+
+import express from "express";
 import connectDB from "./config/db.js";
 import cors from "cors";
 import parser from "cookie-parser";
@@ -8,49 +10,52 @@ import parser from "cookie-parser";
 import router from "./routes/user.route.js";
 import empRoutes from "./routes/employee.route.js";
 import adminRoutes from "./routes/admin.route.js";
-import taskRoutes from "./routes/task.route.js";
 import studentRoutes from "./routes/student.route.js";
-import { UI_URL } from "../../frontend/src/utils/info.js";
+import registerRoutes from "./routes/register.route.js";
+import studentAuthRoutes from './routes/studentAuth.route.js';
+import testConfigRoutes from './routes/testConfig.route.js';
+import analyticsRoutes from './routes/analytics.route.js';
 
-config(); // Load environment variables
 
 const app = express();
+import { createServer } from 'http';
+import { initSocket } from './utils/socketService.js';
+import { initRedis } from './utils/cacheService.js';
+const httpServer = createServer(app);
+initSocket(httpServer);
+initRedis();
+
 
 // Middleware
 app.use(
   cors({
-    origin:["https://piedocx-dot-in.onrender.com", "https://216.24.57.1","https://piedocx-dot-in-1.onrender.com", "https://localhost:5173"] ,
+    origin:["https://piedocx-dot-in.onrender.com", "https://216.24.57.1","https://piedocx-dot-in-1.onrender.com", "https://localhost:5173", "http://localhost:5173"] ,
     credentials: true,
   })
 );
 
 app.use(parser());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-app.use(router);
-app.use(empRoutes);
-app.use(adminRoutes);
-app.use(taskRoutes);
-
-// app.listen(process.env.PORT, () => {
-//   connectDB();
-// });
+// Routes are mounted below with /api prefix
 
 // Routes
 app.use("/api/users", router);
 app.use("/api/employees", empRoutes);
 app.use("/api/admins", adminRoutes);
-app.use("/api/tasks", taskRoutes);
-app.use("/api/students", studentRoutes); // 👈 Important: use a clear base path
+app.use("/api/students", studentRoutes); 
+app.use("/api/certificate", registerRoutes); 
+app.use('/api/student-auth', studentAuthRoutes); 
+app.use('/api/admin/test-config', testConfigRoutes); 
+app.use('/api/admin/analytics', analyticsRoutes); 
 
 // Test route
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-// Connect DB and start server
-// const PORT = process.env.PORT || 5000;
-app.listen(5002, () => {
-  console.log(`✅ Server running at http://localhost:${5002}`);
-  connectDB(); // Connect to MongoDB
+httpServer.listen(5002, async () => {
+  await connectDB(); 
+  console.log(`Server running on port 5002`);
 });

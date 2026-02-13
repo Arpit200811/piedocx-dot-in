@@ -13,6 +13,14 @@ const adminSchema = new mongoose.Schema({
     password:{
         type:String,
         required:true,
+    },
+    otp: {
+        type: String,
+        default: null
+    },
+    otpExpires: {
+        type: Date,
+        default: null
     }
 })
 

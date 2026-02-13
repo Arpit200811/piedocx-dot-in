@@ -1,8 +1,24 @@
 import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { FaServer, FaDatabase, FaCloud, FaDocker, FaGitAlt, FaLaptopCode, FaCodeBranch } from 'react-icons/fa';
-import { SiDotnet, SiBlazor, SiKubernetes, SiGraphql } from 'react-icons/si';
+import { 
+  Database, 
+  Cloud, 
+  Terminal, 
+  Cpu, 
+  Workflow, 
+  Sparkles, 
+  ArrowRight,
+  Code2,
+  Zap,
+  ShieldCheck,
+  Layers,
+  Server,
+  Layout,
+  Activity,
+  Box
+} from 'lucide-react';
 
 const DotNetCoreServices = () => {
   useEffect(() => {
@@ -12,81 +28,98 @@ const DotNetCoreServices = () => {
 
   const services = [
     {
-      title: "ASP.NET Core Development",
-      description: "Build high-performance, cross-platform web applications and APIs using ASP.NET Core framework.",
-      icon: <SiDotnet />,
+      title: "ASP.NET Core",
+      description: "High-performance, cross-platform web ecosystems built for mass scalability.",
+      icon: <Layers className="w-5 h-5 text-blue-600" />,
+      delay: 0
     },
     {
-      title: "C# Programming",
-      description: "Write robust, scalable, and maintainable code using the powerful C# language for all types of applications.",
-      icon: <FaLaptopCode />,
+      title: "C# Architecture",
+      description: "Strictly typed, robust, and maintainable enterprise logic with C# 12+ features.",
+      icon: <Terminal className="w-5 h-5 text-indigo-600" />,
+      delay: 50
     },
     {
-      title: "Entity Framework Core",
-      description: "Efficiently manage database operations and perform ORM-based data access with EF Core.",
-      icon: <FaDatabase />,
+      title: "Entity Framework",
+      description: "Advanced ORM-based data access and migration strategies for complex databases.",
+      icon: <Database className="w-5 h-5 text-emerald-600" />,
+      delay: 100
     },
     {
-      title: "Blazor Web Apps",
-      description: "Create interactive client-side web apps with C# using Blazor for modern UI development.",
-      icon: <SiBlazor />,
+      title: "Blazor Mastery",
+      description: "Next-gen interactive client-side web applications using C# in the browser.",
+      icon: <Zap className="w-5 h-5 text-amber-500" />,
+      delay: 150
     },
     {
-      title: "SignalR & Real-time Apps",
-      description: "Develop real-time applications like chat, notifications, and live dashboards using SignalR.",
-      icon: <FaCodeBranch />,
+      title: "Cloud & Azure",
+      description: "Native cloud orchestration on Microsoft Azure with high-availability clustering.",
+      icon: <Cloud className="w-5 h-5 text-blue-500" />,
+      delay: 200
     },
     {
-      title: "REST & GraphQL APIs",
-      description: "Build robust RESTful and GraphQL APIs for seamless integration with front-end and mobile apps.",
-      icon: <SiGraphql />,
-    },
-    {
-      title: "Cloud & Azure Deployment",
-      description: "Deploy scalable .NET applications on Azure Cloud with monitoring, security, and performance optimization.",
-      icon: <FaCloud />,
-    },
-    {
-      title: "Microservices Architecture",
-      description: "Design distributed, loosely coupled services for scalable and maintainable applications.",
-      icon: <FaServer />,
-    },
-    {
-      title: "Docker & Kubernetes",
-      description: "Containerize your applications and orchestrate deployments using Docker and Kubernetes.",
-      icon: <SiKubernetes />,
-    },
-   
+      title: "Microservices",
+      description: "Developing distributed, loosely coupled services for resilient enterprise software.",
+      icon: <Box className="w-5 h-5 text-slate-800" />,
+      delay: 250
+    }
   ];
 
   return (
-    <div className="bg-gray-50 min-h-screen py-16">
-      <div className="max-w-7xl mx-auto px-6">
-        <h1 className="text-4xl md:text-5xl font-bold text-center text-blue-700 mb-12" data-aos="fade-down">
-           .NET Core Services
-        </h1>
-        <p className="text-center text-gray-600 mb-12" data-aos="fade-down" data-aos-delay="200">
-          We leverage the latest .NET Core technologies to build scalable, high-performance, and modern web applications.
-        </p>
+    <main className="bg-white min-h-screen font-sans pt-14 md:pt-16 lg:pt-20 pb-12 md:pb-16 selection:bg-blue-100 selection:text-blue-600">
+      <div className="max-w-6xl mx-auto px-6">
+        
+        {/* Compact Header */}
+        <div className="text-center mb-10 md:mb-16" data-aos="fade-down">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 mb-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest leading-none">
+             Enterprise Foundations
+          </div>
+          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic mb-4">
+             .NET Core <span className="text-blue-600">Ecosystem.</span>
+          </h1>
+          <p className="max-w-xl mx-auto text-slate-500 font-medium text-sm md:text-base leading-relaxed">
+             Build ultra-fast, secure, and modern cross-platform applications with the full power of Microsoft's .NET ecosystem.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Dense Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {services.map((service, index) => (
             <article
               key={index}
-              className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transform hover:scale-105 transition duration-300 text-center"
+              className="group bg-slate-50 hover:bg-white border border-transparent hover:border-blue-100 rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-8 transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-blue-600/5"
               data-aos="fade-up"
-              data-aos-delay={index * 100}
+              data-aos-delay={service.delay}
             >
-              <div className="text-5xl text-blue-600 mb-4 flex justify-center">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl flex items-center justify-center mb-4 md:mb-6 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all border border-slate-100 text-blue-600">
                 {service.icon}
               </div>
-              <h2 className="text-xl font-semibold mb-2">{service.title}</h2>
-              <p className="text-gray-700">{service.description}</p>
+              <h2 className="text-lg md:text-xl font-black text-slate-800 mb-2 group-hover:text-blue-700 transition-colors uppercase italic tracking-tighter leading-tight">
+                {service.title}
+              </h2>
+              <p className="text-[13px] md:text-sm text-slate-500 font-medium leading-relaxed">
+                {service.description}
+              </p>
             </article>
           ))}
         </div>
+
+        {/* Bottom CTA */}
+        <div className="mt-12 md:mt-20 p-8 md:p-10 rounded-[2rem] md:rounded-[2.5rem] bg-slate-900 text-white text-center relative overflow-hidden shadow-2xl" data-aos="zoom-in">
+           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_20%_80%,rgba(37,99,235,0.08),transparent)]"></div>
+           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 text-center md:text-left">
+              <div>
+                <h3 className="text-xl md:text-2xl font-black tracking-tight italic mb-2 uppercase">Ready for Deployment?</h3>
+                <p className="text-slate-400 text-[13px] md:text-sm max-w-sm">Connect with our .NET architects and initiate your next-gen enterprise solution.</p>
+              </div>
+              <Link to="/contact" className="w-full md:w-auto px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2">
+                Initiate Build <ArrowRight size={16} />
+              </Link>
+           </div>
+        </div>
+
       </div>
-    </div>
+    </main>
   );
 };
 

@@ -1,168 +1,156 @@
-import React, { useEffect } from 'react';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import {
-  FaMobileAlt, FaAndroid, FaApple, FaReact,
-  FaCloudUploadAlt, FaBug, FaTools, FaStore, FaTachometerAlt
-} from 'react-icons/fa';
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { 
+  Smartphone, 
+  Cpu, 
+  Zap, 
+  ShieldCheck, 
+  Layers, 
+  Layout, 
+  Share2,
+  ChevronRight,
+  Code2,
+  Globe,
+  ArrowRight
+} from "lucide-react";
 
 const AndroidDev = () => {
   useEffect(() => {
-    AOS.init({ duration: 1200, once: true });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    AOS.init({ duration: 1000, once: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  const features = [
+    {
+      title: "UI/UX Architecture",
+      desc: "Pixel-perfect interfaces designed for human interaction using Material You.",
+      icon: <Layout className="w-5 h-5" />,
+      delay: 0
+    },
+    {
+      title: "Native Android",
+      desc: "Robust applications built with Kotlin and Jetpack Compose for the ultimate experience.",
+      icon: <Code2 className="w-5 h-5" />,
+      delay: 50
+    },
+    {
+      title: "Swift iOS",
+      desc: "Fluid, high-performance apps using SwiftUI and the latest Apple system features.",
+      icon: <Smartphone className="w-5 h-5" />,
+      delay: 100
+    },
+    {
+      title: "Cross-Platform",
+      desc: "Single codebase solutions with React Native & Flutter that feel and perform native.",
+      icon: <Layers className="w-5 h-5" />,
+      delay: 150
+    },
+    {
+      title: "API Ecosystem",
+      desc: "Seamlessly connect with GraphQL, REST, and Real-time databases for apps.",
+      icon: <Share2 className="w-5 h-5" />,
+      delay: 200
+    },
+    {
+      title: "Performance",
+      desc: "Optimized startup times and smooth 60fps animations for a premium user feel.",
+      icon: <Zap className="w-5 h-5" />,
+      delay: 250
+    }
+  ];
+
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
-        * { box-sizing: border-box; }
+    <main className="bg-white min-h-screen font-sans selection:bg-blue-100 selection:text-blue-600 overflow-x-hidden pt-0">
+      
+      {/* Compact Hero */}
+      <section className="relative pt-14 md:pt-16 lg:pt-20 pb-12 px-6 overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/4 h-full bg-blue-50 opacity-50 transform -skew-x-12 origin-top-right"></div>
+        
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center relative z-10">
+          <div data-aos="fade-right">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 mb-4 text-[10px] font-black uppercase tracking-widest">
+              Mobile Core Excellence
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-6 tracking-tighter italic">
+              Build the App <br /> of the <span className="text-blue-600 underline decoration-blue-100 underline-offset-4">Future.</span>
+            </h1>
+            <p className="text-base text-slate-600 leading-relaxed mb-8 max-w-lg font-medium">
+              We engineer mobile experiences that are fast, secure, and addictive. From concept to App Store, we deliver absolute performance.
+            </p>
+            <div className="flex gap-4">
+              <Link to="/contact" className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center gap-2">
+                Request Quote <ArrowRight size={16} />
+              </Link>
+              <Link to="/projects" className="px-6 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all">
+                The Portfolio
+              </Link>
+            </div>
+          </div>
 
-        body, html, #root {
-          margin: 0;
-          padding: 0;
-          height: 100%;
-          font-family: 'Poppins', sans-serif;
-          background-color: #f0f4f8;
-          color: #111827;
-        }
+          <div className="relative group scale-90 md:scale-100" data-aos="zoom-in">
+             <div className="absolute -inset-4 bg-blue-100 rounded-full blur-3xl opacity-20"></div>
+             <div className="relative bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-2xl overflow-hidden max-w-sm mx-auto flex flex-col items-center">
+                <div className="w-full flex justify-between mb-8 px-2">
+                   <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                   </div>
+                   <Smartphone size={16} className="text-blue-600" />
+                </div>
+                <div className="w-48 h-80 bg-slate-900 rounded-[2.5rem] p-4 border-[6px] border-slate-800 shadow-xl flex flex-col justify-between">
+                   <div className="w-1/3 h-1 bg-slate-800 mx-auto rounded-full"></div>
+                   <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg animate-pulse">
+                         <Zap size={24} />
+                      </div>
+                      <p className="font-mono text-[8px] text-blue-400 text-center tracking-tighter underline">Optimization: ACTIVE</p>
+                   </div>
+                   <div className="h-1 w-1/4 bg-slate-800 mx-auto rounded-full"></div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
 
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 4rem 1rem;
-        }
+      {/* Tighter Grid */}
+      <section className="py-16 px-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, idx) => (
+            <div 
+              key={idx} 
+              className="p-8 rounded-[2rem] bg-slate-50 hover:bg-white border border-transparent hover:border-blue-100 transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-blue-600/5 group"
+              data-aos="fade-up"
+              data-aos-delay={feature.delay}
+            >
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all border border-slate-100 text-blue-600">
+                {feature.icon}
+              </div>
+              <h4 className="text-xl font-black text-slate-800 mb-2 group-hover:text-blue-700 transition-colors uppercase tracking-tighter leading-tight italic">{feature.title}</h4>
+              <p className="text-sm text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        header {
-          text-align: center;
-          padding-bottom: 3rem;
-        }
+      {/* Refined CTA */}
+      <section className="py-12 px-6">
+        <div className="max-w-5xl mx-auto rounded-[3rem] bg-blue-600 p-12 text-center text-white relative shadow-2xl overflow-hidden group">
+           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.1),transparent)] pointer-events-none"></div>
+           <div className="relative z-10" data-aos="zoom-up">
+              <h3 className="text-3xl md:text-4xl font-black mb-6 tracking-tighter italic uppercase text-shadow-sm">READY TO DOMINATE THE APP STORE?</h3>
+              <p className="text-blue-100 text-base mb-10 max-w-lg mx-auto font-medium">
+                 Get a free strategy call with our lead architect and blueprint your next mobile product.
+              </p>
+              <Link to="/contact" className="inline-block px-10 py-4 bg-white text-blue-600 rounded-2xl font-black text-sm hover:scale-105 transition-all shadow-xl">
+                 Get a Free Estimate
+              </Link>
+           </div>
+        </div>
+      </section>
 
-        header h1 {
-          font-size: 3rem;
-          font-weight: 600;
-          color: #2563eb;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-        }
-
-        header p {
-          font-size: 1.2rem;
-          font-weight: 300;
-          color: #4b5563;
-          max-width: 680px;
-          margin: 0 auto;
-        }
-
-        main {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 2.5rem;
-        }
-
-        article {
-          background: #ffffff;
-          border-radius: 1.5rem;
-          padding: 2rem 1.5rem;
-          text-align: center;
-          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-          border: 1px solid #e5e7eb;
-        }
-
-        article:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
-        }
-
-        .icon {
-          font-size: 3rem;
-          color: #3b82f6;
-          margin-bottom: 1rem;
-        }
-
-        article h2 {
-          font-size: 1.4rem;
-          margin-bottom: 0.6rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        article p {
-          font-size: 1rem;
-          font-weight: 300;
-          color: #374151;
-        }
-
-        @media (max-width: 600px) {
-          header h1 {
-            font-size: 2.3rem;
-          }
-        }
-      `}</style>
-
-      <div className="container">
-        <header data-aos="fade-down">
-          <h1>Android & iOS App Development</h1>
-          <p>Innovative, modern, and cross-platform mobile apps built with precision and performance</p>
-        </header>
-
-        <main>
-          <article data-aos="fade-up">
-            <div className="icon"><FaMobileAlt /></div>
-            <h2>UI/UX Design</h2>
-            <p>Craft elegant user experiences using Figma, Flutter widgets, and Material/Apple design systems.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="100">
-            <div className="icon"><FaAndroid /></div>
-            <h2>Android</h2>
-            <p>Powerful native apps with Kotlin, Jetpack, and full Material Design compliance.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="200">
-            <div className="icon"><FaApple /></div>
-            <h2>iOS</h2>
-            <p>Smooth iOS experiences with Swift, SwiftUI, and deep ecosystem integration.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="300">
-            <div className="icon"><FaReact /></div>
-            <h2>Cross-Platform</h2>
-            <p>Single-codebase apps using Flutter or React Native with near-native performance.</p>
-          </article>
-
-          <article data-aos="zoom-in" data-aos-delay="400">
-            <div className="icon"><FaCloudUploadAlt /></div>
-            <h2>API Integration</h2>
-            <p>Seamless real-time data via Firebase, REST APIs, and GraphQL with secure auth flows.</p>
-          </article>
-
-          <article data-aos="zoom-in" data-aos-delay="500">
-            <div className="icon"><FaBug /></div>
-            <h2>Testing</h2>
-            <p>End-to-end and unit testing with tools like Espresso, Detox, and XCUITest.</p>
-          </article>
-
-          <article data-aos="zoom-in" data-aos-delay="600">
-            <div className="icon"><FaTools /></div>
-            <h2>Development Tools</h2>
-            <p>Streamline dev cycles with Android Studio, Xcode, emulators, and Expo CLI.</p>
-          </article>
-
-          <article data-aos="flip-left" data-aos-delay="700">
-            <div className="icon"><FaStore /></div>
-            <h2>App Store Launch</h2>
-            <p>Deploy confidently to Google Play & Apple App Store with signing, CI/CD, and analytics.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="800">
-            <div className="icon"><FaTachometerAlt /></div>
-            <h2>Performance Optimization</h2>
-            <p>Improve app responsiveness and reduce load times using profiling tools, lazy loading, and efficient state management.</p>
-          </article>
-        </main>
-      </div>
-    </>
+    </main>
   );
 };
 

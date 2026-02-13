@@ -1,180 +1,151 @@
-import React, { useEffect } from 'react';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import {
-  FaBullhorn, FaChartLine, FaEnvelopeOpenText, FaSearch,
-  FaPaintBrush, FaUsers, FaLaptopCode, FaEye, FaHeadset
-} from 'react-icons/fa';
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { 
+  TrendingUp, 
+  Target, 
+  Users, 
+  BarChart3, 
+  MousePointer2, 
+  PieChart, 
+  ChevronRight,
+  Zap,
+  ArrowUpRight
+} from "lucide-react";
 
 const DigitalMarketing = () => {
   useEffect(() => {
-    AOS.init({ duration: 1200, once: true });
-    setTimeout(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    }, 50);
+    AOS.init({ duration: 1000, once: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  const features = [
+    {
+      title: "Content Strategy",
+      desc: "Data-backed storytelling that positions your brand as a market leader.",
+      icon: <Target className="w-5 h-5" />,
+      delay: 0
+    },
+    {
+      title: "Performance SEO",
+      desc: "Dominating search results through technical optimization and link building.",
+      icon: <TrendingUp className="w-5 h-5" />,
+      delay: 50
+    },
+    {
+      title: "Social Ecosystems",
+      desc: "Building communities on LinkedIn & Instagram with viral campaigns.",
+      icon: <Users className="w-5 h-5" />,
+      delay: 100
+    },
+    {
+      title: "Precision Ads",
+      desc: "Targeted PPC and Social Ads with automated bidding for maximum ROI.",
+      icon: <BarChart3 className="w-5 h-5" />,
+      delay: 150
+    },
+    {
+      title: "Conversion Funnels",
+      desc: "Optimizing landing pages to turn every click into a customer.",
+      icon: <MousePointer2 className="w-5 h-5" />,
+      delay: 200
+    },
+    {
+      title: "Advanced Analytics",
+      desc: "Real-time dashboards tracking CAC, LTV, and conversion metrics.",
+      icon: <PieChart className="w-5 h-5" />,
+      delay: 250
+    }
+  ];
+
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
+    <main className="bg-white min-h-screen font-sans selection:bg-blue-100 selection:text-blue-600 overflow-x-hidden pt-0">
+      
+      {/* Compact Hero */}
+      <section className="relative pt-14 md:pt-16 lg:pt-20 pb-12 px-6 overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/4 h-full bg-slate-50 opacity-50 transform skew-x-12 origin-top-right"></div>
+        
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center relative z-10">
+          <div data-aos="fade-right">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 mb-4 text-[10px] font-black uppercase tracking-widest">
+              Growth Engineering
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-6 tracking-tighter">
+              Amplify Your <br /> <span className="text-blue-600 underline decoration-blue-100 underline-offset-4">Digital Voice.</span>
+            </h1>
+            <p className="text-base text-slate-600 leading-relaxed mb-8 max-w-lg font-medium">
+              We engineer growth using data, user psychology, and relentless optimization to dominate your industry.
+            </p>
+            <div className="flex gap-4">
+              <Link to="/contact" className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center gap-2">
+                Get Growth Plan <ArrowUpRight size={16} />
+              </Link>
+              <Link to="/projects" className="px-6 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all">
+                Case Studies
+              </Link>
+            </div>
+          </div>
 
-        * { box-sizing: border-box; }
+          <div className="relative group scale-90 md:scale-100" data-aos="zoom-in">
+             <div className="absolute -inset-10 bg-blue-400 opacity-5 blur-3xl rounded-full"></div>
+             <div className="relative bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-2xl overflow-hidden grid grid-cols-2 gap-4">
+                <div className="bg-slate-900 rounded-2xl p-6 flex flex-col justify-between h-32">
+                   <TrendingUp className="text-blue-400" size={24} />
+                   <p className="text-white text-xl font-black italic">12.5x</p>
+                </div>
+                <div className="bg-blue-50 rounded-2xl p-6 flex flex-col justify-between h-32 border border-blue-100">
+                   <Zap className="text-blue-600" size={24} />
+                   <p className="text-blue-900 text-sm font-bold">Fast Scale</p>
+                </div>
+                <div className="col-span-2 bg-slate-50 border border-slate-100 rounded-2xl p-6">
+                   <div className="flex justify-between items-center h-4 bg-white rounded-full overflow-hidden mb-2">
+                      <div className="h-full bg-blue-600 w-2/3 animate-pulse"></div>
+                   </div>
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">ROI Optimization Active</p>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
 
-        body, html, #root {
-          margin: 0;
-          padding: 0;
-          font-family: 'Poppins', sans-serif;
-          background: #f0f4f8;
-          color: #111827;
-        }
+      {/* Tighter Grid */}
+      <section className="py-16 px-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, idx) => (
+            <div 
+              key={idx} 
+              className="p-8 rounded-[2rem] bg-slate-50 hover:bg-white border border-transparent hover:border-blue-100 transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-blue-600/5 group"
+              data-aos="fade-up"
+              data-aos-delay={feature.delay}
+            >
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all border border-slate-100 text-blue-600">
+                {feature.icon}
+              </div>
+              <h4 className="text-xl font-black text-slate-800 mb-2 group-hover:text-blue-700 transition-colors uppercase tracking-tighter italic">{feature.title}</h4>
+              <p className="text-sm text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 4rem 1rem;
-        }
+      {/* Refined CTA */}
+      <section className="py-12 px-6">
+        <div className="max-w-5xl mx-auto rounded-[3rem] bg-blue-600 p-12 text-center text-white relative shadow-2xl overflow-hidden">
+           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_20%_80%,rgba(255,255,255,0.1),transparent)] pointer-events-none"></div>
+           <div className="relative z-10" data-aos="zoom-up">
+              <h3 className="text-3xl md:text-4xl font-black mb-6 tracking-tighter italic uppercase">STOP GUESSING. START GROWING.</h3>
+              <p className="text-blue-100 text-base mb-10 max-w-lg mx-auto font-medium">
+                 Join partners who scaled their enterprise with our performance marketing blueprints.
+              </p>
+              <Link to="/contact" className="inline-block px-10 py-4 bg-white text-blue-600 rounded-2xl font-black text-sm hover:scale-105 transition-all shadow-xl">
+                 Claim Growth Audit
+              </Link>
+           </div>
+        </div>
+      </section>
 
-        header {
-          text-align: center;
-          padding-bottom: 3rem;
-        }
-
-        header h1 {
-          font-size: 3rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        header p {
-          font-size: 1.2rem;
-          max-width: 640px;
-          margin: 1rem auto 0;
-          font-weight: 300;
-          color: #4b5563;
-        }
-
-        main {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 2rem;
-        }
-
-        article {
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 1.5rem;
-          padding: 2rem 1.5rem;
-          text-align: center;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        article:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
-        }
-
-        .icon-box {
-          background: #3b82f6;
-          width: 70px;
-          height: 70px;
-          margin: 0 auto 1rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .icon-box svg {
-          font-size: 2rem;
-          color: #ffffff;
-        }
-
-        article h2 {
-          font-size: 1.3rem;
-          margin-bottom: 0.6rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        article p {
-          font-size: 1rem;
-          color: #374151;
-          font-weight: 300;
-        }
-
-        @media (max-width: 600px) {
-          header h1 {
-            font-size: 2.3rem;
-          }
-        }
-      `}</style>
-
-      <div className="container">
-        <header data-aos="fade-down">
-          <h1>Digital Marketing Services</h1>
-          <p>We create impactful digital journeys that convert your audience into loyal customers.</p>
-        </header>
-
-        <main>
-          <article data-aos="fade-up">
-            <div className="icon-box"><FaBullhorn /></div>
-            <h2>Brand Strategy</h2>
-            <p>Develop strong brand messaging & identity that resonate with your ideal audience.</p>
-          </article>
-
-          <article data-aos="fade-right" data-aos-delay="100">
-            <div className="icon-box"><FaSearch /></div>
-            <h2>SEO</h2>
-            <p>Rank higher organically with smart SEO practices and continuous content optimization.</p>
-          </article>
-
-          <article data-aos="zoom-in" data-aos-delay="200">
-            <div className="icon-box"><FaEnvelopeOpenText /></div>
-            <h2>Email Marketing</h2>
-            <p>Engage users with automated, segmented, and personalized email funnels.</p>
-          </article>
-
-          <article data-aos="flip-left" data-aos-delay="300">
-            <div className="icon-box"><FaUsers /></div>
-            <h2>Social Media Marketing</h2>
-            <p>Build loyalty and buzz with storytelling, campaigns, and influencer partnerships.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="400">
-            <div className="icon-box"><FaChartLine /></div>
-            <h2>Analytics & Reporting</h2>
-            <p>We turn data into insight to optimize your digital investment with precision.</p>
-          </article>
-
-          <article data-aos="zoom-in" data-aos-delay="500">
-            <div className="icon-box"><FaPaintBrush /></div>
-            <h2>Creative Design</h2>
-            <p>Visually stunning creatives that drive clicks, engagement, and conversion.</p>
-          </article>
-
-          <article data-aos="fade-left" data-aos-delay="600">
-            <div className="icon-box"><FaLaptopCode /></div>
-            <h2>Landing Page Optimization</h2>
-            <p>Design and test responsive pages that increase leads and reduce bounce.</p>
-          </article>
-
-          <article data-aos="zoom-in-up" data-aos-delay="700">
-            <div className="icon-box"><FaEye /></div>
-            <h2>Paid Ad Campaigns</h2>
-            <p>Run scalable Google Ads and social campaigns with measurable ROAS.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="800">
-            <div className="icon-box"><FaHeadset /></div>
-            <h2>Strategy Consulting</h2>
-            <p>Access expert insights, audits, and one-on-one digital growth sessions.</p>
-          </article>
-        </main>
-      </div>
-    </>
+    </main>
   );
 };
 

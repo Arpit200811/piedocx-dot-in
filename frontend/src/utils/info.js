@@ -1,5 +1,4 @@
-export const base_url = "https://piedocx-dot-in.onrender.com"
-// export const base_url = "http://localhost:5002"
-export const UI_URL = "https://piedocx-dot-in-1.onrender.com"
-
-// export const UI_URL = "http://localhost:5173"
+// Environment based configuration
+export const base_url = import.meta.env.VITE_API_BASE_URL || "https://piedocx-dot-in.onrender.com"
+export const UI_URL = import.meta.env.VITE_UI_BASE_URL || "https://piedocx-dot-in-1.onrender.com"
+export const ADMIN_PATH = import.meta.env.VITE_ADMIN_PATH || "/Admin-ST25"

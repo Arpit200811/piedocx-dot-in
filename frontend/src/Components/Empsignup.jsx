@@ -283,7 +283,7 @@ const SignIn = () => {
   }
 
   return (
-    <div className="relative mx-auto my-10 w-full max-w-md bg-white px-6 pt-10 pb-8 shadow-xl ring-1 ring-gray-900/5 sm:rounded-xl sm:px-10">
+    <div className="relative mx-auto w-full max-w-md bg-white px-6 pt-14 md:pt-16 lg:pt-20 pb-8 shadow-xl ring-1 ring-gray-900/5 sm:rounded-xl sm:px-10 min-h-[calc(100vh-3.5rem)] md:min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-5rem)]">
       <div className="w-full">
         <div className="text-center">
           <h1 className="text-3xl font-semibold text-gray-900">Sign Up</h1>

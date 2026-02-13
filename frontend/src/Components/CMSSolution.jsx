@@ -1,229 +1,164 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import {
-  FaCode,
-  FaPuzzlePiece,
-  FaClipboardCheck,
-  FaExpandArrowsAlt,
-  FaStar,
-  FaHandshake,
-  FaCogs,
-  FaPlug,
-  FaShieldAlt,
-} from "react-icons/fa";
+import { 
+  FileEdit, 
+  Layout, 
+  Search, 
+  Users, 
+  ShieldCheck, 
+  Zap, 
+  Layers,
+  ChevronRight,
+  Share2,
+  MousePointer2,
+  Globe,
+  Monitor
+} from "lucide-react";
 
-const CmsSolutions = () => {
+const CMSSolution = () => {
   useEffect(() => {
-    AOS.init({ duration: 1200, once: true });
+    AOS.init({ duration: 1000, once: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  const features = [
+    {
+      title: "No-Code Editing",
+      desc: "Empower non-technical teams to create and publish high-performance pages.",
+      icon: <FileEdit className="w-5 h-5" />,
+      delay: 0
+    },
+    {
+      title: "Headless Architecture",
+      desc: "API-driven content layer that serves web, mobile, and IoT apps simultaneously.",
+      icon: <Layers className="w-5 h-5" />,
+      delay: 50
+    },
+    {
+      title: "SEO Automation",
+      desc: "Automatic schema generation and sitemap management baked into the core.",
+      icon: <Search className="w-5 h-5" />,
+      delay: 100
+    },
+    {
+      title: "Granular Permissions",
+      desc: "Advanced RBAC systems for multi-author environments and workflows.",
+      icon: <Users className="w-5 h-5" />,
+      delay: 150
+    },
+    {
+      title: "Edge Delivery",
+      desc: "Static site generation and global CDN caching for instant page loads.",
+      icon: <Zap className="w-5 h-5" />,
+      delay: 200
+    },
+    {
+      title: "Infinite Extensibility",
+      desc: "Native support for third-party plugins and custom modules.",
+      icon: <Share2 className="w-5 h-5" />,
+      delay: 250
+    }
+  ];
+
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
-
-        * { box-sizing: border-box; }
-
-        body, html, #root {
-          margin: 0;
-          padding: 0;
-          font-family: 'Poppins', sans-serif;
-          background: #f0f4f8;
-          color: #111827;
-        }
-
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 4rem 1rem;
-        }
-
-        header {
-          text-align: center;
-          padding-bottom: 3rem;
-        }
-
-        header h1 {
-          font-size: 3rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        header h1::after {
-          content: '';
-          width: 60px;
-          height: 4px;
-          background: #3b82f6;
-          display: block;
-          margin: 0.5rem auto 0;
-          border-radius: 3px;
-          animation: underline 2s infinite alternate;
-        }
-
-        @keyframes underline {
-          0% { width: 60px; }
-          100% { width: 120px; background-color: #1e40af; }
-        }
-
-        header p {
-          font-size: 1.2rem;
-          max-width: 640px;
-          margin: 1rem auto 0;
-          font-weight: 300;
-          color: #4b5563;
-        }
-
-        main {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 2rem;
-        }
-
-        article {
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 1.5rem;
-          padding: 2rem 1.5rem;
-          text-align: center;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
-          transition: transform 0.5s ease, box-shadow 0.5s ease;
-        }
-
-        article:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
-        }
-
-        .icon-box {
-          background: #3b82f6;
-          width: 70px;
-          height: 70px;
-          margin: 0 auto 1rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .icon-box svg {
-          font-size: 2rem;
-          color: #ffffff;
-        }
-
-        article h2 {
-          font-size: 1.3rem;
-          margin-bottom: 0.7rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        article h3 {
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: #1e40af;
-          margin-bottom: 0.5rem;
-        }
-
-        article p {
-          font-size: 1rem;
-          color: #374151;
-          font-weight: 300;
-        }
-
-        @media (max-width: 600px) {
-          header h1 {
-            font-size: 2.3rem;
-          }
-        }
-      `}</style>
-
-      <div className="container">
-        <header data-aos="fade-down">
-          <h1>CMS Solutions</h1>
-          <p>
-            Powerful and user-friendly Content Management Systems to manage your website content with ease.
-          </p>
-        </header>
-
-        <main>
-          <article data-aos="fade-up" data-aos-delay="0">
-            <div className="icon-box"><FaCode /></div>
-            <h2>Flexible CMS Platforms</h2>
-            <p>
-              Intuitive systems designed to let you create, edit, and publish content effortlessly.
+    <main className="bg-white min-h-screen font-sans selection:bg-blue-100 selection:text-blue-600 overflow-x-hidden pt-0">
+      
+      {/* Compact Hero */}
+      <section className="relative pt-14 md:pt-16 lg:pt-20 pb-12 px-6 overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/4 h-full bg-blue-50/20 -skew-x-12 transform origin-top-right"></div>
+        
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center relative z-10">
+          <div data-aos="fade-right">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 mb-4 text-[10px] font-black uppercase tracking-widest">
+              <Layout size={12} /> Digital Experience Platform
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-6 tracking-tighter italic">
+               Manage Content <br /> <span className="text-blue-600 underline decoration-blue-100 underline-offset-4">Without Limits.</span>
+            </h1>
+            <p className="text-base text-slate-600 leading-relaxed mb-8 max-w-lg font-medium">
+              We build intelligent Content Management Systems that give you total control over your digital narrative.
             </p>
-          </article>
+            <div className="flex gap-4">
+              <Link to="/contact" className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center gap-2">
+                Explore Engine <ChevronRight size={16} />
+              </Link>
+              <Link to="/services" className="px-6 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all">
+                The Architecture
+              </Link>
+            </div>
+          </div>
 
-          <article data-aos="fade-up" data-aos-delay="100">
-            <div className="icon-box"><FaPuzzlePiece /></div>
-            <h3>Easy Content Management</h3>
-            <p>
-              Manage text, images, videos, and documents without needing coding skills.
-            </p>
-          </article>
+          <div className="relative group scale-90 md:scale-100" data-aos="zoom-in">
+             <div className="absolute -inset-4 bg-blue-100 rounded-full blur-3xl opacity-20"></div>
+             <div className="relative bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-2xl overflow-hidden max-w-sm mx-auto">
+                <div className="flex items-center justify-between mb-6">
+                   <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                   </div>
+                   <p className="text-[8px] font-mono text-slate-300 italic">cms_ Piedocx</p>
+                </div>
+                <div className="space-y-4">
+                   <div className="h-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 flex items-center justify-center">
+                      <Zap size={16} className="text-blue-600 animate-pulse" />
+                   </div>
+                   <div className="grid grid-cols-2 gap-2">
+                      <div className="h-16 bg-slate-900 rounded-xl p-3 flex flex-col justify-between">
+                         <div className="h-1 w-1/2 bg-blue-500/50 rounded-full"></div>
+                         <p className="text-[7px] text-white font-black uppercase">Edge Cache</p>
+                      </div>
+                      <div className="h-16 bg-blue-50 border border-blue-100 rounded-xl p-3 flex flex-col justify-between">
+                         <Globe size={14} className="text-blue-600" />
+                         <p className="text-[7px] text-blue-900 font-black uppercase">Deploy</p>
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
 
-          <article data-aos="fade-up" data-aos-delay="200">
-            <div className="icon-box"><FaClipboardCheck /></div>
-            <h3>Customizable Templates</h3>
-            <p>
-              Use and modify templates that fit your brand and style perfectly.
-            </p>
-          </article>
+      {/* Tighter Grid */}
+      <section className="py-16 px-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, idx) => (
+            <div 
+              key={idx} 
+              className="p-8 rounded-[2rem] bg-slate-50 hover:bg-white border border-transparent hover:border-blue-100 transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-blue-600/5 group"
+              data-aos="fade-up"
+              data-aos-delay={feature.delay}
+            >
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all border border-slate-100 text-blue-600">
+                {feature.icon}
+              </div>
+              <h4 className="text-xl font-black text-slate-800 mb-2 group-hover:text-blue-700 transition-colors uppercase tracking-tighter leading-tight italic">{feature.title}</h4>
+              <p className="text-sm text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-          <article data-aos="fade-up" data-aos-delay="300">
-            <div className="icon-box"><FaExpandArrowsAlt /></div>
-            <h3>Scalable Architecture</h3>
-            <p>
-              Grows with your website, handling more pages, users, and functionalities over time.
-            </p>
-          </article>
+      {/* Refined CTA */}
+      <section className="py-12 px-6">
+        <div className="max-w-5xl mx-auto rounded-[3rem] bg-blue-600 p-12 text-center text-white relative shadow-2xl overflow-hidden group">
+           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.1),transparent)] pointer-events-none"></div>
+           <div className="relative z-10" data-aos="zoom-up">
+              <h3 className="text-3xl md:text-4xl font-black mb-6 tracking-tighter italic uppercase text-shadow-sm">RECLAIM YOUR DIGITAL STORY.</h3>
+              <p className="text-blue-100 text-base mb-10 max-w-lg mx-auto font-medium">
+                 Switch to a CMS that empowers your creativity instead of limiting it.
+              </p>
+              <Link to="/contact" className="inline-flex px-10 py-4 bg-white text-blue-600 rounded-2xl font-black text-sm hover:scale-105 transition-all shadow-xl items-center gap-2 mx-auto">
+                 Launch Prototype <MousePointer2 size={16} />
+              </Link>
+           </div>
+        </div>
+      </section>
 
-          <article data-aos="fade-up" data-aos-delay="400">
-            <div className="icon-box"><FaStar /></div>
-            <h3>SEO Friendly</h3>
-            <p>
-              Built-in tools to optimize your content for search engines and improve visibility.
-            </p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="500">
-            <div className="icon-box"><FaHandshake /></div>
-            <h3>User Roles & Permissions</h3>
-            <p>
-              Control who can view, edit, or publish content with granular access controls.
-            </p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="600">
-            <div className="icon-box"><FaCogs /></div>
-            <h3>Workflow Automation</h3>
-            <p>
-              Automate publishing schedules, notifications, and content approval processes.
-            </p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="700">
-            <div className="icon-box"><FaPlug /></div>
-            <h3>Plugin & Integration Support</h3>
-            <p>
-              Extend functionality with plugins and connect with third-party tools seamlessly.
-            </p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="800">
-            <div className="icon-box"><FaShieldAlt /></div>
-            <h3>Secure & Reliable</h3>
-            <p>
-              Protect your website with robust security features and regular updates.
-            </p>
-          </article>
-        </main>
-      </div>
-    </>
+    </main>
   );
 };
 
-export default CmsSolutions;
+export default CMSSolution;

@@ -21,7 +21,7 @@ function profileHoc(EmpProfile) {
 
         } catch (error) {
           console.log("hello!!!!err", error);
-        //   nav("/emp-login");
+
         }
       };
       getUserInfo();

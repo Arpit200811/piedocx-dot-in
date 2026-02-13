@@ -1,2 +1,51 @@
-
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", sans-serif;
+}
+
+:root {
+  --primary-blue: #2563eb;
+  --bg-mesh: radial-gradient(at 100% 0%, hsla(210,100%,98%,1) 0, transparent 50%),
+             radial-gradient(at 0% 100%, hsla(210,100%,96%,1) 0, transparent 50%);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: #f8fafc;
+  background-image: var(--bg-mesh);
+  background-attachment: fixed;
+  color: #0f172a;
+  overflow-x: hidden;
+}
+
+/* Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #2563eb;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #1d4ed8;
+}
+
+/* Glassmorphism Helper */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Text Gradients */
+.text-premium {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1e40af 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

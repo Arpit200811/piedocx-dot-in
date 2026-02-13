@@ -1,444 +1,299 @@
-import React, { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { 
+  Zap, 
+  Cpu, 
+  Workflow, 
+  ArrowRight, 
+  Phone, 
+  Mail, 
+  MapPin, 
+  Github, 
+  ExternalLink,
+  Layers,
+  Sparkles,
+  Terminal,
+  Activity,
+  Code2
+} from "lucide-react";
 import { base_url } from "../utils/info";
 
+const contactSchema = yup.object({
+  name: yup.string().required("Identity required").min(3, "Too short"),
+  email: yup.string().email("Invalid endpoint").required("Email required"),
+  message: yup.string().required("Payload required").min(10, "Detail too short"),
+}).required();
+
 const Project = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
-  const [message, setMessage] = useState("");
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+    resolver: yupResolver(contactSchema)
+  });
 
-  const submitResponse = async (e) => {
-    e.preventDefault();
-
-    const obj = { name, email, address, message };
-    const url = `${base_url}/user`;
-
+  const onSubmit = async (data) => {
     try {
-      const res = await axios.post(url, obj);
-      Swal.fire(
-        res.data.message,
-        "Now you are our trusted customer",
-        "success"
-      );
-
-      setName("");
-      setEmail("");
-      setAddress("");
-      setMessage("");
+      await axios.post(`${base_url}/api/users/user`, { ...data, source: 'contact' });
+      Swal.fire({
+        title: "Inquiry Locked",
+        text: "Your breakthrough idea has been committed to our queue.",
+        icon: "success",
+        confirmButtonColor: "#2563eb",
+        background: '#ffffff',
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      reset();
     } catch (error) {
-      Swal.fire("Internal server error!", error.message, "error");
+      Swal.fire("Transmission Error", "Data packet loss detected. Please retry.", "error");
     }
   };
+
   useEffect(() => {
+    AOS.init({ duration: 1000, once: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
-  const features = [
+
+  const corePillars = [
     {
-      icon: (
-        <svg
-          className="h-7 w-7 text-gradient-from-sky-500-to-indigo-600"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {/* Abstract AI brain with nodes */}
-          <circle cx="12" cy="12" r="8" />
-          <line x1="12" y1="4" x2="12" y2="20" />
-          <line x1="4" y1="12" x2="20" y2="12" />
-          <circle cx="16" cy="8" r="1.5" />
-          <circle cx="8" cy="8" r="1.5" />
-          <circle cx="8" cy="16" r="1.5" />
-          <circle cx="16" cy="16" r="1.5" />
-        </svg>
-      ),
-      title: "AI-Powered Intelligence",
-      description:
-        "Unleash the power of adaptive AI to transform your workflow with smart automation and insights.",
+      icon: <Zap className="w-5 h-5" />,
+      title: "Real-time Operations",
+      text: "Optimized for latency-critical enterprise environments.",
+      color: "blue"
     },
     {
-      icon: (
-        <svg
-          className="h-7 w-7 text-gradient-from-purple-500-to-pink-600"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {/* Puzzle pieces symbolizing integration */}
-          <path d="M3 10h4v4H3z" />
-          <path d="M7 6h4v4H7z" />
-          <path d="M13 10h4v4h-4z" />
-          <path d="M17 14h4v4h-4z" />
-        </svg>
-      ),
-      title: "Seamless Ecosystem",
-      description:
-        "Connect effortlessly across platforms with fluid, plug-and-play integration to keep your tools in sync.",
+      icon: <Cpu className="w-5 h-5" />,
+      title: "Neural Integration",
+      text: "AI-driven logic embedded within core architectures.",
+      color: "indigo"
     },
     {
-      icon: (
-        <svg
-          className="h-7 w-7 text-gradient-from-green-400-to-teal-500"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {/* Lightning bolt for speed */}
-          <path d="M13 2L3 14h9l-1 8 10-12h-9z" />
-        </svg>
-      ),
-      title: "Blazing Fast Performance",
-      description:
-        "Experience lightning-speed operations optimized for efficiency and reliability at scale.",
-    },
-    {
-      icon: (
-        <svg
-          className="h-7 w-7 text-gradient-from-yellow-400-to-orange-500"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {/* Shield for security */}
-          <path d="M12 2L4 7v5c0 5 4 9 8 10 4-1 8-5 8-10V7l-8-5z" />
-        </svg>
-      ),
-      title: "Rock-Solid Security",
-      description:
-        "Protect your data and operations with state-of-the-art encryption and robust security protocols.",
-    },
-    {
-      icon: (
-        <svg
-          className="h-7 w-7 text-gradient-from-indigo-500-to-blue-600"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {/* Globe for global reach */}
-          <circle cx="12" cy="12" r="10" />
-          <line x1="2" y1="12" x2="22" y2="12" />
-          <path d="M12 2a15 15 0 0 1 0 20" />
-          <path d="M12 2a15 15 0 0 0 0 20" />
-        </svg>
-      ),
-      title: "Global Scalability",
-      description:
-        "Grow your impact worldwide with infrastructure designed for scale and resilience.",
-    },
+      icon: <Workflow className="w-5 h-5" />,
+      title: "Agile Orchestration",
+      text: "Seamlessly scaling from MVP to global production.",
+      color: "emerald"
+    }
   ];
 
   const projects = [
-    {
-      id: 1,
-      title: "Modern Web App",
-      category: "Web Design",
-      imgSrc:
-        "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=600&q=80",
-      link: "#",
+    { 
+      id: 1, 
+      title: "Command Center Web", 
+      category: "DASHBOARD SYSTEMS", 
+      imgSrc: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=2000&q=100",
+      tech: ["React", "D3.js", "Node"]
     },
-    {
-      id: 2,
-      title: "Mobile App UI",
-      category: "App Development",
-      imgSrc:
-        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80",
-      link: "#",
+    { 
+      id: 2, 
+      title: "Neural App UI", 
+      category: "MOBILE ECOSYSTEMS", 
+      imgSrc: "https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=2000&q=100",
+      tech: ["Flutter", "Kotlin", "Go"]
     },
-    {
-      id: 3,
-      title: "Brand Identity",
-      category: "Branding",
-      imgSrc:
-        "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80",
-      link: "#",
+    { 
+      id: 3, 
+      title: "Quantum Cloud", 
+      category: "INFRASTRUCTURE", 
+      imgSrc: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2000&q=100",
+      tech: ["Kubernetes", "AWS", "Python"]
     },
-    // Add more projects as needed
+    { 
+      id: 4, 
+      title: "Sync Pro", 
+      category: "SaaS ARCHITECTURE", 
+      imgSrc: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=2000&q=100",
+      tech: ["Vite", "Supabase", "Tailwind"]
+    },
+    { 
+      id: 5, 
+      title: "BioMetric Guard", 
+      category: "SECURITY", 
+      imgSrc: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=2000&q=100",
+      tech: ["WebAuthn", "Rust", "C++"]
+    },
+    { 
+      id: 6, 
+      title: "Data Visualizer 2.0", 
+      category: "ANALYTICS", 
+      imgSrc: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=2000&q=100",
+      tech: ["Python", "PowerBI", "Azure"]
+    }
   ];
 
   return (
-    <>
-      <section>
-        <section className="py-10 px-4">
-          <div className="container mx-auto max-w-7xl space-y-20">
-            {/* ✅ Features Section */}
+    <main className="bg-white font-sans overflow-x-hidden selection:bg-blue-100 selection:text-blue-600">
+      
+      {/* Dynamic Command Header */}
+      <section className="relative pt-20 pb-10 md:pb-12 px-6 border-b border-slate-100 bg-slate-50/50 mt-6">
+        <div className="max-w-6xl mx-auto relative z-10">
+          
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 mb-4 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em]" data-aos="fade-right">
+             The Innovation Lab
+          </div>
+          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic mb-3 md:mb-4 uppercase" data-aos="fade-up" data-aos-delay="100">
+             Building <span className="text-blue-600 underline decoration-blue-100 decoration-8 underline-offset-8">Tomorrow.</span>
+          </h1>
+          <p className="max-w-2xl text-slate-500 font-medium text-sm md:text-base mb-6 md:mb-8 leading-relaxed" data-aos="fade-up" data-aos-delay="200">
+             Explore our vault of architectural breakthroughs and high-performance digital systems engineered for the 2.0 era.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-4" data-aos="fade-up" data-aos-delay="300">
+             <button onClick={() => document.querySelector('.portfolio-grid')?.scrollIntoView({ behavior: 'smooth' })} className="w-full sm:w-auto px-8 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-slate-900/10">View Deployments</button>
+             <div className="flex items-center gap-3 h-12 px-5 rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <span className="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse"></span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Live Systems Active</span>
+             </div>
+          </div>
+        </div>
+      </div>
+        
+        {/* Background Accents */}
+        <div className="absolute top-0 right-0 w-[50%] h-full bg-blue-600/[0.02] -skew-x-12 translate-x-1/2 pointer-events-none"></div>
+      </section>
 
-            <section className="bg-white text-black  px-4 sm:px-8 lg:px-16">
-              {/* Heading */}
-
-              <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen bg-blue-500 text-white py-6 px-6 sm:px-8 overflow-hidden">
-                <div className="text-center max-w-6xl mx-auto">
-                  <h2
-                    className="relative inline-block text-3xl sm:text-5xl font-extrabold tracking-tight group"
-                    data-aos="fade-up"
-                  >
-                    Our Latest Innovations
-                    <span className="absolute bottom-0 left-1/2 h-1 w-0 bg-white rounded-full transition-all duration-500 group-hover:w-full group-hover:-translate-x-1/2 origin-left"></span>
-                  </h2>
-
-                  <p
-                    className="max-w-3xl mx-auto mt-6 text-lg sm:text-xl text-white/90"
-                    data-aos="fade-up"
-                    data-aos-delay="100"
-                  >
-                    Discover cutting-edge solutions and enhancements designed to
-                    elevate your software development experience.
-                  </p>
-                </div>
+      {/* Strategic Pillars */}
+      <section className="max-w-6xl mx-auto px-6 py-10 md:py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          {corePillars.map((pillar, idx) => (
+            <div key={idx} className="p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] bg-slate-50 hover:bg-white border border-transparent hover:border-blue-100 transition-all duration-500 group shadow-sm hover:shadow-xl hover:shadow-blue-600/5 cursor-default" data-aos="fade-up" data-aos-delay={idx * 100}>
+              <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all mb-4">
+                {pillar.icon}
               </div>
+              <h3 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 mb-2 group-hover:text-blue-600 transition-colors">{pillar.title}</h3>
+              <p className="text-xs md:text-sm font-bold text-slate-700 leading-relaxed italic">{pillar.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-              {/* Content */}
-              <div className="grid lg:grid-cols-2 gap-12 items-center mt-16">
-                {/* Features */}
-                <div className="space-y-10">
-                  {features.map((feature, index) => (
-                    <div
-                      className="flex items-start gap-4"
-                      key={index}
-                      data-aos="fade-right"
-                      data-aos-delay={index * 100}
-                    >
-                      <div className="w-14 h-14 bg-blue-500 text-white flex items-center justify-center rounded-lg shadow-md text-xl">
-                        {feature.icon}
+      {/* Refined Portfolio Grid */}
+      <section className="portfolio-grid bg-slate-50/30 border-y border-slate-100 py-10 md:py-14">
+        <div className="max-w-6xl mx-auto px-6">
+           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 md:mb-12 px-2 md:px-4">
+              <div>
+                 <h2 className="text-2xl md:text-3xl font-black tracking-tighter italic uppercase text-slate-900 mb-2" data-aos="fade-right">Deployed Ecosystems</h2>
+                 <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em]" data-aos="fade-right" data-aos-delay="100">Vault 0.1 // Engineering Excellence</p>
+              </div>
+              <div className="flex flex-wrap gap-2" data-aos="fade-left">
+                 {['ALL', 'WEB', 'APPS', 'CLOUD'].map(tag => (
+                   <button key={tag} className="px-4 md:px-5 py-2 rounded-xl text-[9px] md:text-[10px] font-black bg-white border border-slate-100 text-slate-400 hover:text-blue-600 hover:border-blue-600/20 transition-all tracking-widest uppercase">{tag}</button>
+                 ))}
+              </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((project, i) => (
+                <article key={project.id} className="group relative bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-600/10 transition-all duration-700" data-aos="fade-up" data-aos-delay={i * 50}>
+                   <div className="relative h-56 overflow-hidden">
+                      <img src={project.imgSrc} alt={project.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale-[30%] group-hover:grayscale-0" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="absolute top-4 right-4 flex gap-2 translate-y-[-10px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                         <button className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-md text-white border border-white/20 hover:bg-white hover:text-slate-900"><ExternalLink size={16} /></button>
+                         <button className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-md text-white border border-white/20 hover:bg-white hover:text-slate-900"><Github size={16} /></button>
                       </div>
-                      <div>
-                        <h4 className="text-xl font-semibold text-black">
-                          {feature.title}
-                        </h4>
-                        <p className="mt-2 text-gray-700">
-                          {feature.description}
-                        </p>
+                   </div>
+                   <div className="p-6">
+                      <div className="flex items-center gap-2 mb-3">
+                         <span className="h-1 w-1 bg-blue-600 rounded-full"></span>
+                         <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">{project.category}</h4>
                       </div>
+                      <h3 className="text-xl font-black text-slate-800 tracking-tighter italic uppercase group-hover:text-blue-600 transition-colors mb-4">{project.title}</h3>
+                      <div className="flex flex-wrap gap-2">
+                         {project.tech.map(tech => (
+                           <span key={tech} className="px-3 py-1 bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-400 rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 transition-all uppercase tracking-widest">{tech}</span>
+                         ))}
+                      </div>
+                   </div>
+                </article>
+              ))}
+           </div>
+        </div>
+      </section>
+
+      {/* Blueprint CTA Section */}
+      <section className="py-10 md:py-14 px-6 max-w-6xl mx-auto overflow-hidden">
+         <div className="relative rounded-[2.5rem] md:rounded-[3.5rem] bg-slate-900 p-6 md:p-12 flex flex-col lg:flex-row gap-10 text-white shadow-2xl overflow-hidden group">
+            <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_20%,rgba(37,99,235,0.08),transparent)] pointer-events-none"></div>
+            
+            <div className="lg:w-1/2 relative z-10">
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-600/10 border border-blue-600/20 text-blue-500 mb-5 md:mb-6 text-[9px] font-black uppercase tracking-[0.3em]">
+                  Initiate Project
+               </div>
+               <h2 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter leading-tight mb-5">Let's blueprint your <span className="text-blue-600">Vision.</span></h2>
+               <p className="text-slate-400 text-xs md:text-sm font-medium leading-relaxed max-w-sm mb-6 md:mb-8 italic">"Engineering is not just building; it's architecting a future that doesn't yet exist."</p>
+               
+               <div className="grid grid-cols-1 gap-6 mb-10">
+                  {[
+                    { icon: <Phone size={14} />, text: "+91 6307503700", label: "Direct Line" },
+                    { icon: <Mail size={14} />, text: "info@piedocx.com", label: "Inquiry Box" },
+                    { icon: <MapPin size={14} />, text: "Aliganj, Lucknow IN", label: "Headquarters" }
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-4 group/link cursor-pointer">
+                       <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 group-hover/link:bg-blue-600 group-hover/link:text-white transition-all">
+                          {item.icon}
+                       </div>
+                       <div>
+                          <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-0.5">{item.label}</p>
+                          <p className="text-sm font-black transition-colors group-hover/link:text-blue-500 italic">{item.text}</p>
+                       </div>
                     </div>
                   ))}
-                </div>
-
-                {/* Image */}
-                <div data-aos="fade-left">
-                  <img
-                    src="https://images.unsplash.com/photo-1516542076529-1ea3854896f2?auto=format&fit=crop&w=1080&q=80"
-                    alt="Software Development"
-                    className="w-full max-w-md mx-auto rounded-2xl shadow-2xl"
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* ✅ Projects Section */}
-            <section>
-              <div className="text-center mb-5">
-                <div className="text-center">
-                  <h2 className="relative inline-block text-3xl p-2 font-bold sm:text-5xl group">
-                    Portfolio Showcase
-                    <span className="absolute bottom-0 left-1/2 h-1 w-0 bg-blue-500 rounded-full transition-all duration-300 group-hover:w-full group-hover:-translate-x-1/2  origin-left"></span>
-                  </h2>
-                </div>
-                <p className="text-lg text-indigo-500 m-2 font-semibold">
-                  Discover our latest projects and success stories
-                </p>
-              </div>
-
-              <div className="flex flex-col md:flex-row items-center justify-center mb-8">
-                {["All", "Web Design", "App Development", "Branding"].map(
-                  (category) => (
-                    <button
-                      key={category}
-                      className="filter-button bg-indigo-500 hover:bg-pink-500 px-4 py-2 mr-2 mb-2 text-white rounded"
-                    >
-                      {category}
-                    </button>
-                  )
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {projects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="group portfolio-item relative hover:shadow-lg shadow-md rounded-lg overflow-hidden"
-                  >
-                    <a href={project.link}>
-                      <img
-                        className="w-full h-60 object-cover"
-                        src={project.imgSrc}
-                        alt={project.title}
-                      />
-                      <div className="absolute top-0 left-0 right-0 bottom-0 bg-gradient-to-r from-indigo-500 to-pink-500 opacity-0 transition duration-300 ease-in-out group-hover:opacity-70"></div>
-                      <div className="p-4 flex flex-col items-center justify-between relative z-10">
-                        <h3 className="text-lg font-medium text-txt group-hover:text-gray-dark">
-                          {project.title}
-                        </h3>
-                        <span className="text-sm font-bold text-pink-500 group-hover:text-indigo-500">
-                          {project.category}
-                        </span>
-                      </div>
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-        </section>
-
-        <section className="mb-32">
-          {/* Google Maps Embed */}
-
-          {/* Form Section */}
-          <div className="relative bg-gradient-to-br from-white via-blue-50 to-sky-100 py-12 px-4 md:px-10">
-            <div
-              className="max-w-7xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 shadow-lg rounded-2xl p-6 md:p-10"
-              data-aos="fade-up"
-            >
-              <div className="flex flex-wrap gap-y-10 lg:gap-y-0 items-start">
-                {/* LEFT: Form Section */}
-                <div className="w-full lg:w-5/12 px-3">
-                  <h2 className="text-2xl md:text-3xl font-extrabold text-sky-600 mb-5">
-                    Get in Touch
-                  </h2>
-                  <form onSubmit={submitResponse} className="space-y-4">
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Your Name"
-                      className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-sky-400 outline-none text-sm"
-                      required
-                    />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-sky-400 outline-none text-sm"
-                      required
-                    />
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Address"
-                      className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-sky-400 outline-none text-sm"
-                      required
-                    />
-                    <textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      rows="3"
-                      placeholder="Your Message"
-                      className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-sky-400 outline-none resize-none text-sm"
-                      required
-                    />
-                    <button
-                      type="submit"
-                      className="w-full bg-gradient-to-r from-sky-500 to-blue-600 text-white py-2.5 rounded-xl font-medium text-sm shadow-md hover:shadow-lg transition duration-300"
-                    >
-                      🚀 Send Message
-                    </button>
-                  </form>
-                </div>
-
-                {/* RIGHT: Contact Info + Floating Image */}
-                <div className="w-full lg:w-7/12 px-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Technical Support */}
-                  <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-4 flex items-start gap-3 hover:scale-[1.01] transition">
-                    <div className="bg-sky-100 p-2 rounded-full shadow-inner">
-                      <svg
-                        className="w-5 h-5 text-sky-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M14.25 9.75v-4.5..."
-                        />
-                      </svg>
-                    </div>
-                    <div className="text-sm text-gray-700">
-                      <p className="font-semibold text-sky-700">
-                        Technical Support
-                      </p>
-                      <a
-                        href="mailto:info@piedocx.com"
-                        className="block hover:text-sky-500"
-                      >
-                        info@piedocx.com
-                      </a>
-                      <a
-                        href="tel:+916307503700"
-                        className="block mt-1 hover:text-sky-500"
-                      >
-                        +91 6307503700
-                      </a>
-                      <a
-                        href="tel:+918114247881"
-                        className="block mt-1 hover:text-sky-500"
-                      >
-                        +91 8114247881
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Address */}
-                  <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-4 flex items-start gap-3 hover:scale-[1.01] transition">
-                    <div className="bg-sky-100 p-2 rounded-full shadow-inner">
-                      <svg
-                        className="w-5 h-5 text-sky-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 9h3.75M15 12..."
-                        />
-                      </svg>
-                    </div>
-                    <div className="text-sm text-gray-700">
-                      <p className="font-semibold text-sky-700">Our Address</p>
-                      <a
-                        href="https://www.google.com/maps?q=piedocx+technologies+pvt+ltd..."
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-sky-500 block"
-                      >
-                        Chandralok Colony, Near Purania,
-                        <br />
-                        Aliganj, Lucknow, UP – 226024
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Floating Image */}
-                </div>
-              </div>
+               </div>
             </div>
 
-            {/* Floating Animation CSS */}
-          </div>
-        </section>
+            <div className="lg:w-1/2 relative z-10 bg-white shadow-2xl rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 text-slate-900 mx-auto w-full max-w-md lg:max-w-none" data-aos="zoom-in">
+               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Mission Lead</label>
+                     <input 
+                        type="text" 
+                        {...register("name")}
+                        placeholder="Full Name" 
+                        className={`w-full bg-slate-50 border ${errors.name ? 'border-red-500' : 'border-slate-100'} p-3.5 md:p-4 rounded-xl md:rounded-2xl focus:bg-white focus:border-blue-600/20 outline-none transition font-bold text-xs md:text-sm placeholder:text-slate-300`} 
+                     />
+                     {errors.name && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.name.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Secure Channel</label>
+                     <input 
+                        type="email" 
+                        {...register("email")}
+                        placeholder="Email@domain.com" 
+                        className={`w-full bg-slate-50 border ${errors.email ? 'border-red-500' : 'border-slate-100'} p-3.5 md:p-4 rounded-xl md:rounded-2xl focus:bg-white focus:border-blue-600/20 outline-none transition font-bold text-xs md:text-sm placeholder:text-slate-300`} 
+                     />
+                     {errors.email && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.email.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Mission Details</label>
+                     <textarea 
+                        {...register("message")}
+                        placeholder="Describe your breakthrough idea..." 
+                        rows="4" 
+                        className={`w-full bg-slate-50 border ${errors.message ? 'border-red-500' : 'border-slate-100'} p-3.5 md:p-4 rounded-xl md:rounded-2xl focus:bg-white focus:border-blue-600/20 outline-none transition font-bold text-xs md:text-sm placeholder:text-slate-300 resize-none`} 
+                     ></textarea>
+                     {errors.message && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.message.message}</p>}
+                  </div>
+                  <button 
+                     type="submit" 
+                     disabled={isSubmitting}
+                     className="w-full bg-blue-600 text-white font-black py-4 md:py-5 rounded-[2rem] hover:bg-blue-700 transition shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 uppercase text-[10px] md:text-xs tracking-widest group/btn"
+                  >
+                     {isSubmitting ? "Processing..." : "Push Deployment"} 
+                     {!isSubmitting && <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />}
+                  </button>
+               </form>
+            </div>
+         </div>
       </section>
-    </>
+
+
+
+    </main>
   );
 };
 

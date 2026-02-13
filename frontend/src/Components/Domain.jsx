@@ -1,196 +1,155 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import {
-  FaSearch, FaCogs, FaGlobe, FaUserShield, FaCloud, FaTools
-} from "react-icons/fa";
-import { FaServer as FaVPS } from "react-icons/fa";
+import { 
+  Globe, 
+  Server, 
+  ShieldCheck, 
+  Cloud, 
+  Zap, 
+  ChevronRight,
+  Database,
+  Cpu,
+  HardDrive,
+  ArrowUpRight
+} from "lucide-react";
 
 const Domain = () => {
   useEffect(() => {
-    AOS.init({ duration: 1200, once: true });
+    AOS.init({ duration: 1000, once: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  const features = [
+    {
+      title: "Edge Cloud Hosting",
+      desc: "Distributed networks ensuring sub-100ms load times globally.",
+      icon: <Cloud className="w-5 h-5" />,
+      delay: 0
+    },
+    {
+      title: "Bare Metal VPS",
+      desc: "High-performance environments with dedicated CPU and NVMe storage.",
+      icon: <Server className="w-5 h-5" />,
+      delay: 50
+    },
+    {
+      title: "Web3 Domains",
+      desc: "Secure your identity across classic .com and decentralized namespaces.",
+      icon: <Globe className="w-5 h-5" />,
+      delay: 100
+    },
+    {
+      title: "Fortified Security",
+      desc: "DDoS protection, automated SSL, and daily backups as standard.",
+      icon: <ShieldCheck className="w-5 h-5" />,
+      delay: 150
+    },
+    {
+      title: "Managed DevOps",
+      desc: "Expert server management including security patches and app optimization.",
+      icon: <Cpu className="w-5 h-5" />,
+      delay: 200
+    },
+    {
+      title: "Private Clusters",
+      desc: "Dedicated internal networks for enterprise apps requiring isolation.",
+      icon: <Database className="w-5 h-5" />,
+      delay: 250
+    }
+  ];
+
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
+    <main className="bg-white min-h-screen font-sans selection:bg-blue-100 selection:text-blue-600 overflow-x-hidden pt-0">
+      
+      {/* Compact Hero */}
+      <section className="relative pt-14 md:pt-16 lg:pt-20 pb-10 md:pb-12 px-6 overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/4 h-full bg-slate-50 opacity-50 transform skew-x-[-12deg] origin-top-right"></div>
+        
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-12 items-center relative z-10">
+          <div data-aos="fade-right">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 mb-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest leading-none">
+              Infrastructure Core
+            </div>
+            <h1 className="text-3xl md:text-5xl font-black text-slate-900 leading-tight mb-4 md:mb-6 tracking-tighter italic">
+              Zero Latency <br /> <span className="text-blue-600 underline decoration-blue-100 underline-offset-4">Digital Foundation.</span>
+            </h1>
+            <p className="text-sm md:text-base text-slate-600 leading-relaxed mb-6 md:mb-8 max-w-lg font-medium">
+              We provide the heartbeat for modern enterprise. Secure, scalable, and ultra-fast hosting designed for traffic demands.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+              <Link to="/contact" className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2">
+                Check Availability <ArrowUpRight size={16} />
+              </Link>
+              <Link to="/services" className="w-full sm:w-auto px-6 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all text-center">
+                Custom Config
+              </Link>
+            </div>
+          </div>
 
-        * { box-sizing: border-box; }
+          <div className="relative group scale-90 md:scale-100" data-aos="zoom-in">
+             <div className="absolute -inset-4 bg-emerald-100 rounded-full blur-3xl opacity-20"></div>
+             <div className="relative bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl overflow-hidden max-w-sm mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                   <HardDrive size={24} className="text-blue-400 opacity-40" />
+                   <div className="flex gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                   </div>
+                </div>
+                <div className="space-y-4">
+                   <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 w-[45%] animate-pulse"></div>
+                   </div>
+                   <div className="flex justify-between font-mono text-[9px] text-blue-400">
+                      <span>Latency: 24ms</span>
+                      <span>Health: 100%</span>
+                   </div>
+                   <p className="text-xl font-black text-white/10 tracking-widest text-center mt-4 uppercase">Infrastructure</p>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
 
-        body, html, #root {
-          margin: 0;
-          padding: 0;
-          font-family: 'Poppins', sans-serif;
-          background: #f0f4f8;
-          color: #111827;
-        }
+      {/* Tighter Grid */}
+      <section className="py-12 md:py-16 px-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {features.map((feature, idx) => (
+            <div 
+              key={idx} 
+              className="p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] bg-slate-50 hover:bg-white border border-transparent hover:border-blue-100 transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-blue-600/5 group"
+              data-aos="fade-up"
+              data-aos-delay={feature.delay}
+            >
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl flex items-center justify-center mb-4 md:mb-6 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all border border-slate-100 text-blue-600">
+                {feature.icon}
+              </div>
+              <h4 className="text-lg md:text-xl font-black text-slate-800 mb-2 group-hover:text-blue-700 transition-colors uppercase tracking-tighter italic leading-tight">{feature.title}</h4>
+              <p className="text-[13px] md:text-sm text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 4rem 1rem;
-        }
+      {/* Refined CTA */}
+      <section className="py-10 md:py-12 px-6">
+        <div className="max-w-5xl mx-auto rounded-[2rem] md:rounded-[3rem] bg-blue-600 p-8 md:p-12 text-center text-white relative shadow-2xl overflow-hidden group">
+           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_20%_80%,rgba(255,255,255,0.1),transparent)] pointer-events-none"></div>
+           <div className="relative z-10" data-aos="zoom-up">
+              <h3 className="text-2xl md:text-4xl font-black mb-4 md:mb-6 tracking-tighter italic uppercase underline decoration-white/20 underline-offset-8">YOUR EMPIRE ON SOLID GROUND.</h3>
+              <p className="text-blue-100 text-[13px] md:text-base mb-8 md:mb-10 max-w-lg mx-auto font-medium">
+                 Deploy your vision on the most resilient hosting network available today.
+              </p>
+              <Link to="/contact" className="inline-flex px-10 py-4 bg-white text-blue-600 rounded-2xl font-black text-sm hover:scale-105 transition-all shadow-xl items-center gap-2 mx-auto uppercase">
+                 Get Consultation <ChevronRight size={16} />
+              </Link>
+           </div>
+        </div>
+      </section>
 
-        header {
-          text-align: center;
-          padding-bottom: 3rem;
-        }
-
-        header h1 {
-          font-size: 3rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        header h1::after {
-          content: '';
-          width: 60px;
-          height: 4px;
-          background: #3b82f6;
-          display: block;
-          margin: 0.5rem auto 0;
-          border-radius: 3px;
-          animation: underline 2s infinite alternate;
-        }
-
-        @keyframes underline {
-          0% { width: 60px; }
-          100% { width: 120px; background-color: #1e40af; }
-        }
-
-        header p {
-          font-size: 1.2rem;
-          max-width: 640px;
-          margin: 1rem auto 0;
-          font-weight: 300;
-          color: #4b5563;
-        }
-
-        main {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 2rem;
-        }
-
-        article {
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 1.5rem;
-          padding: 2rem 1.5rem;
-          text-align: center;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        article:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
-        }
-
-        .icon-box {
-          background: #3b82f6;
-          width: 70px;
-          height: 70px;
-          margin: 0 auto 1rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .icon-box svg {
-          font-size: 2rem;
-          color: #ffffff;
-        }
-
-        article h2 {
-          font-size: 1.3rem;
-          margin-bottom: 0.6rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        article p {
-          font-size: 1rem;
-          color: #374151;
-          font-weight: 300;
-        }
-
-        @media (max-width: 600px) {
-          header h1 {
-            font-size: 2.3rem;
-          }
-        }
-      `}</style>
-
-      <div className="container">
-        <header data-aos="fade-down">
-          <h1>Domain & Hosting</h1>
-          <p>
-            Secure your online presence with reliable domain registration and hosting tailored for performance and support.
-          </p>
-        </header>
-
-        <main>
-          <article data-aos="fade-up" data-aos-delay="0">
-            <div className="icon-box"><FaSearch /></div>
-            <h2>SEO Optimization</h2>
-            <p>Enhance visibility on search engines with optimized site structure and content strategies.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="100">
-            <div className="icon-box"><FaCogs /></div>
-            <h2>Maintenance & Support</h2>
-            <p>Ongoing updates, bug fixes, and performance monitoring for your web apps.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="200">
-            <div className="icon-box"><FaGlobe /></div>
-            <h2>Domain Registration</h2>
-            <p>Secure your unique web address with our easy domain registration services.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="300">
-            <div className="icon-box"><FaUserShield /></div>
-            <h2>Domain Privacy Protection</h2>
-            <p>Keep your personal information safe from public WHOIS databases.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="400">
-            <div className="icon-box"><FaGlobe /></div>
-            <h2>Shared Hosting</h2>
-            <p>Affordable solution for small websites by sharing server resources.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="500">
-            <div className="icon-box"><FaVPS /></div>
-            <h2>VPS Hosting</h2>
-            <p>Get more power and control with a virtual private server.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="600">
-            <div className="icon-box"><FaUserShield /></div>
-            <h2>Dedicated Hosting</h2>
-            <p>Exclusive server environment for high performance and control.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="700">
-            <div className="icon-box"><FaCloud /></div>
-            <h2>Cloud Hosting</h2>
-            <p>Flexible, scalable hosting using cloud platforms like AWS or GCP.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="800">
-            <div className="icon-box"><FaTools /></div>
-            <h2>Managed Hosting</h2>
-            <p>Fully maintained hosting service for hands-free website management.</p>
-          </article>
-        </main>
-      </div>
-    </>
+    </main>
   );
 };
 

@@ -1,178 +1,155 @@
-import { useEffect } from 'react';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import {
-  FaLaptopCode, FaMobileAlt, FaServer, FaSearch, FaShoppingCart,
-  FaPaintBrush, FaCode, FaCogs, FaHeadset
-} from 'react-icons/fa';
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { 
+  Code2, 
+  Server, 
+  ShoppingCart,
+  Search,
+  MousePointer2,
+  ChevronRight,
+  Layout,
+  Zap,
+  Globe,
+  ArrowRight
+} from "lucide-react";
 
 const WebDevelopment = () => {
   useEffect(() => {
-    AOS.init({ duration: 1200, once: true });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    AOS.init({ duration: 1000, once: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  const features = [
+    {
+      title: "Custom Full-Stack",
+      desc: "End-to-end web architectures using MERN & Next.js for high-speed applications.",
+      icon: <Code2 className="w-5 h-5" />,
+      delay: 0
+    },
+    {
+      title: "Responsive Core",
+      desc: "Infinite scalability with 'Mobile-First' philosophy across every browser.",
+      icon: <Layout className="w-5 h-5" />,
+      delay: 50
+    },
+    {
+      title: "Backend Scalability",
+      desc: "Mission-critical server logic using Node.js and Python with microservices.",
+      icon: <Server className="w-5 h-5" />,
+      delay: 100
+    },
+    {
+      title: "E-Commerce Titan",
+      desc: "Enterprise-grade shopping with custom checkouts and secure gateways.",
+      icon: <ShoppingCart className="w-5 h-5" />,
+      delay: 150
+    },
+    {
+      title: "SEO Intelligence",
+      desc: "Search optimization baked into code structure for maximum organic visibility.",
+      icon: <Search className="w-5 h-5" />,
+      delay: 200
+    },
+    {
+      title: "Modern UI/UX",
+      desc: "High-conversion designs focusing on user psychology and aesthetics.",
+      icon: <MousePointer2 className="w-5 h-5" />,
+      delay: 250
+    }
+  ];
+
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
+    <main className="bg-white min-h-[calc(100vh-3.5rem)] md:min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-5rem)] font-sans selection:bg-blue-100 selection:text-blue-600 overflow-x-hidden pt-0">
+      
+      {/* Compact Hero */}
+      <section className="relative pt-6 pb-12 px-6 overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/4 h-full bg-slate-50 opacity-50 transform skew-x-12 origin-top-right"></div>
+        
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center relative z-10">
+          <div data-aos="fade-right">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 mb-4 text-[10px] font-black uppercase tracking-widest">
+              Digital Architecture
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-6 tracking-tighter italic">
+              Performance <br /> driven <span className="text-blue-600 underline decoration-blue-100 underline-offset-4">Web.</span>
+            </h1>
+            <p className="text-base text-slate-600 leading-relaxed mb-8 max-w-lg font-medium">
+              We don't just build websites; we build business tools. Optimized for speed, SEO, and conversion to drive your growth.
+            </p>
+            <div className="flex gap-4">
+              <Link to="/contact" className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center gap-2">
+                Start Building <ArrowRight size={16} />
+              </Link>
+              <Link to="/services" className="px-6 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all">
+                The Stack
+              </Link>
+            </div>
+          </div>
 
-        * { box-sizing: border-box; }
+          <div className="relative group scale-90 md:scale-100" data-aos="zoom-in">
+             <div className="absolute -inset-4 bg-blue-100 rounded-full blur-3xl opacity-20"></div>
+             <div className="relative bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-2xl overflow-hidden max-w-sm mx-auto">
+                <div className="flex justify-between items-start mb-6">
+                   <div className="space-y-2">
+                      <div className="h-1.5 w-16 bg-blue-600 rounded-full"></div>
+                      <div className="h-1.5 w-8 bg-slate-200 rounded-full"></div>
+                   </div>
+                   <Zap size={24} className="text-blue-600 animate-pulse" />
+                </div>
+                <div className="space-y-4">
+                   <div className="h-24 bg-slate-50 rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center p-4">
+                      <Globe size={32} className="text-slate-300 mb-2" />
+                      <p className="text-[8px] font-black text-slate-400 uppercase">Synchronizing...</p>
+                   </div>
+                   <div className="flex justify-between font-mono text-[9px] text-blue-400 italic">
+                      <span>Status: Online</span>
+                      <span>Uptime: 99.9%</span>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
 
-        body, html, #root {
-          margin: 0;
-          padding: 0;
-          font-family: 'Poppins', sans-serif;
-          background: #f0f4f8;
-          color: #111827;
-        }
+      {/* Tighter Grid */}
+      <section className="py-16 px-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, idx) => (
+            <div 
+              key={idx} 
+              className="p-8 rounded-[2rem] bg-slate-50 hover:bg-white border border-transparent hover:border-blue-100 transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-blue-600/5 group"
+              data-aos="fade-up"
+              data-aos-delay={feature.delay}
+            >
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all border border-slate-100 text-blue-600">
+                {feature.icon}
+              </div>
+              <h4 className="text-xl font-black text-slate-800 mb-2 group-hover:text-blue-700 transition-colors uppercase tracking-tighter leading-tight italic">{feature.title}</h4>
+              <p className="text-sm text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 4rem 1rem;
-        }
+      {/* Refined CTA */}
+      <section className="py-12 px-6">
+        <div className="max-w-5xl mx-auto rounded-[3rem] bg-blue-600 p-12 text-center text-white relative shadow-2xl overflow-hidden group">
+           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.1),transparent)] pointer-events-none"></div>
+           <div className="relative z-10" data-aos="zoom-up">
+              <h3 className="text-3xl md:text-4xl font-black mb-6 tracking-tighter italic uppercase">Scale Your Digital Presence.</h3>
+              <p className="text-blue-100 text-base mb-10 max-w-lg mx-auto font-medium">
+                 Ready to turn your vision into a global platform? Let's engineer your success today.
+              </p>
+              <Link to="/contact" className="inline-block px-10 py-4 bg-white text-blue-600 rounded-2xl font-black text-sm hover:scale-105 transition-all shadow-xl">
+                 Contact Our Experts
+              </Link>
+           </div>
+        </div>
+      </section>
 
-        header {
-          text-align: center;
-          padding-bottom: 3rem;
-        }
-
-        header h1 {
-          font-size: 3rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        header p {
-          font-size: 1.2rem;
-          max-width: 640px;
-          margin: 1rem auto 0;
-          font-weight: 300;
-          color: #4b5563;
-        }
-
-        main {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 2rem;
-        }
-
-        article {
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 1.5rem;
-          padding: 2rem 1.5rem;
-          text-align: center;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        article:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
-        }
-
-        .icon-box {
-          background: #3b82f6;
-          width: 70px;
-          height: 70px;
-          margin: 0 auto 1rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .icon-box svg {
-          font-size: 2rem;
-          color: #ffffff;
-        }
-
-        article h2 {
-          font-size: 1.3rem;
-          margin-bottom: 0.6rem;
-          font-weight: 600;
-          color: #2563eb;
-        }
-
-        article p {
-          font-size: 1rem;
-          color: #374151;
-          font-weight: 300;
-        }
-
-        @media (max-width: 600px) {
-          header h1 {
-            font-size: 2.3rem;
-          }
-        }
-      `}</style>
-
-      <div className="container">
-        <header data-aos="fade-down">
-          <h1>Web Development Services</h1>
-          <p>Building responsive, high-performance websites and applications tailored to your business goals.</p>
-        </header>
-
-        <main>
-          <article data-aos="fade-up">
-            <div className="icon-box"><FaLaptopCode /></div>
-            <h2>Custom Web Development</h2>
-            <p>Tailor-made websites and web apps using modern frameworks like React, Node.js, and MongoDB.</p>
-          </article>
-
-          <article data-aos="fade-right" data-aos-delay="100">
-            <div className="icon-box"><FaMobileAlt /></div>
-            <h2>Responsive Design</h2>
-            <p>Optimized user interfaces that look great on all devices—from desktop to mobile.</p>
-          </article>
-
-          <article data-aos="zoom-in" data-aos-delay="200">
-            <div className="icon-box"><FaServer /></div>
-            <h2>Backend Development</h2>
-            <p>Scalable server-side logic and API integration to power your applications.</p>
-          </article>
-
-          <article data-aos="flip-left" data-aos-delay="300">
-            <div className="icon-box"><FaShoppingCart /></div>
-            <h2>E-Commerce Solutions</h2>
-            <p>Full-featured e-commerce platforms with secure payment and product management systems.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="400">
-            <div className="icon-box"><FaPaintBrush /></div>
-            <h2>UI/UX Design</h2>
-            <p>Intuitive and visually appealing interfaces designed for excellent user experience.</p>
-          </article>
-
-          <article data-aos="zoom-in" data-aos-delay="500">
-            <div className="icon-box"><FaCode /></div>
-            <h2>Frontend Development</h2>
-            <p>Modern, fast-loading, and interactive frontends using React, Vue, or Angular.</p>
-          </article>
-
-          <article data-aos="fade-left" data-aos-delay="600">
-            <div className="icon-box"><FaSearch /></div>
-            <h2>SEO Optimization</h2>
-            <p>Enhance visibility on search engines with optimized site structure and content strategies.</p>
-          </article>
-
-          <article data-aos="zoom-in-up" data-aos-delay="700">
-            <div className="icon-box"><FaCogs /></div>
-            <h2>Maintenance & Support</h2>
-            <p>Ongoing updates, bug fixes, and performance monitoring for your web apps.</p>
-          </article>
-
-          <article data-aos="fade-up" data-aos-delay="800">
-            <div className="icon-box"><FaHeadset /></div>
-            <h2>Tech Consultation</h2>
-            <p>Expert advice on tech stack, system architecture, and digital transformation planning.</p>
-          </article>
-        </main>
-      </div>
-    </>
+    </main>
   );
 };
 

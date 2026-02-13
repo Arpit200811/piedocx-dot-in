@@ -1,108 +1,89 @@
-import React, { Suspense, useEffect } from "react";
-import { HashRouter, Route, Routes } from "react-router-dom";
+import React, { Suspense, useEffect, useState } from "react";
+import { HashRouter } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import TeamSection from "./Components/TeamSection";
-import Project from "./Components/Project";
-
-import AdminPanel from './Components/AdminPanel';
-import StudentDetails from './Components/StudentDetails';
-import Home from "./Components/Home";
-import AboutUscompany from "./Components/AboutUscompany";
-import Contact from "./Components/Contact";
-import Empsignup from "./Components/Empsignup";
-import Emplogin from "./Components/Emplogin";
-import Dashboard from "./Components/Dashboard";
-import AdminDashboard from "./Components/AdminDashboard";
-import Profile from "./Components/Profile";
-import RootLayout from "./Components/RootLayout";
-import Task from "./Components/Task";
-import DashboardProject from "./Components/DashboardProject";
-import GenTask from "./Components/GenTask";
-import FullStackdev from "./Components/FullStackdev";
-import AndroidDev from "./Components/AndroidDev";
-import Services from "./Components/Services";
-import DigitalMarketing from "./Components/DigitalMarketing";
-// import termsconditions from './Components/termsconditions'
-import PageNotfound from "./Components/PageNotfound";
-import GraphicsDev from "./Components/GraphicsDev";
-import Mern from "./Components/Mern";
-import WebDevelopment from "./Components/WebDevelopment";
-import Domain from "./Components/Domain";
-import CustomSoftware from "./Components/CustomSoftware";
-import ErpSolution from "./Components/ErpSolution";
-import CMSSolution from "./Components/CMSSolution";
-import DotNetCoreServices from "./Components/DotNet-core";
-import PhpCoreServices from "./Components/PHP-core";
-import PythonServices from "./Components/Python";
-import AdvanceJavaServices from "./Components/Advance-java";
-import FlutterKotlinServices from "./Components/Flutter-kotlin";
-
 import "./App.css";
 
-function App() {
-  useEffect(() => {
-    AOS.init();
-  }, []);
-  return (
-    <>
-      <HashRouter>
-        <div className="overflow-x-hidden">
-          
-            <Routes>
-              <Route path="/" element={<RootLayout><Home /> </RootLayout>} />
-              <Route path="/team" element={<RootLayout><TeamSection /> </RootLayout>} />
-              <Route path="/projects" element={<RootLayout><Project /> </RootLayout>} />
-              <Route path="/services" element={<RootLayout><Services /> </RootLayout>} />
-              <Route path="about" element={<RootLayout><AboutUscompany /> </RootLayout>} />
-              <Route path="/contact" element={<RootLayout><Contact /> </RootLayout>} />
-              <Route path="/emp-signup" element={<RootLayout><Empsignup /> </RootLayout>} />
-              <Route path="/emp-login" element={<RootLayout><Emplogin /> </RootLayout>} />
-              <Route path="/student/:id" element={<StudentDetails />} />
-              <Route path="/profile" element={<Dashboard><Profile /></Dashboard>} />
-              <Route path="/task" element={<Dashboard><Task /></Dashboard>} />
-              <Route path="/dashboard-project" element={<Dashboard><DashboardProject /></Dashboard>} />
-              <Route path="/Admin-ST25" element={<AdminPanel />} />
+// Components
+import GlobalSearch from "./Components/GlobalSearch";
+import ErrorBoundary from "./Components/ErrorBoundary";
+import SEO from "./Components/SEO";
+import MainRouter from "./routes/MainRouter";
 
-              <Route path="full-stackdev" element={<RootLayout><FullStackdev /></RootLayout>} />
-              <Route path="android-ios" element={<RootLayout><AndroidDev /></RootLayout>} />
-              <Route path="DigitalMarketing" element={<RootLayout><DigitalMarketing /></RootLayout>} />
-              <Route path="Graphic-design" element={<RootLayout><GraphicsDev /></RootLayout>} />
-              <Route path="Web-Development" element={<RootLayout><WebDevelopment /></RootLayout>} />
-              <Route path="Domain & Web Hosting" element={<RootLayout><Domain /></RootLayout>} />
-              <Route path="Custom-Software-Development" element={<RootLayout><CustomSoftware /></RootLayout>} />
-              <Route path="ERP-Solutions" element={<RootLayout><ErpSolution /></RootLayout>} />
-              <Route path="cms-Solution" element={<RootLayout><CMSSolution/></RootLayout>} />
-              <Route path="/services/full-stack" element={<RootLayout><FullStackdev /></RootLayout>} />
-              <Route path="/services/android-ios" element={<RootLayout><AndroidDev /></RootLayout>} />
-              <Route path="/services/DigitalMarketing" element={<RootLayout><DigitalMarketing /></RootLayout>} />
-              <Route path="/services/Graphic-design" element={<RootLayout><GraphicsDev /></RootLayout>} />
-              <Route path="/services/Web-Development" element={<RootLayout><WebDevelopment /></RootLayout>} />
-              <Route path="/services/Domain & Web Hosting" element={<RootLayout><Domain /></RootLayout>} />
-              <Route path="/services/Custom-Software-Development" element={<RootLayout><CustomSoftware /></RootLayout>} />
-              <Route path="/services/ERP-Solutions" element={<RootLayout><ErpSolution /></RootLayout>} />
-              <Route path="/services/cms-Solution" element={<RootLayout><CMSSolution /></RootLayout>} />
-              <Route path="/aboutus1/mern" element={<RootLayout><Mern /></RootLayout>} />
-              <Route path="/aboutus1/.net-core" element={<RootLayout><DotNetCoreServices /></RootLayout>} />
-              <Route path="/aboutus1/php-core" element={<RootLayout><PhpCoreServices /></RootLayout>} />
-              <Route path="/aboutus1/python" element={<RootLayout><PythonServices /></RootLayout>} />
-              <Route path="/aboutus1/advance-java" element={<RootLayout><AdvanceJavaServices /></RootLayout>} />
-              <Route path="/aboutus1/flutter-kotlin" element={<RootLayout><FlutterKotlinServices /></RootLayout>} />
+// Loading Component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-screen bg-slate-50 relative overflow-hidden">
+    {/* Animated Background Gradients */}
+    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 rounded-full blur-[100px] opacity-60 animate-pulse"></div>
+    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-100 rounded-full blur-[100px] opacity-60 animate-pulse" style={{ animationDelay: '1s' }}></div>
 
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
-              <Route path="/gen-task" element={<Dashboard><GenTask /></Dashboard>} />
-              <Route path="*" element={<RootLayout><PageNotfound /></RootLayout>} />
-            
-
-
-              {/* <Route path='/terms-and-conditions' element={<termsconditions/>}/> */}
-            </Routes>
-         
-
-          
+    <div className="flex flex-col items-center gap-8 relative z-10">
+      <div className="relative">
+        <div className="w-24 h-24 rounded-full border-4 border-blue-600/10 border-t-blue-600 animate-spin transition-all duration-700"></div>
+        <div className="absolute top-2 left-2 w-20 h-20 rounded-full border-4 border-indigo-600/10 border-b-indigo-600 animate-spin-reverse transition-all duration-700"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.6)] animate-pulse"></div>
+      </div>
+      
+      <div className="flex flex-col items-center">
+        <h2 className="text-2xl font-black tracking-tighter text-slate-900 mb-1">
+          PIEDOCX<span className="text-blue-600">.</span>
+        </h2>
+        <div className="flex items-center gap-2">
+            <span className="h-1 w-1 bg-blue-600 rounded-full animate-bounce"></span>
+            <span className="h-1 w-1 bg-blue-600 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+            <span className="h-1 w-1 bg-blue-600 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 ml-1">Architecting Innovation</p>
         </div>
-      </HashRouter>
-    </>
+      </div>
+    </div>
+
+    <style>{`
+      @keyframes spin-reverse {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(-360deg); }
+      }
+      .animate-spin-reverse {
+        animation: spin-reverse 1.5s linear infinite;
+      }
+    `}</style>
+  </div>
+);
+
+function App() {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: false,
+      easing: "ease-out-cubic",
+      mirror: false,
+    });
+  }, []);
+
+  return (
+    <HashRouter>
+      <SEO />  
+      <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <div className="overflow-x-hidden min-h-screen flex flex-col">
+        <ErrorBoundary>
+          <Suspense fallback={<LoadingSpinner />}>
+            <MainRouter />
+          </Suspense>
+        </ErrorBoundary>
+      </div>
+    </HashRouter>
   );
 }
 

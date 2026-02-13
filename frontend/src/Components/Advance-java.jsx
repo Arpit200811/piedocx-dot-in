@@ -1,15 +1,24 @@
 import React, { useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import {
-  FaJava,
-  FaDatabase,
-  FaServer,
-  FaCloud,
-  FaTools,
-  FaLock,
-} from "react-icons/fa";
-import { SiSpring, SiHibernate, SiJenkins } from "react-icons/si";
+import { 
+  Database, 
+  Cloud, 
+  Terminal, 
+  Cpu, 
+  Workflow, 
+  Sparkles, 
+  ArrowRight,
+  Code2,
+  Zap,
+  ShieldCheck,
+  Layers,
+  GitBranch,
+  Server,
+  Layout,
+  Lock,
+  Activity
+} from "lucide-react";
 
 const AdvanceJavaServices = () => {
   useEffect(() => {
@@ -19,120 +28,98 @@ const AdvanceJavaServices = () => {
 
   const services = [
     {
-      title: "Spring Framework",
-      description:
-        "Build enterprise-grade applications with Spring Boot, Spring Security, and Spring Cloud.",
-      icon: <SiSpring />,
-      animation: "flip-left",
+      title: "Spring Ecosystem",
+      description: "Enterprise-grade logic with Spring Boot, Security, and Cloud orchestration.",
+      icon: <Layers className="w-5 h-5 text-green-600" />,
+      delay : 0
     },
     {
       title: "Hibernate & JPA",
-      description:
-        "Efficient ORM solutions with Hibernate & JPA for database interaction and data management.",
-      icon: <SiHibernate />,
-      animation: "fade-up-right",
+      description: "Advanced ORM solutions and transaction management for complex data layers.",
+      icon: <Database className="w-5 h-5 text-indigo-600" />,
+      delay: 50
     },
     {
-      title: "Microservices Architecture",
-      description:
-        "Develop scalable microservices with Java, Spring Boot, and RESTful APIs.",
-      icon: <FaServer />,
-      animation: "zoom-in-up",
+      title: "Microservices Core",
+      description: "Developing resilient, distributed systems using Java and Spring Cloud Netflix.",
+      icon: <Server className="w-5 h-5 text-blue-600" />,
+      delay: 100
     },
     {
-      title: "Secure Authentication",
-      description:
-        "Implement JWT, OAuth2, and Spring Security for safe and secure Java applications.",
-      icon: <FaLock />,
-      animation: "flip-up",
-    },
-    {
-      title: "CI/CD with Jenkins",
-      description:
-        "Automate your deployments using Jenkins pipelines for Java enterprise projects.",
-      icon: <SiJenkins />,
-      animation: "fade-down",
-    },
-    {
-      title: "Database Connectivity",
-      description:
-        "Seamless JDBC, MySQL, PostgreSQL, and Oracle DB integration with Java.",
-      icon: <FaDatabase />,
-      animation: "zoom-out",
+      title: "Cyber Security",
+      description: "Implementing OAuth2, JWT, and zero-trust security for enterprise safety.",
+      icon: <Lock className="w-5 h-5 text-rose-600" />,
+      delay: 150
     },
     {
       title: "Cloud Native Java",
-      description:
-        "Deploy Java apps on AWS, Azure, and Google Cloud with modern DevOps practices.",
-      icon: <FaCloud />,
-      animation: "zoom-in-left",
+      description: "Deploying high-performance JVM apps on AWS and Azure cloud platforms.",
+      icon: <Cloud className="w-5 h-5 text-blue-400" />,
+      delay: 200
     },
     {
-      title: "Performance & Tools",
-      description:
-        "Use Maven, Gradle, and advanced profiling tools to optimize Java applications.",
-      icon: <FaTools />,
-      animation: "fade-left",
-    },
-    {
-      title: "Core Java Mastery",
-      description:
-        "Advanced OOP, multithreading, concurrency, and Java 17+ features for enterprise apps.",
-      icon: <FaJava />,
-      animation: "flip-right",
-    },
+      title: "JVM Performance",
+      description: "GC tuning, multithreading, and low-latency optimization for large-scale systems.",
+      icon: <Activity className="w-5 h-5 text-emerald-600" />,
+      delay: 250
+    }
   ];
 
   return (
-    <div className="relative bg-gradient-to-r from-[#163F81]/10 via-[#163F81]/20 to-[#163F81]/30 min-h-screen py-20">
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Title Section */}
-        <h1
-          className="text-4xl md:text-5xl font-extrabold text-center text-[#163F81] mb-6 tracking-wide"
-          data-aos="fade-down"
-        >
-          Advance Java Services
-        </h1>
-        <p
-          className="text-center text-gray-700 max-w-2xl mx-auto mb-14"
-          data-aos="fade-up"
-        >
-          We deliver enterprise-level Java solutions using Spring, Hibernate, 
-          and cloud-native technologies for scalable and secure applications.
-        </p>
+    <main className="bg-white min-h-screen font-sans pt-14 md:pt-16 lg:pt-20 pb-12 md:pb-16 selection:bg-blue-100 selection:text-blue-600">
+      <div className="max-w-6xl mx-auto px-6">
+        
+        {/* Compact Header */}
+        <div className="text-center mb-10 md:mb-16" data-aos="fade-down">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 mb-4 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] leading-none">
+             Enterprise Systems
+          </div>
+          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic mb-4">
+             Advance Java <span className="text-blue-600">Architectures.</span>
+          </h1>
+          <p className="max-w-xl mx-auto text-slate-500 font-medium text-sm md:text-base leading-relaxed">
+             We deliver mission-critical Java solutions using Spring, Hibernate, and cloud-native frameworks for resilient enterprise performance.
+          </p>
+        </div>
 
-        {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        {/* Dense Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {services.map((service, index) => (
-            <div
+            <article
               key={index}
-              className="relative group rounded-2xl p-8 shadow-lg bg-white/30 backdrop-blur-lg border border-white/40 
-              transition-transform transform hover:-translate-y-2 hover:shadow-2xl hover:border-[#163F81]"
-              data-aos={service.animation}
-              data-aos-delay={index * 120}
+              className="group bg-slate-50 hover:bg-white border border-transparent hover:border-blue-100 rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-8 transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-blue-600/5"
+              data-aos="fade-up"
+              data-aos-delay={service.delay}
             >
-              {/* Icon */}
-              <div className="text-5xl text-[#163F81] mb-6 flex justify-center group-hover:scale-110 transition-transform duration-300">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl flex items-center justify-center mb-4 md:mb-6 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all border border-slate-100">
                 {service.icon}
               </div>
-
-              {/* Title */}
-              <h2 className="text-xl font-semibold text-center text-gray-800 mb-3 relative inline-block
-                after:content-[''] after:block after:h-[3px] after:w-0 after:bg-[#163F81] after:transition-all after:duration-300
-                group-hover:after:w-full mx-auto"
-              >
+              <h2 className="text-lg md:text-xl font-black text-slate-800 mb-2 group-hover:text-blue-700 transition-colors uppercase italic tracking-tighter leading-tight">
                 {service.title}
               </h2>
-
-              {/* Description */}
-              <p className="text-gray-700 text-center leading-relaxed">
+              <p className="text-[13px] md:text-sm text-slate-500 font-medium leading-relaxed">
                 {service.description}
               </p>
-            </div>
+            </article>
           ))}
         </div>
+
+        {/* Bottom CTA */}
+        <div className="mt-12 md:mt-20 p-8 md:p-10 rounded-[2rem] md:rounded-[2.5rem] bg-slate-900 text-white text-center relative overflow-hidden shadow-2xl" data-aos="zoom-in">
+           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_20%_80%,rgba(37,99,235,0.08),transparent)]"></div>
+           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 text-center md:text-left">
+              <div>
+                <h3 className="text-xl md:text-2xl font-black tracking-tight italic mb-2 uppercase">Scale Your Enterprise.</h3>
+                <p className="text-slate-400 text-[13px] md:text-sm max-w-sm">Connect with our senior Java architects and build your next-gen enterprise backend.</p>
+              </div>
+              <button className="w-full md:w-auto px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2">
+                Consult Architects <ArrowRight size={16} />
+              </button>
+           </div>
+        </div>
+
       </div>
-    </div>
+    </main>
   );
 };
 
