@@ -16,42 +16,38 @@ const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
 
 const MainRouter = () => {
   return (
-    <Routes>
-      <Route path="/" element={<RootLayout />}>
-        {PublicRoutes}
-      </Route>
-
-      {/* Student Portal (Protected) */}
-      <Route element={<ProtectedStudentRoute />}>
-        <Route path="/student-dashboard" element={<DashboardLayout />}>
-          <Route index element={<StudentDashboard />} />
-          {/* You can add more sub-routes here if needed */}
-          <Route path="exams" element={<StudentDashboard />} /> 
-          <Route path="resources" element={<StudentDashboard />} />
-          <Route path="certificates" element={<StudentDashboard />} />
-          <Route path="profile" element={<StudentDashboard />} />
-        </Route>
-        
-        {/* These might need to be outside the layout depending on UI needs */}
-        <Route path="/test-interface" element={<TestInterface />} />
-        <Route path="/waiting-room" element={<WaitingRoom />} />
-        <Route path="/feedback" element={<FeedbackForm />} />
-      </Route>
-
-      <Route path="/verify/:id" element={<VerifyCertificate />} />
-
-      {/* Special Individual Pages */}
-      <Route path="/student/:id" element={<StudentDetails />} />
-
-      {/* Employee Dashboard */}
-      {EmployeeRoutes}
-
-      {/* Admin Panel */}
-      {AdminRoutes}
-
-      {/* Catch-all for undefined routes */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={
+        <div className="h-screen flex items-center justify-center bg-[#f8fafc]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+    }>
+        <Routes>
+          <Route path="/" element={<RootLayout />}>
+            {PublicRoutes}
+          </Route>
+    
+          {/* Student Portal (Protected) */}
+          <Route element={<ProtectedStudentRoute />}>
+            <Route path="/student-dashboard" element={<DashboardLayout />}>
+              <Route index element={<StudentDashboard />} />
+              <Route path="exams" element={<StudentDashboard />} /> 
+              <Route path="resources" element={<StudentDashboard />} />
+              <Route path="certificates" element={<StudentDashboard />} />
+              <Route path="profile" element={<StudentDashboard />} />
+            </Route>
+            
+            <Route path="/test-interface" element={<TestInterface />} />
+            <Route path="/waiting-room" element={<WaitingRoom />} />
+            <Route path="/feedback" element={<FeedbackForm />} />
+          </Route>
+    
+          <Route path="/verify/:id" element={<VerifyCertificate />} />
+          <Route path="/student/:id" element={<StudentDetails />} />
+          {EmployeeRoutes}
+          {AdminRoutes}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+    </Suspense>
   );
 };
 

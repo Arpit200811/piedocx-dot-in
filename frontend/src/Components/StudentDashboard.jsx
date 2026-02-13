@@ -58,24 +58,19 @@ const StudentDashboard = () => {
 
     const getActiveTabFromPath = () => {
         const path = location.pathname;
-        if (path.includes('/exams')) return 'exams';
-        if (path.includes('/resources')) return 'resources';
-        if (path.includes('/certificates')) return 'certificates';
-        if (path.includes('/profile')) return 'profile';
+        if (path.endsWith('/exams')) return 'exams';
+        if (path.endsWith('/resources')) return 'resources';
+        if (path.endsWith('/certificates')) return 'certificates';
+        if (path.endsWith('/profile')) return 'profile';
         return 'dashboard';
     };
 
-    const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
+    const activeTab = getActiveTabFromPath();
     const [testInfo, setTestInfo] = useState(null);
     const [loading, setLoading] = useState(false); // Context handles initial loading
     const [announcements, setAnnouncements] = useState([]);
     const [studyResources, setStudyResources] = useState([]);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-    useEffect(() => {
-        // Set tab based on path
-        setActiveTab(getActiveTabFromPath());
-    }, [location.pathname]);
 
     useEffect(() => {
         // fetchProfile(); // No longer needed, handled by AuthContext
@@ -104,7 +99,7 @@ const StudentDashboard = () => {
 
     const handleLogout = () => {
         authLogout();
-        navigate('/student-login');
+        navigate('/student-login', { replace: true });
     };
 
     const fetchTestInfo = async () => {
@@ -179,7 +174,7 @@ const StudentDashboard = () => {
                                             }
                                         </p>
                                         {!student.testAttempted && (
-                                            <button onClick={() => setActiveTab('exams')} className="mt-4 px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase italic tracking-widest shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center gap-2 group border border-blue-500">
+                                            <button onClick={() => navigate('/student-dashboard/exams')} className="mt-4 px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase italic tracking-widest shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center gap-2 group border border-blue-500">
                                                 Start Exam <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
                                             </button>
                                         )}
@@ -244,7 +239,7 @@ const StudentDashboard = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button onClick={() => setActiveTab('profile')} className="w-full mt-8 py-3 bg-slate-50 hover:bg-blue-600 hover:text-white rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] transition-all border border-slate-100 group">
+                                            <button onClick={() => navigate('/student-dashboard/profile')} className="w-full mt-8 py-3 bg-slate-50 hover:bg-blue-600 hover:text-white rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] transition-all border border-slate-100 group">
                                                 View Full Profile
                                             </button>
                                         </div>

@@ -14,7 +14,7 @@ const DashboardLayout = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/student-login');
+        navigate('/student-login', { replace: true });
     };
 
     const navItems = [

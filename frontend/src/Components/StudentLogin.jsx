@@ -10,8 +10,15 @@ import { useStudentAuth } from '../context/StudentAuthContext';
 
 const StudentLogin = () => {
     const navigate = useNavigate();
-    const { login } = useStudentAuth();
+    const { login, isAuthenticated } = useStudentAuth();
     const [loading, setLoading] = useState(false);
+
+    // Redirect if already authenticated
+    React.useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/student-dashboard', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
 
     const handleSuccess = async (response) => {
         setLoading(true);
@@ -34,7 +41,8 @@ const StudentLogin = () => {
                 customClass: { popup: 'rounded-[1.5rem] border border-slate-100 shadow-2xl' }
             });
 
-            setTimeout(() => navigate('/student-dashboard'), 1500);
+            // Use replace: true so they can't go back to login
+            setTimeout(() => navigate('/student-dashboard', { replace: true }), 1500);
         } catch (err) {
 
             Swal.fire({
