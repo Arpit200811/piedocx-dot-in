@@ -29,7 +29,7 @@ initRedis();
 // Middleware
 app.use(
   cors({
-    origin:["https://piedocx-dot-in.onrender.com", "https://216.24.57.1","https://piedocx-dot-in-1.onrender.com", "https://localhost:5173", "http://localhost:5173"] ,
+    origin:["*"] ,
     credentials: true,
   })
 );
