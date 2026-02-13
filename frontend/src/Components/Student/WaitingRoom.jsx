@@ -4,7 +4,7 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Wifi, ShieldCheck, User, Zap, Lock, Cpu } from 'lucide-react';
-import { base_url } from '../utils/info';
+import { base_url } from '../../utils/info';
 
 const WaitingRoom = () => {
     const location = useLocation();
