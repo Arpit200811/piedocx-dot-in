@@ -4,6 +4,9 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import "./App.css";
 
+// Context
+import { StudentAuthProvider } from "./context/StudentAuthContext";
+
 // Components
 import GlobalSearch from "./Components/GlobalSearch";
 import ErrorBoundary from "./Components/ErrorBoundary";
@@ -73,18 +76,21 @@ function App() {
   }, []);
 
   return (
-    <HashRouter>
-      <SEO />  
-      <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-      <div className="overflow-x-hidden min-h-screen flex flex-col">
-        <ErrorBoundary>
-          <Suspense fallback={<LoadingSpinner />}>
-            <MainRouter />
-          </Suspense>
-        </ErrorBoundary>
-      </div>
-    </HashRouter>
+    <StudentAuthProvider>
+      <HashRouter>
+        <SEO />  
+        <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+        <div className="overflow-x-hidden min-h-screen flex flex-col">
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <MainRouter />
+            </Suspense>
+          </ErrorBoundary>
+        </div>
+      </HashRouter>
+    </StudentAuthProvider>
   );
 }
 
 export default App;
+

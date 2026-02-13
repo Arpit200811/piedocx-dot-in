@@ -12,6 +12,8 @@ import {
 import SEO from './SEO';
 import { base_url } from '../utils/info';
 import Swal from 'sweetalert2';
+import { useStudentAuth } from '../context/StudentAuthContext';
+import { useLocation } from 'react-router-dom';
 
 // Custom SVG Donut Chart Component
 const SimpleDonut = ({ score, total = 30 }) => {
@@ -44,17 +46,39 @@ const SimpleDonut = ({ score, total = 30 }) => {
 
 const StudentDashboard = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { student: authStudent, logout: authLogout } = useStudentAuth();
     const fileInputRef = useRef(null);
-    const [student, setStudent] = useState(null);
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const [student, setStudent] = useState(authStudent);
+    
+    // Sync local student state with auth context if it changes
+    useEffect(() => {
+        if (authStudent) setStudent(authStudent);
+    }, [authStudent]);
+
+    const getActiveTabFromPath = () => {
+        const path = location.pathname;
+        if (path.includes('/exams')) return 'exams';
+        if (path.includes('/resources')) return 'resources';
+        if (path.includes('/certificates')) return 'certificates';
+        if (path.includes('/profile')) return 'profile';
+        return 'dashboard';
+    };
+
+    const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
     const [testInfo, setTestInfo] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false); // Context handles initial loading
     const [announcements, setAnnouncements] = useState([]);
     const [studyResources, setStudyResources] = useState([]);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
-        fetchProfile();
+        // Set tab based on path
+        setActiveTab(getActiveTabFromPath());
+    }, [location.pathname]);
+
+    useEffect(() => {
+        // fetchProfile(); // No longer needed, handled by AuthContext
         fetchTestInfo();
         fetchBulletins();
         fetchResources();
@@ -78,32 +102,9 @@ const StudentDashboard = () => {
         }
     };
 
-    const fetchProfile = async () => {
-        try {
-            const token = localStorage.getItem('studentToken');
-            if (!token) {
-                navigate('/student-login');
-                return;
-            }
-            const res = await axios.get(`${base_url}/api/student-auth/profile`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = res.data;
-            if (!data.firstName && data.fullName) {
-                data.firstName = data.fullName.split(' ')[0];
-            }
-            setStudent(data);
-            setLoading(false);
-        } catch (err) {
-            console.error("Profile fetch error:", err);
-            // Don't clear local storage immediately if it's a network error
-            if (err.response?.status === 401) {
-                localStorage.clear();
-                navigate('/student-login');
-            } else {
-                setLoading(false); // Stop loading even if error to show UI state if needed
-            }
-        }
+    const handleLogout = () => {
+        authLogout();
+        navigate('/student-login');
     };
 
     const fetchTestInfo = async () => {
@@ -145,123 +146,28 @@ const StudentDashboard = () => {
         reader.readAsDataURL(file);
     };
 
-    const handleLogout = () => {
-        localStorage.clear();
-        navigate('/student-login');
-    };
-
-    if (loading) return (
-        <div className="h-screen flex items-center justify-center bg-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-    );
+    if (loading) return null; // Loading handled by ProtectedRoute
 
     if (!student) return null;
 
-    const navItems = [
-        { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-        { id: 'exams', label: 'Online Exams', icon: BookOpen },
-        { id: 'resources', label: 'Resources', icon: FileText },
-        { id: 'certificates', label: 'Certificates', icon: Award },
-        { id: 'profile', label: 'My Profile', icon: User },
-    ];
-
-
-
     return (
-        <div className="h-screen bg-[#f8fafc] font-sans text-slate-900 flex overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0">
             <SEO title="Student Dashboard | Piedocx" />
 
-            {/* Mobile Menu Button */}
-            <button 
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden fixed top-4 left-4 z-[60] bg-white p-3 rounded-xl shadow-lg border border-slate-200"
-            >
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-
-            {/* Sidebar */}
-            <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col flex-shrink-0 z-50 fixed lg:static inset-y-0 left-0 transform transition-transform duration-300 ${
-                mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-            }`}>
-                <div className="h-20 flex items-center px-8 border-b border-slate-100">
-                    <img src="/pie_logo.png" alt="Logo" className="h-10 w-auto mix-blend-multiply" />
-                </div>
-
-                <nav className="flex-1 p-4 space-y-1 mt-4">
-                    {navItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => {
-                                setActiveTab(item.id);
-                                setMobileMenuOpen(false); // Close menu on mobile
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
-                                activeTab === item.id 
-                                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
-                                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                            }`}
-                        >
-                            <item.icon size={18} />
-                            <span>{item.label}</span>
-                        </button>
-                    ))}
-                </nav>
-
-                <div className="p-4 border-t border-slate-100">
-                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all">
-                        <LogOut size={18} />
-                        <span>Sign Out</span>
-                    </button>
-                </div>
-            </aside>
-
-            {/* Mobile Overlay */}
-            {mobileMenuOpen && (
-                <div 
-                    className="lg:hidden fixed inset-0 bg-black/50 z-40"
-                    onClick={() => setMobileMenuOpen(false)}
-                />
-            )}
-
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col min-w-0 lg:ml-0">
-                <header className="h-16 sm:h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 md:px-8 z-40">
-                    <h2 className="text-base sm:text-lg font-bold text-slate-800 ml-12 lg:ml-0">{navItems.find(i => i.id === activeTab)?.label}</h2>
-                    
-                    <div className="flex items-center gap-4">
-                        <div className="bg-slate-100 px-4 py-2 rounded-full hidden sm:flex items-center gap-2 w-64 lg:w-80 border border-slate-200/50">
-                            <Search size={16} className="text-slate-400" />
-                            <input type="text" placeholder="Search resources..." className="bg-transparent border-0 outline-none text-sm w-full" />
-                        </div>
-                        <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-                            <div className="text-right hidden sm:block">
-                                <p className="text-sm font-bold text-slate-800 leading-none mb-1 uppercase tracking-tight italic">{student.fullName}</p>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{student.studentId}</p>
-                            </div>
-                            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-black overflow-hidden border-2 border-white shadow-sm ring-2 ring-slate-100">
-                                {student.profilePicture ? (
-                                    <img src={student.profilePicture} alt="Profile" className="w-full h-full object-cover" />
-                                ) : student.fullName?.[0]}
-                            </div>
-                        </div>
-                    </div>
-                </header>
-
-                <div className="bg-slate-900 text-white py-2 px-8 overflow-hidden relative border-b border-blue-600/20">
-                    <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-white/90 italic">
-                        <span className="bg-blue-600 px-2 py-0.5 rounded text-white font-black not-italic border border-blue-500 shadow-sm">Bulletin</span>
-                        <div className="flex-1 overflow-hidden relative h-4">
-                            <motion.div animate={{ x: ["100%", "-100%"] }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="absolute whitespace-nowrap">
-                                {announcements.map(a => a.text).join(" • ")}
-                            </motion.div>
-                        </div>
+            <div className="bg-slate-900 text-white py-2 px-8 overflow-hidden relative border-b border-blue-600/20 rounded-2xl mb-6">
+                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-white/90 italic">
+                    <span className="bg-blue-600 px-2 py-0.5 rounded text-white font-black not-italic border border-blue-500 shadow-sm">Bulletin</span>
+                    <div className="flex-1 overflow-hidden relative h-4">
+                        <motion.div animate={{ x: ["100%", "-100%"] }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="absolute whitespace-nowrap">
+                            {announcements.map(a => a.text).join(" • ")}
+                        </motion.div>
                     </div>
                 </div>
+            </div>
 
-                <div className="flex-1 overflow-y-auto p-8">
-                    <AnimatePresence mode="wait">
-                        {activeTab === 'dashboard' && (
+            <div className="flex-1">
+                <AnimatePresence mode="wait">
+                    {activeTab === 'dashboard' && (
                             <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-6xl space-y-8">
                                 <div className="bg-white p-8 rounded-[2rem] border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm group">
                                     <div className="flex-1 space-y-3">
@@ -607,7 +513,7 @@ const StudentDashboard = () => {
                                                     testTitle: testInfo?.title,
                                                     studentName: student.fullName,
                                                     studentId: student.studentId,
-                                                    yearGroup: student.year,       // assuming student object has year '1-2' or '3'
+                                                    yearGroup: student.year,
                                                     branchGroup: student.branch === 'CS' || student.branch === 'IT' ? 'CS-IT' : 'CORE'
                                                 }
                                             })}
@@ -645,7 +551,7 @@ const StudentDashboard = () => {
                                             <button 
                                                 onClick={() => navigate(`/verify/${student.studentId}`)}
                                                 className="px-12 py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-xs uppercase italic tracking-[0.3em] flex items-center gap-4 hover:bg-blue-600 transition-all shadow-2xl shadow-slate-900/10 active:scale-95 border border-slate-800 hover:border-blue-500 group/dl">
-                                                Download matrix PDF <Download size={20} className="group-dl:animate-bounce" />
+                                                Download Certificate PDF <Download size={20} className="group-dl:animate-bounce" />
                                             </button>
                                         ) : (
                                             <div className="inline-flex px-8 py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] border border-slate-100 italic">
@@ -661,9 +567,8 @@ const StudentDashboard = () => {
                                 </div>
                             </motion.div>
                         )}
-                    </AnimatePresence>
-                </div>
-            </main>
+                </AnimatePresence>
+            </div>
         </div>
     );
 };

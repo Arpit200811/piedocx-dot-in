@@ -6,9 +6,11 @@ import { base_url } from '../utils/info';
 import Swal from 'sweetalert2';
 import Typewriter from 'typewriter-effect';
 import { ShieldCheck, GraduationCap } from 'lucide-react';
+import { useStudentAuth } from '../context/StudentAuthContext';
 
 const StudentLogin = () => {
     const navigate = useNavigate();
+    const { login } = useStudentAuth();
     const [loading, setLoading] = useState(false);
 
     const handleSuccess = async (response) => {
@@ -18,8 +20,8 @@ const StudentLogin = () => {
                 token: response.credential
             });
             
-            localStorage.setItem('studentToken', res.data.token);
-            localStorage.setItem('studentData', JSON.stringify(res.data.student));
+            // Use context login
+            login(res.data.student, res.data.token);
             
             Swal.fire({
                 icon: 'success',
@@ -34,6 +36,7 @@ const StudentLogin = () => {
 
             setTimeout(() => navigate('/student-dashboard'), 1500);
         } catch (err) {
+
             Swal.fire({
                 icon: 'error',
                 title: 'Access Denied',
