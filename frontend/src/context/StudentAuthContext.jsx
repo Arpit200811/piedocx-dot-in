@@ -10,6 +10,7 @@ export const StudentAuthProvider = ({ children }) => {
 
     useEffect(() => {
         const initializeAuth = async () => {
+            setLoading(true);
             const token = localStorage.getItem('studentToken');
             const savedStudent = localStorage.getItem('studentData');
 
@@ -19,24 +20,19 @@ export const StudentAuthProvider = ({ children }) => {
                     setStudent(parsedStudent);
                     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
                     
-                    // Verify token with backend to ensure it's still valid
-                    try {
-                        const res = await axios.get(`${base_url}/api/student-auth/profile`);
-                        if (res.data) {
-                            const updatedData = res.data;
-                            if (!updatedData.firstName && updatedData.fullName) {
-                                updatedData.firstName = updatedData.fullName.split(' ')[0];
-                            }
-                            setStudent(updatedData);
-                            localStorage.setItem('studentData', JSON.stringify(updatedData));
+                    // Verify session with backend
+                    const res = await axios.get(`${base_url}/api/student-auth/profile`);
+                    if (res.data) {
+                        const updatedData = res.data;
+                        if (!updatedData.firstName && updatedData.fullName) {
+                            updatedData.firstName = updatedData.fullName.split(' ')[0];
                         }
-                    } catch (err) {
-                        if (err.response?.status === 401) {
-                            logout();
-                        }
+                        setStudent(updatedData);
+                        localStorage.setItem('studentData', JSON.stringify(updatedData));
                     }
-                } catch (e) {
-                    logout();
+                } catch (err) {
+                    console.error("Auth verification failed:", err);
+                    logout(); // Clear invalid session
                 }
             }
             setLoading(false);
@@ -55,9 +51,14 @@ export const StudentAuthProvider = ({ children }) => {
     };
 
     const logout = () => {
+        // 1. Clear Local Storage
         localStorage.removeItem('studentToken');
         localStorage.removeItem('studentData');
+        
+        // 2. Clear Axios Headers
         delete axios.defaults.headers.common['Authorization'];
+        
+        // 3. Update React State (triggers re-renders)
         setStudent(null);
     };
 

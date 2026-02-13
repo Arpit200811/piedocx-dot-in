@@ -47,14 +47,8 @@ const SimpleDonut = ({ score, total = 30 }) => {
 const StudentDashboard = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { student: authStudent, logout: authLogout } = useStudentAuth();
+    const { student, logout: authLogout } = useStudentAuth();
     const fileInputRef = useRef(null);
-    const [student, setStudent] = useState(authStudent);
-    
-    // Sync local student state with auth context if it changes
-    useEffect(() => {
-        if (authStudent) setStudent(authStudent);
-    }, [authStudent]);
 
     const getActiveTabFromPath = () => {
         const path = location.pathname;
