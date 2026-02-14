@@ -10,21 +10,21 @@ export const getTransporter = () => {
 
   // Robust configuration for Render + Gmail
   const transporter = nodemailer.createTransport({
-    host: EMAIL_HOST || 'smtp.gmail.com',
+    host: EMAIL_HOST || 'smtp.googlemail.com',
     port: EMAIL_PORT ? parseInt(EMAIL_PORT) : 587,
     secure: false, // Force false for 587 (STARTTLS)
     auth: {
       user: EMAIL_USER,
       pass: EMAIL_PASS,
     },
-    tls: {
-      rejectUnauthorized: false
-    },
-    family: 4, // Force IPv4 to prevent ENETUNREACH
-    pool: true,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 30000
+    // tls: {
+    //   rejectUnauthorized: false
+    // },
+    // family: 4, // Force IPv4 to prevent ENETUNREACH
+    // pool: true,
+    // connectionTimeout: 10000,
+    // greetingTimeout: 10000,
+    // socketTimeout: 30000
   });
 
   return transporter;
