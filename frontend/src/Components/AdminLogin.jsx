@@ -20,7 +20,8 @@ const AdminLogin = () => {
     setError(''); setSuccess('');
     setLoading(true);
     try {
-      await axios.post(`${base_url}/api/admins/admin/request-login`, { email, password });
+      const normalizedEmail = email.trim().toLowerCase();
+      await axios.post(`${base_url}/api/admins/admin/request-login`, { email: normalizedEmail, password });
       setStep(2);
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed.');
@@ -34,7 +35,8 @@ const AdminLogin = () => {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post(`${base_url}/api/admins/admin/verify-otp`, { email, otp });
+      const normalizedEmail = email.trim().toLowerCase();
+      const res = await axios.post(`${base_url}/api/admins/admin/verify-otp`, { email: normalizedEmail, otp });
       localStorage.setItem('adminToken', res.data.token);
       localStorage.setItem('adminUser', JSON.stringify(res.data.admin));
       navigate('/admin-dashboard');
@@ -50,7 +52,8 @@ const AdminLogin = () => {
     setError(''); setSuccess('');
     setLoading(true);
     try {
-      await axios.post(`${base_url}/api/admins/admin/forgot-password`, { email });
+      const normalizedEmail = email.trim().toLowerCase();
+      await axios.post(`${base_url}/api/admins/admin/forgot-password`, { email: normalizedEmail });
       setStep(4);
       setSuccess('OTP sent for password reset.');
     } catch (err) {
@@ -65,7 +68,8 @@ const AdminLogin = () => {
     setError('');
     setLoading(true);
     try {
-      await axios.post(`${base_url}/api/admins/admin/reset-password`, { email, otp, newPassword });
+      const normalizedEmail = email.trim().toLowerCase();
+      await axios.post(`${base_url}/api/admins/admin/reset-password`, { email: normalizedEmail, otp, newPassword });
       setStep(1);
       setSuccess('Password updated successfully! Login now.');
       setOtp('');
@@ -129,7 +133,7 @@ const AdminLogin = () => {
                   <input type="password" required placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 md:py-5 pl-12 md:pl-14 pr-6 text-white text-sm md:text-base placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-medium" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <div className="flex justify-end pr-2">
-                   <button type="button" onClick={() => setStep(3)} className="text-[9px] md:text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-white transition-colors">Forgot Key?</button>
+                  <button type="button" onClick={() => { setStep(3); setOtp(''); }} className="text-[9px] md:text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-white transition-colors">Forgot Key?</button>
                 </div>
               </div>
 
@@ -150,7 +154,7 @@ const AdminLogin = () => {
               </div>
               <input type="text" maxLength="6" required autoFocus placeholder="0 0 0 0 0 0" className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 md:py-6 text-center text-3xl md:text-4xl font-black text-white tracking-[0.5em] placeholder:text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} />
               <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white py-4 md:py-5 rounded-2xl font-black text-base md:text-lg shadow-xl active:scale-95">
-                 {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'AUTHORIZE & ACCESS'}
+                {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'AUTHORIZE & ACCESS'}
               </button>
               <button type="button" onClick={() => setStep(1)} className="w-full text-slate-500 text-[10px] md:text-xs font-black uppercase tracking-widest hover:text-white transition-colors pt-4">← Back to Login</button>
             </form>
@@ -167,7 +171,7 @@ const AdminLogin = () => {
               </div>
               <input type="email" required placeholder="admin@piedocx.in" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 md:py-5 px-6 text-white text-center font-bold text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all" value={email} onChange={(e) => setEmail(e.target.value)} />
               <button type="submit" disabled={loading} className="w-full bg-purple-600 hover:bg-purple-500 text-white py-4 md:py-5 rounded-2xl font-black text-base md:text-lg transition-all shadow-xl active:scale-95">
-                 {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'SEND RESET OTP'}
+                {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'SEND RESET OTP'}
               </button>
               <button type="button" onClick={() => setStep(1)} className="w-full text-slate-500 text-[10px] md:text-xs font-black uppercase tracking-widest hover:text-white pt-4">← Return to Login</button>
             </form>
@@ -176,15 +180,15 @@ const AdminLogin = () => {
           {step === 4 && (
             <form onSubmit={handleResetSubmit} className="space-y-6">
               <div className="text-center mb-6 md:mb-8">
-                 <h3 className="text-lg md:text-xl font-bold text-white mb-1">Set New Key</h3>
-                 <p className="text-slate-500 text-xs md:text-sm">Check OTP in your inbox.</p>
+                <h3 className="text-lg md:text-xl font-bold text-white mb-1">Set New Key</h3>
+                <p className="text-slate-500 text-xs md:text-sm">Check OTP in your inbox.</p>
               </div>
               <div className="space-y-4">
-                 <input type="text" maxLength="6" required placeholder="OTP Code" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 text-center text-xl md:text-2xl font-black text-white tracking-[0.2em] focus:outline-none focus:ring-2 focus:ring-blue-500/50" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} />
-                 <input type="password" required placeholder="Enter New Password" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-bold text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500/50" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                <input type="text" maxLength="6" required placeholder="OTP Code" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 text-center text-xl md:text-2xl font-black text-white tracking-[0.2em] focus:outline-none focus:ring-2 focus:ring-blue-500/50" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} />
+                <input type="password" required placeholder="Enter New Password" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-bold text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500/50" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
               </div>
               <button type="submit" disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 md:py-5 rounded-2xl font-black text-base md:text-lg shadow-xl">
-                 {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'RECOVER ACCESS'}
+                {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'RECOVER ACCESS'}
               </button>
               <button type="button" onClick={() => setStep(1)} className="w-full text-slate-500 text-[10px] md:text-xs font-black uppercase tracking-widest hover:text-white pt-4">← Cancel Recovery</button>
             </form>
