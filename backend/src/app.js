@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 config(); // Load environment variables first!
-
+import dns from "dns";
+dns.setDefaultResultOrder('ipv4first');
 import express from "express";
 import connectDB from "./config/db.js";
 import cors from "cors";
