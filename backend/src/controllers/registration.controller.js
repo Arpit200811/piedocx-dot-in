@@ -79,8 +79,13 @@ export const registerStudent = async (req, res) => {
 
         await newStudent.save();
         
-        // Send Email (Optional)
-        // sendCertificateEmail(email, fullName, certId);
+        // Send Welcome Email
+        try {
+            const { sendRegistrationEmail } = await import('../utils/mailer.js');
+            sendRegistrationEmail(newStudent);
+        } catch (mailErr) {
+            console.error("Delayed mail error:", mailErr);
+        }
 
         res.status(201).json({ message: 'Registration Successful', student: newStudent });
 

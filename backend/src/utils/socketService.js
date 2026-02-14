@@ -90,7 +90,20 @@ export const initSocket = (server) => {
       }
     });
 
-    // 2. Real-time Heartbeat (every 10-30s)
+    // 2. Real-time Status / Progress
+    socket.on('progress_update', async ({ attemptedCount, totalQuestions, currentQuestion }) => {
+        if (!socket.sessionId) return;
+        
+        // Notify Admin Room instantly without hitting DB for every tick
+        io.to('admin_monitor').emit('student_progress', { 
+            studentId: socket.studentId, 
+            attemptedCount, 
+            totalQuestions,
+            currentQuestion,
+            lastSeen: new Date()
+        });
+    });
+
     socket.on('heartbeat', async ({ timeLeft, answersHash }) => {
         if (!socket.sessionId) return;
         
@@ -132,11 +145,21 @@ export const initSocket = (server) => {
         }
     });
 
-    // 4. Admin Joining Monitor
+    // 4. Admin Joining Monitor & Control
     socket.on('join_admin_monitor', () => {
-        // Add auth check here for admin role
         socket.join('admin_monitor');
         console.log("👀 Admin joined monitor");
+    });
+
+    // 5. Targeted Broadcast (Only to students in a specific test/security-key group)
+    socket.on('send_broadcast', ({ testId, message, type }) => {
+        // We broadcast to the specific room 'testId' which students joined
+        io.to(testId).emit('broadcast_notice', { 
+            message, 
+            type: type || 'info', 
+            timestamp: new Date() 
+        });
+        console.log(`📢 Broadcast sent to Room [${testId}]: ${message}`);
     });
 
     socket.on('disconnect', async () => {

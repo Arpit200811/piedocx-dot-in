@@ -25,6 +25,17 @@ router.get('/', adminAuth, async (req, res) => {
         res.status(500).json({ message: 'Error fetching config' });
     }
 });
+
+// Get List of Active Tests (For Broadcasters/Selectors)
+router.get('/active', adminAuth, async (req, res) => {
+    try {
+        const configs = await TestConfig.find({ isActive: true }, 'title yearGroup branchGroup testAccessKey');
+        res.json(configs);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching active tests' });
+    }
+});
+
 // Check Server Time & Exam Status
 router.get('/time-check', async (req, res) => {
     try {
