@@ -114,12 +114,12 @@ export const sendAdminOTP = async (adminEmail, otp, type = 'login') => {
       `
     };
     await transporter.sendMail(mailOptions);
-    return true;
+    return { success: true };
   } catch (error) {
-    console.error("OTP SMTP Error:", error);
+    console.error("CRITICAL: SMTP Transmission Failed:", error);
     status = 'failed';
     errorMessage = error.message;
-    return false;
+    return { success: false, error: error.message };
   } finally {
     try {
       await EmailLog.create({

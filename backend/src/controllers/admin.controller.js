@@ -32,13 +32,23 @@ const hashPassword = (password) => {
 export const adminRequestLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const normalizedEmail = email.toLowerCase();
+    if (!email || !password) return res.status(400).json({ message: "Credentials required" });
+    
+    const normalizedEmail = email.trim().toLowerCase();
     const hashedPassword = hashPassword(password);
     
-    // Check for both hashed and plain (for backward compatibility during migration)
-    let admin = await Admin.findOne({ email: normalizedEmail, password: hashedPassword });
+    // Case-insensitive search for admin
+    let admin = await Admin.findOne({ 
+      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }, 
+      password: hashedPassword 
+    });
+    
     if (!admin) {
-        admin = await Admin.findOne({ email: normalizedEmail, password });
+        // Double check for legacy plain-text password (case-insensitive)
+        admin = await Admin.findOne({ 
+            email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }, 
+            password: password 
+        });
     }
     
     if (!admin) {
@@ -52,12 +62,17 @@ export const adminRequestLogin = async (req, res) => {
     admin.otpExpires = otpExpires;
     await admin.save();
 
-    const emailSent = await sendAdminOTP(email, otp);
+    const { success: emailSent, error: smtpError } = await sendAdminOTP(admin.email, otp);
     
     if (emailSent) {
       res.status(200).json({ message: "OTP sent to your email!" });
     } else {
-      res.status(500).json({ message: "Failed to send OTP." });
+      console.error(`[LOGIN-SMTP-FAILURE] Target: ${admin.email}, Error: ${smtpError}`);
+      res.status(500).json({ 
+        message: "Failed to send OTP.", 
+        error: smtpError,
+        tip: "Check terminal for [AUTH-DEBUG] OTP if this is a test."
+      });
     }
   } catch (error) {
     console.error("Login Controller Error:", error);
@@ -68,7 +83,13 @@ export const adminRequestLogin = async (req, res) => {
 export const verifyAdminOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    const admin = await Admin.findOne({ email: email.toLowerCase(), otp });
+    if (!email || !otp) return res.status(400).json({ message: "Email and OTP required" });
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const admin = await Admin.findOne({ 
+        email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }, 
+        otp: otp.toString() 
+    });
 
     if (!admin || !admin.otpExpires || admin.otpExpires < new Date()) {
       return res.status(401).json({ message: "Invalid or expired OTP!" });
@@ -319,10 +340,15 @@ export const getResultMetadata = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const normalizedEmail = email.toLowerCase();
-    const admin = await Admin.findOne({ email: normalizedEmail });
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const admin = await Admin.findOne({ 
+        email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') } 
+    });
 
     if (!admin) {
+      console.log(`[FORGOT-PASSWORD] Admin not found for: ${normalizedEmail}`);
       return res.status(404).json({ message: "Admin not found with this email!" });
     }
 
@@ -333,22 +359,35 @@ export const forgotPassword = async (req, res) => {
     admin.otpExpires = otpExpires;
     await admin.save();
 
-    const emailSent = await sendAdminOTP(normalizedEmail, otp, 'reset');
+    // Debugging for API Tests
+    console.log(`[AUTH-DEBUG] OTP for ${normalizedEmail}: ${otp}`);
+
+    const { success: emailSent, error: smtpError } = await sendAdminOTP(admin.email, otp, 'reset');
     if (emailSent) {
       res.status(200).json({ message: "Reset OTP sent to your email!" });
     } else {
-      res.status(500).json({ message: "Failed to send reset OTP." });
+      console.error(`[SMTP-FAILURE] Target: ${admin.email}, Error: ${smtpError}`);
+      res.status(500).json({ 
+        message: "Failed to send reset OTP.", 
+        error: smtpError,
+        tip: "Check terminal for [AUTH-DEBUG] OTP if this is a test."
+      });
     }
   } catch (error) {
     console.error("forgotPassword error:", error);
     res.status(500).json({ message: "Internal server error!" });
   }
 };
-
 export const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
-    const admin = await Admin.findOne({ email: email.toLowerCase(), otp });
+    if (!email || !otp || !newPassword) return res.status(400).json({ message: "Required fields missing" });
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const admin = await Admin.findOne({ 
+        email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }, 
+        otp: otp.toString() 
+    });
 
     if (!admin || !admin.otpExpires || admin.otpExpires < new Date()) {
       return res.status(401).json({ message: "Invalid or expired OTP!" });
