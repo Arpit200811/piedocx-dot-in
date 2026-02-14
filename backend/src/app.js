@@ -68,6 +68,15 @@ app.use(parser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Global error handler for JSON parsing errors
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error('Bad JSON Request:', err.message);
+    return res.status(400).json({ message: 'Invalid JSON payload. Please check your request syntax.' });
+  }
+  next();
+});
+
 // Routes are mounted below with /api prefix
 
 // Routes

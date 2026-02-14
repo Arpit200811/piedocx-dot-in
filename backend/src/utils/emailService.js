@@ -8,32 +8,27 @@ export const getTransporter = () => {
     throw new Error('Email credentials (EMAIL_USER or EMAIL_PASS) are missing in .env file');
   }
 
-  // Use environment variables if provided, otherwise fallback to Gmail SMTP
+  // Robust configuration for Render + Gmail
   const transporter = nodemailer.createTransport({
     host: EMAIL_HOST || 'smtp.gmail.com',
     port: EMAIL_PORT ? parseInt(EMAIL_PORT) : 587,
-    secure: EMAIL_SECURE === 'true' || false, // true for 465, false for 587 (STARTTLS)
+    secure: false, // Force false for 587 (STARTTLS)
     auth: {
       user: EMAIL_USER,
       pass: EMAIL_PASS,
     },
+    tls: {
+      rejectUnauthorized: false
+    },
+    family: 4, // Force IPv4 to prevent ENETUNREACH
+    pool: true,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 30000
   });
 
   return transporter;
 };
-
-// Verify connection configuration on startup/usage
-const verifyConnection = async (transporter) => {
-    try {
-        await transporter.verify();
-        console.log("SMTP Connection Verified");
-        return true;
-    } catch (error) {
-        console.error("SMTP Connection Verification Failed:", error.message);
-        return false;
-    }
-}
-
 
 export const sendCertificateEmail = async (studentEmail, studentName, certificateBase64) => {
   let status = 'sent';
