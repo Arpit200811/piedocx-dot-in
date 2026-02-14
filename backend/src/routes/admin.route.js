@@ -17,13 +17,15 @@ import {
   deleteBulletin,
   getResources,
   createResource,
-  deleteResource
+  deleteResource,
+  registerAdmin
 } from "../controllers/admin.controller.js";
 import { adminAuth } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 router.post("/admin/request-login", adminRequestLogin);
+router.post("/admin/register", adminAuth, registerAdmin); // Protected route for current admins to add new ones
 router.post("/admin/verify-otp", verifyAdminOTP);
 router.get("/admin/stats", adminAuth, getAdminStats);
 router.get("/admin/email-logs", adminAuth, getEmailLogs);
@@ -35,8 +37,6 @@ router.get("/admin/result-metadata", adminAuth, getResultMetadata);
 router.get("/admin/result/:id", adminAuth, getTestResultDetail);
 router.post("/admin/forgot-password", forgotPassword);
 router.post("/admin/reset-password", resetPassword);
-
-// Bulletin & Resource Management
 router.get("/admin/bulletins", adminAuth, getBulletins);
 router.post("/admin/bulletins", adminAuth, createBulletin);
 router.delete("/admin/bulletins/:id", adminAuth, deleteBulletin);

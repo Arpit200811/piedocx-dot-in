@@ -444,3 +444,41 @@ export const deleteResource = async (req, res) => {
         res.status(500).json({ message: "Error deleting resource" });
     }
 };
+
+export const registerAdmin = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    
+    if (!name || !email || !password) {
+        return res.status(400).json({ message: "All fields (name, email, password) are required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    const existingAdmin = await Admin.findOne({ email: normalizedEmail });
+    if (existingAdmin) {
+        return res.status(400).json({ message: "Admin with this email already exists" });
+    }
+
+    const hashedPassword = hashPassword(password);
+
+    const newAdmin = await Admin.create({
+      name,
+      email: normalizedEmail,
+      password: hashedPassword
+    });
+
+    res.status(201).json({ 
+        message: "New admin registered successfully", 
+        admin: { 
+            id: newAdmin._id,
+            name: newAdmin.name, 
+            email: newAdmin.email 
+        } 
+    });
+
+  } catch (error) {
+    console.error("registerAdmin error:", error);
+    res.status(500).json({ message: "Internal server error during registration" });
+  }
+};

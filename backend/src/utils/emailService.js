@@ -17,19 +17,6 @@ export const getTransporter = () => {
       user: EMAIL_USER,
       pass: EMAIL_PASS,
     },
-    pool: true, // Use pooled connections
-    maxConnections: 5, // Limit concurrent connections
-    maxMessages: 100, // Limit messages per connection
-    rateDelta: 1000, // Rate limit window
-    rateLimit: 5, // 5 messages per second
-    connectionTimeout: 10000, 
-    greetingTimeout: 10000,
-    socketTimeout: 30000,
-    family: 4, // Force IPv4
-    tls: {
-      rejectUnauthorized: false, // Sometimes helpful in cloud environments if certs are tricky
-      ciphers: 'SSLv3'
-    }
   });
 
   return transporter;
