@@ -32,6 +32,9 @@ const CMSSolution = lazy(() => import("../Components/CMSSolution"));
 const IotSmartSystems = lazy(() => import("../Components/IotSmartSystems"));
 const AiMachineLearning = lazy(() => import("../Components/AiMachineLearning"));
 const BlockchainSolutions = lazy(() => import("../Components/BlockchainSolutions"));
+const SecuritySolutions = lazy(() => import("../Components/SecuritySolutions"));
+const DataScience = lazy(() => import("../Components/DataScience"));
+const UiUxDesign = lazy(() => import("../Components/UiUxDesign"));
 
 // Technology Sub-routes
 const Mern = lazy(() => import("../Components/Mern"));
@@ -52,7 +55,7 @@ export const PublicRoutes = (
     <Route path="contact" element={<Contact />} />
     <Route path="emp-signup" element={<Empsignup />} />
     <Route path="emp-login" element={<Emplogin />} />
-    
+
     {/* Service Sub-routes */}
     <Route path="services/full-stack" element={<FullStackdev />} />
     <Route path="services/android-ios" element={<AndroidDev />} />
@@ -66,7 +69,10 @@ export const PublicRoutes = (
     <Route path="services/iot" element={<IotSmartSystems />} />
     <Route path="services/ai-ml" element={<AiMachineLearning />} />
     <Route path="services/blockchain" element={<BlockchainSolutions />} />
-    
+    <Route path="services/security" element={<SecuritySolutions />} />
+    <Route path="services/data-science" element={<DataScience />} />
+    <Route path="services/ui-ux" element={<UiUxDesign />} />
+
     {/* Technology Sub-routes */}
     <Route path="aboutus1/mern" element={<Mern />} />
     <Route path="aboutus1/dotnet-core" element={<DotNetCoreServices />} />
@@ -81,7 +87,7 @@ export const PublicRoutes = (
     <Route path="refund-policy" element={<RefundPolicy />} />
     <Route path="careers" element={<Careers />} />
     <Route path="faq" element={<FAQ />} />
-    
+
     {/* Student Related (Public entry points) */}
   </>
 );
