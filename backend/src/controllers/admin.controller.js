@@ -341,6 +341,7 @@ export const forgotPassword = async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(otp);
     const otpExpires = new Date(Date.now() + 10 * 60000); // 10 mins
 
     admin.otp = otp;
