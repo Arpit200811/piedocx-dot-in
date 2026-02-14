@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-
 import EmailLog from '../models/EmailLog.js';
 
 export const getTransporter = () => {
@@ -9,38 +8,53 @@ export const getTransporter = () => {
     throw new Error('Email credentials (EMAIL_USER or EMAIL_PASS) are missing in .env file');
   }
 
-  if (EMAIL_HOST) {
-    return nodemailer.createTransport({
-      host: EMAIL_HOST,
-      port: parseInt(EMAIL_PORT || "587"),
-      secure: EMAIL_SECURE === 'true', 
-      auth: {
-        user: EMAIL_USER,
-        pass: EMAIL_PASS,
-      },
-    });
-  }
-
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // SSL
-    pool: true,
+  // Use environment variables if provided, otherwise fallback to Gmail SMTP
+  const transporter = nodemailer.createTransport({
+    host: EMAIL_HOST || 'smtp.gmail.com',
+    port: EMAIL_PORT ? parseInt(EMAIL_PORT) : 587,
+    secure: EMAIL_SECURE === 'true' || false, // true for 465, false for 587 (STARTTLS)
     auth: {
       user: EMAIL_USER,
       pass: EMAIL_PASS,
     },
-    connectionTimeout: 20000, // 20 seconds
-    greetingTimeout: 20000,
+    // Production & Render Optimizations
+    pool: true, // Use pooled connections
+    maxConnections: 5, // Limit concurrent connections
+    maxMessages: 100, // Limit messages per connection
+    rateDelta: 1000, // Rate limit window
+    rateLimit: 5, // 5 messages per second
+    connectionTimeout: 10000, 
+    greetingTimeout: 10000,
     socketTimeout: 30000,
+    tls: {
+      rejectUnauthorized: false, // Sometimes helpful in cloud environments if certs are tricky
+      ciphers: 'SSLv3'
+    }
   });
+
+  return transporter;
 };
+
+// Verify connection configuration on startup/usage
+const verifyConnection = async (transporter) => {
+    try {
+        await transporter.verify();
+        console.log("SMTP Connection Verified");
+        return true;
+    } catch (error) {
+        console.error("SMTP Connection Verification Failed:", error.message);
+        return false;
+    }
+}
+
 
 export const sendCertificateEmail = async (studentEmail, studentName, certificateBase64) => {
   let status = 'sent';
   let errorMessage = '';
   try {
     const transporter = getTransporter();
+    // await verifyConnection(transporter); // Optional: verify before sending if dealing with strict firewalls
+    
     const mailOptions = {
       from: `"Piedocx Technologies" <${process.env.EMAIL_USER}>`,
       to: studentEmail,
@@ -71,6 +85,7 @@ export const sendCertificateEmail = async (studentEmail, studentName, certificat
   } catch (error) {
     status = 'failed';
     errorMessage = error.message;
+    console.error("SMTP ERROR (Certificate):", error.message);
     return false;
   } finally {
     try {
@@ -97,6 +112,15 @@ export const sendAdminOTP = async (adminEmail, otp, type = 'login') => {
 
   try {
     const transporter = getTransporter();
+    
+    // Explicit verification for debugging on Render
+    try {
+        await transporter.verify();
+    } catch(verifyErr) {
+        console.error("Transporter Verification Failed:", verifyErr.message);
+        throw new Error(`SMTP Handshake Failed: ${verifyErr.message}`);
+    }
+
     const mailOptions = {
       from: `"Piedocx Security" <${process.env.EMAIL_USER}>`,
       to: adminEmail,
@@ -122,7 +146,7 @@ export const sendAdminOTP = async (adminEmail, otp, type = 'login') => {
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error) {
-    console.error("CRITICAL: SMTP Transmission Failed:", error);
+    console.error("SMTP ERROR:", error.message);
     status = 'failed';
     errorMessage = error.message;
     return { success: false, error: error.message };
