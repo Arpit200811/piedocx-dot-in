@@ -14,7 +14,9 @@ import {
   X,
   MapPin,
   User as UserIcon,
-  Filter as FilterIcon
+  Filter as FilterIcon,
+  Download,
+  UploadCloud
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -89,12 +91,13 @@ const DataRow = ({ item, onView, onDelete, deletingId }) => (
 const AdminDataHub = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('contact');
+  const [activeTab, setActiveTab] = useState('students');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
   const tabs = [
+    { id: 'students', label: 'Students', icon: UserIcon },
     { id: 'contact', label: 'Inquiries', icon: FileText },
     { id: 'newsletter', label: 'Newsletter', icon: Mail },
     { id: 'workshop', label: 'Workshops', icon: Database },
@@ -104,10 +107,25 @@ const AdminDataHub = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await axios.get(`${base_url}/api/users/all-data?source=${source}`, {
+      let url = `${base_url}/api/users/all-data?source=${source}`;
+      
+      if (source === 'students') {
+          url = `${base_url}/api/certificate/students`;
+      }
+
+      const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setData(res.data);
+      
+      // Normalize data for Student ID if source is students
+      const normalizedData = res.data.map(item => ({
+          ...item,
+          name: item.fullName || item.name,
+          message: item.branch ? `${item.branch} (${item.year})` : item.message,
+          source: source
+      }));
+
+      setData(normalizedData);
     } catch (err) {
       console.error("Error fetching admin data:", err);
     } finally {
@@ -127,6 +145,77 @@ const AdminDataHub = () => {
     ),
   [data, searchTerm]);
 
+  const handleBulkImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const students = JSON.parse(event.target.result);
+        if (!Array.isArray(students)) throw new Error('Invalid format');
+
+        const result = await Swal.fire({
+          title: 'Bulk Student Import?',
+          text: `Confirm importing ${students.length} student records from file.`,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, Import'
+        });
+
+        if (result.isConfirmed) {
+          const token = localStorage.getItem('adminToken');
+          const res = await axios.post(`${base_url}/api/certificate/bulk-register`, { students }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          Swal.fire('Success', res.data.message, 'success');
+          fetchData('students'); // Refresh
+        }
+      } catch (err) {
+        Swal.fire('Error', 'Invalid JSON file or Network Error.', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleExportCSV = () => {
+    if (filteredData.length === 0) return;
+
+    const headers = ["ID", "Name", "Email", "Details/Branch", "College", "Mobile", "Created At"];
+    const rows = filteredData.map(item => [
+      item.studentId || item._id,
+      item.name,
+      item.email,
+      item.message || "",
+      item.college || "N/A",
+      item.mobile || "N/A",
+      new Date(item.createdAt).toLocaleString()
+    ]);
+
+    let csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n"
+      + rows.map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Piedocx_${activeTab}_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    Swal.fire({
+        title: 'Export Complete',
+        text: `${filteredData.length} records exported successfully.`,
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        timer: 3000,
+        showConfirmButton: false
+    });
+  };
+
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: 'Action: Permanently PURGE this entry?',
@@ -143,7 +232,12 @@ const AdminDataHub = () => {
     setDeletingId(id);
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.delete(`${base_url}/api/users/delete/${id}`, {
+      let url = `${base_url}/api/users/delete/${id}`;
+      if (activeTab === 'students') {
+          url = `${base_url}/api/certificate/students/${id}`;
+      }
+      
+      await axios.delete(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setData(prev => prev.filter(item => item._id !== id));
@@ -179,10 +273,28 @@ const AdminDataHub = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
            </div>
-           <button onClick={() => fetchData(activeTab)} className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-           </button>
-        </div>
+            <button onClick={() => fetchData(activeTab)} className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
+               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            </button>
+            <div className="w-[1px] h-4 bg-slate-100 mx-1"></div>
+            
+            {activeTab === 'students' && (
+              <div className="relative">
+                 <input type="file" accept=".json" onChange={handleBulkImport} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                 <button className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95">
+                    <UploadCloud size={12} /> Import
+                 </button>
+              </div>
+            )}
+
+            <button 
+              onClick={handleExportCSV}
+              disabled={filteredData.length === 0}
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 active:scale-95"
+            >
+               <Download size={12} /> Export
+            </button>
+         </div>
       </div>
 
       {/* Tabs - Compact */}

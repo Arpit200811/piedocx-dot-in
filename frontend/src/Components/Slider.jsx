@@ -6,32 +6,32 @@ import { ArrowRight, Star } from 'lucide-react';
 
 const sliderData = [
   {
-    title: 'Innovate with Piedocx Technologies',
-    subtitle: 'Crafting modern digital solutions!',
-    description: 'We deliver scalable web, mobile, and AI-driven applications tailored to your business needs.',
-    image: 'slider1.jpg',
+    title: 'Innovate with Piedocx Architecture',
+    subtitle: 'Crafting elite digital artifacts!',
+    description: 'We translate complex business logic into high-performance web and mobile ecosystems at global scale.',
+    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80',
     color: 'from-blue-600 to-indigo-700'
   },
   {
-    title: 'Empowering Startups & Enterprises',
-    subtitle: 'With full-stack development expertise!',
-    description: 'At Piedocx Technologies, we use MERN stack and cloud-first strategies to build powerful, production-ready platforms.',
-    image: 'slider2.jpg',
-    color: 'from-indigo-600 to-purple-700'
+    title: 'Precision Full-Stack Engineering',
+    subtitle: 'Scale your vision with resilient code!',
+    description: 'Our labs utilize the MERN stack and cloud-native strategies to build architectures that never sleep.',
+    image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80',
+    color: 'from-blue-700 to-blue-900'
   },
   {
-    title: 'Transform Ideas into Products',
-    subtitle: 'With agile, data-driven development!',
-    description: 'From MVPs to enterprise-grade solutions, Piedocx helps you go from concept to launch quickly and efficiently.',
-    image: 'slider3.jpg',
+    title: 'Data-Driven Future Logic',
+    subtitle: 'AI-embedded system orchestration!',
+    description: 'From MVPs to enterprise-grade neural networks, we architect the future of digital interaction.',
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
     color: 'from-blue-500 to-sky-600'
   },
   {
-    title: 'Let’s Build the Future Together',
-    subtitle: 'With Piedocx as your tech partner!',
-    description: 'Collaborate with a team that values innovation, performance, and long-term scalability.',
-    image: 'slider4.jpg',
-    color: 'from-blue-700 to-blue-900'
+    title: 'Global Performance Nodes',
+    subtitle: 'Reliability engineered into every byte.',
+    description: 'Collaborate with an elite engineering team where innovation, velocity, and security are non-negotiable.',
+    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80',
+    color: 'from-blue-800 to-indigo-950'
   },
 ];
 

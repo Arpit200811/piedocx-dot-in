@@ -2,7 +2,14 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { base_url } from '../utils/info';
 
-const StudentAuthContext = createContext();
+const StudentAuthContext = createContext({
+    student: null,
+    setStudent: () => {},
+    login: () => {},
+    logout: () => {},
+    loading: true,
+    isAuthenticated: false
+});
 
 export const StudentAuthProvider = ({ children }) => {
     const [student, setStudent] = useState(null);
@@ -51,22 +58,32 @@ export const StudentAuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        // 1. Clear Local Storage
         localStorage.removeItem('studentToken');
         localStorage.removeItem('studentData');
-        
-        // 2. Clear Axios Headers
         delete axios.defaults.headers.common['Authorization'];
-        
-        // 3. Update React State (triggers re-renders)
         setStudent(null);
     };
 
+    const value = {
+        student,
+        setStudent,
+        login,
+        logout,
+        loading,
+        isAuthenticated: !!student
+    };
+
     return (
-        <StudentAuthContext.Provider value={{ student, login, logout, loading, isAuthenticated: !!student }}>
+        <StudentAuthContext.Provider value={value}>
             {children}
         </StudentAuthContext.Provider>
     );
 };
 
-export const useStudentAuth = () => useContext(StudentAuthContext);
+export const useStudentAuth = () => {
+    const context = useContext(StudentAuthContext);
+    if (context === undefined) {
+        console.error("useStudentAuth Hook returned undefined! Checking Provider status...");
+    }
+    return context;
+};

@@ -2,50 +2,67 @@
 
 @theme {
   --font-sans: "Outfit", sans-serif;
+  --color-dark-surface: #0a0c10;
+  --color-dark-elevated: #161a22;
+  --glow-blue: 0 0 20px rgba(37, 99, 235, 0.4);
 }
 
-:root {
-  --primary-blue: #2563eb;
-  --bg-mesh: radial-gradient(at 100% 0%, hsla(210,100%,98%,1) 0, transparent 50%),
-             radial-gradient(at 0% 100%, hsla(210,100%,96%,1) 0, transparent 50%);
+.dark-mesh {
+  background-color: #030712;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(220,100%,10%,1) 0, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(240,100%,7%,1) 0, transparent 50%);
 }
 
-body {
-  font-family: 'Outfit', sans-serif;
+.glass-dark {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.premium-border {
+  border: 1px solid transparent;
+  background: linear-gradient(#161a22, #161a22) padding-box,
+              linear-gradient(135deg, rgba(37, 99, 235, 0.5), rgba(79, 70, 229, 0.5)) border-box;
+}
+
+.text-glow {
+  text-shadow: 0 0 15px rgba(37, 99, 235, 0.6);
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Light Theme Enhancements */
+.light-mesh {
   background-color: #f8fafc;
-  background-image: var(--bg-mesh);
-  background-attachment: fixed;
-  color: #0f172a;
-  overflow-x: hidden;
+  background-image: 
+    radial-gradient(at 100% 0%, hsla(210,100%,98%,1) 0, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(210,100%,96%,1) 0, transparent 50%);
 }
 
-/* Premium Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-::-webkit-scrollbar-thumb {
-  background: #2563eb;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #1d4ed8;
-}
-
-/* Glassmorphism Helper */
-.glass-effect {
+.glass-light {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-/* Text Gradients */
-.text-premium {
-  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1e40af 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+.card-shadow {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
 }

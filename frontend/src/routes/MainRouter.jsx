@@ -9,6 +9,7 @@ const StudentDetails = lazy(() => import("../Components/StudentDetails"));
 const StudentDashboard = lazy(() => import("../Components/StudentDashboard"));
 const TestInterface = lazy(() => import("../Components/Student/TestInterface"));
 const WaitingRoom = lazy(() => import("../Components/Student/WaitingRoom"));
+const ExamResults = lazy(() => import("../Components/Student/ExamResults"));
 const FeedbackForm = lazy(() => import("../Components/Student/FeedbackForm"));
 const VerifyCertificate = lazy(() => import("../Components/VerifyCertificate"));
 const ProtectedStudentRoute = lazy(() => import("../Components/ProtectedStudentRoute"));
@@ -50,6 +51,7 @@ const MainRouter = () => {
             <Route path="/test-interface" element={<TestInterface />} />
             <Route path="/waiting-room" element={<WaitingRoom />} />
             <Route path="/feedback" element={<FeedbackForm />} />
+            <Route path="/student-results" element={<ExamResults />} />
           </Route>
     
           <Route path="/verify/:id" element={<VerifyCertificate />} />

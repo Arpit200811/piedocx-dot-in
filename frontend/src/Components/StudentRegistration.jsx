@@ -14,6 +14,8 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import axios from 'axios';
 
+import { useStudentAuth } from '../context/StudentAuthContext';
+
 const registrationSchema = yup.object({
   fullName: yup.string().required("Full Name is required").min(3, "Name is too short"),
   branch: yup.string().required("Branch is required"),
@@ -24,6 +26,7 @@ const registrationSchema = yup.object({
 
 const StudentRegistration = () => {
   const navigate = useNavigate();
+  const { login } = useStudentAuth();
   const [user, setUser] = useState(null);
   const [googleToken, setGoogleToken] = useState(null);
   const [registeredData, setRegisteredData] = useState(null);
@@ -110,16 +113,14 @@ const StudentRegistration = () => {
 
   const handleAutoLogin = async () => {
     try {
-        // Use axios for consistency
         const res = await axios.post(`${base_url}/api/student-auth/login`, {
             token: googleToken
         });
         
-        localStorage.setItem('studentToken', res.data.token);
-        localStorage.setItem('studentData', JSON.stringify(res.data.student));
-        navigate('/student-dashboard');
+        // Use context login
+        login(res.data.student, res.data.token);
+        navigate('/student-dashboard', { replace: true });
     } catch (loginErr) {
-        // If auto-login fails, redirect to manual login
         navigate('/student-login');
     }
   };

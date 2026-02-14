@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { base_url } from '../utils/info';
-import { ShieldCheck, ShieldAlert, Award, Loader2, Calendar, User, Printer } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Award, Loader2, Calendar, User, Printer, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const VerifyCertificate = () => {
@@ -45,7 +45,7 @@ const VerifyCertificate = () => {
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white w-full max-w-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 relative"
+                className="bg-white w-full max-w-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 relative certificate-card"
             >
                 {/* Status Banner */}
                 <div className={`p-6 sm:p-8 text-center relative overflow-hidden ${status === 'valid' ? 'bg-emerald-500' : 'bg-red-500'}`}>
@@ -124,15 +124,37 @@ const VerifyCertificate = () => {
                     </div>
                 </div>
 
-                {/* Print Action - No Print */}
-                <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex flex-col items-center gap-4 no-print">
+                {/* Print & Download Action - No Print */}
+                <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex flex-col items-center gap-3 no-print">
                     {status === 'valid' && (
-                        <button 
-                            onClick={() => window.print()}
-                            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95"
-                        >
-                            <Printer size={16} /> Print Official Transcript
-                        </button>
+                        <>
+                            <button 
+                                onClick={() => {
+                                    const btn = document.querySelector('.no-print-container');
+                                    import('html2canvas').then(html2canvas => {
+                                        html2canvas.default(document.querySelector('.certificate-card'), {
+                                            scale: 3,
+                                            useCORS: true,
+                                            backgroundColor: '#ffffff'
+                                        }).then(canvas => {
+                                            const link = document.createElement('a');
+                                            link.download = `Certificate_${data.fullName.replace(/\s+/g, '_')}.png`;
+                                            link.href = canvas.toDataURL('image/png');
+                                            link.click();
+                                        });
+                                    });
+                                }}
+                                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 active:scale-95"
+                            >
+                                <Download size={16} /> Download High-Res Certificate
+                            </button>
+                            <button 
+                                onClick={() => window.print()}
+                                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
+                            >
+                                <Printer size={16} /> Print Official Transcript
+                            </button>
+                        </>
                     )}
                 </div>
             </motion.div>

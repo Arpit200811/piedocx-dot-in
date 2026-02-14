@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Zap, BookOpen, CheckCircle, Target, ChevronRight, KeyRound } from 'lucide-react';
+import { Lock, Zap, BookOpen, CheckCircle, Target, ChevronRight, KeyRound, Megaphone, X } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { base_url } from '../../utils/info';
 
@@ -29,6 +29,8 @@ const TestInterface = () => {
     const [accessKey, setAccessKey] = useState('');
     const [studentProfile, setStudentProfile] = useState(null);
     
+    const [statusMessage, setStatusMessage] = useState(null);
+    const [broadcastMessage, setBroadcastMessage] = useState(null);
     const timerRef = useRef(null);
 
     // 1. Initial Fetch (Profile & Test Info)
@@ -161,6 +163,26 @@ const TestInterface = () => {
                 });
             });
 
+            newSocket.on('broadcast_notice', (data) => {
+                setBroadcastMessage(data);
+                // Auto-clear after 15 seconds or keep until dismissed? 
+                // Let's keep it for 20 seconds for high visibility
+                setTimeout(() => setBroadcastMessage(null), 20000);
+                
+                // Audio cue if possible, or just a toast
+                Swal.fire({
+                    title: 'ADMIN MESSAGE',
+                    text: data.message,
+                    icon: 'info',
+                    toast: true,
+                    position: 'top',
+                    timer: 10000,
+                    showConfirmButton: false,
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+            });
+
             setSocket(newSocket);
 
             return () => newSocket.disconnect();
@@ -212,21 +234,76 @@ const TestInterface = () => {
             handleViolation("Copy/Paste Attempt");
         };
 
+        const blockKeys = (e) => {
+            // Block F12
+            if (e.keyCode === 123) {
+                e.preventDefault();
+                handleViolation("Attempted to open DevTools (F12)");
+                return false;
+            }
+            // Block Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+            if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
+                e.preventDefault();
+                handleViolation("Attempted to open DevTools (Shortcut)");
+                return false;
+            }
+            // Block Ctrl+U (View Source)
+            if (e.ctrlKey && e.keyCode === 85) {
+                e.preventDefault();
+                handleViolation("Attempted to View Source");
+                return false;
+            }
+        };
+
+        // DevTools detection trick
+        let devtoolsOpen = false;
+        const threshold = 160;
+        const checkDevTools = () => {
+            if (window.outerWidth - window.innerWidth > threshold || 
+                window.outerHeight - window.innerHeight > threshold) {
+                if (!devtoolsOpen) {
+                    handleViolation("Developer Tools Detected");
+                    devtoolsOpen = true;
+                }
+            } else {
+                devtoolsOpen = false;
+            }
+        };
+
+        const handleOrientationChange = () => {
+            handleViolation("Orientation Change Detected (Mobile Security)");
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Keep device stable',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        };
+
+        const dtInterval = setInterval(checkDevTools, 1000);
+
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("blur", handleBlur);
+        window.addEventListener("orientationchange", handleOrientationChange);
         document.addEventListener("fullscreenchange", handleFullScreenChange);
         document.addEventListener("copy", preventCopyPaste);
         document.addEventListener("cut", preventCopyPaste);
         document.addEventListener("paste", preventCopyPaste);
+        document.addEventListener("keydown", blockKeys);
         document.addEventListener("contextmenu", (e) => e.preventDefault());
 
         return () => {
+            clearInterval(dtInterval);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);
+            window.removeEventListener("orientationchange", handleOrientationChange);
             document.removeEventListener("fullscreenchange", handleFullScreenChange);
             document.removeEventListener("copy", preventCopyPaste);
             document.removeEventListener("cut", preventCopyPaste);
             document.removeEventListener("paste", preventCopyPaste);
+            document.removeEventListener("keydown", blockKeys);
             document.removeEventListener("contextmenu", (e) => e.preventDefault());
         };
     }, [isStarted, submitting, navigate]);
@@ -245,6 +322,7 @@ const TestInterface = () => {
         }
     };
 
+    // 4. Timer Logic Only
     useEffect(() => {
         if (!isStarted || submitting || timeLeft <= 0) return;
 
@@ -255,16 +333,33 @@ const TestInterface = () => {
                     handleSubmitTest(true); // Auto submit
                     return 0;
                 }
-                if (prev % 60 === 0) syncProgress(answers, prev); 
                 return prev - 1;
             });
         }, 1000);
 
         return () => clearInterval(timerRef.current);
-    }, [isStarted, submitting, timeLeft, answers]);
+    }, [isStarted, submitting, timeLeft]);
+
+    // 5. Answer Selection with Real-time Sync
+    const handleAnswerSelect = (questionId, option) => {
+        const newAnswers = { ...answers, [questionId]: option };
+        setAnswers(newAnswers);
+        
+        // Push to server immediately
+        syncProgress(newAnswers, timeLeft);
+
+        // Emit via Socket for Real-time Admin Monitor
+        if (socket) {
+            socket.emit('progress_update', {
+                attemptedCount: Object.keys(newAnswers).length,
+                totalQuestions: questions.length,
+                currentQuestion: currentQuestion + 1
+            });
+        }
+    };
 
 
-    // 5. Utility Functions
+    // 6. Utility Functions
     const handleViolation = (type) => {
         if (!isStarted || submitting) return;
 
@@ -350,11 +445,6 @@ const TestInterface = () => {
         }
     };
 
-    const handleAnswer = (questionId, option) => {
-        const newAnswers = { ...answers, [questionId]: option };
-        setAnswers(newAnswers);
-        if (Object.keys(newAnswers).length % 5 === 0) syncProgress(newAnswers, timeLeft);
-    };
 
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;
@@ -436,16 +526,18 @@ const TestInterface = () => {
 
     // 3. Main Test Interface (When Started)
     return (
-        <div className="min-h-screen bg-slate-900 text-white p-4 md:p-8 font-sans select-none relative overflow-hidden" onContextMenu={e => e.preventDefault()}>
+        <div className="min-h-screen dark-mesh text-white p-3 md:p-6 lg:p-8 font-sans select-none relative overflow-hidden" onContextMenu={e => e.preventDefault()}>
             
-
+            {/* Ambient background glows */}
+            <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+            <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
             
             {/* Watermark Overlay */}
             {studentProfile && (
-                <div className="fixed inset-0 pointer-events-none z-[50] opacity-[0.03] flex flex-wrap content-center justify-center gap-24 overflow-hidden select-none">
-                    {Array.from({ length: 20 }).map((_, i) => (
-                        <div key={i} className="transform -rotate-45 text-4xl font-black text-white whitespace-nowrap">
-                            {studentProfile.studentId} • {studentProfile.email} • {studentProfile.college || 'PIEDOCX'}
+                <div className="fixed inset-0 pointer-events-none z-[50] opacity-[0.02] flex flex-wrap content-center justify-center gap-24 overflow-hidden select-none">
+                    {Array.from({ length: 24 }).map((_, i) => (
+                        <div key={i} className="transform -rotate-45 text-2xl font-black text-white whitespace-nowrap tracking-widest uppercase">
+                            {studentProfile.studentId} • {studentProfile.email}
                         </div>
                     ))}
                 </div>
@@ -455,179 +547,250 @@ const TestInterface = () => {
                 {/* Security Lockdown Modal */}
                 {isOutOfSync && (
                     <motion.div 
-                        initial={{ opacity: 0 }} 
-                        animate={{ opacity: 1 }} 
+                        initial={{ opacity: 0, backdropFilter: 'blur(0px)' }} 
+                        animate={{ opacity: 1, backdropFilter: 'blur(20px)' }} 
                         exit={{ opacity: 0 }} 
-                        className="fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center"
+                        className="fixed inset-0 z-[9999] bg-[#030712]/90 flex flex-col items-center justify-center p-8 text-center"
                     >
-                        <div className="w-24 h-24 bg-red-500/10 text-red-500 rounded-[2rem] flex items-center justify-center mb-8 border border-red-500/20 shadow-2xl shadow-red-500/20 animate-pulse">
+                        <motion.div 
+                            initial={{ scale: 0.8, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            className="w-24 h-24 bg-red-600/20 text-red-500 rounded-[2.5rem] flex items-center justify-center mb-8 border border-red-500/30 shadow-[0_0_50px_rgba(239,68,68,0.3)] animate-float"
+                        >
                             <Lock size={48} />
-                        </div>
-                        <h2 className="text-4xl font-black tracking-tighter italic uppercase mb-4 text-white">Security Alert</h2>
+                        </motion.div>
+                        <h2 className="text-4xl font-black tracking-tighter italic uppercase mb-2 text-white">Security Alert</h2>
+                        <div className="h-1 w-20 bg-red-600 mb-6 rounded-full mx-auto"></div>
                         <p className="text-slate-400 max-w-md font-medium leading-relaxed mb-10">
-                            You are not allowed to switch tabs or minimize the window. 
-                            <br/><span className="text-red-400 font-bold block mt-2">Warning Count: {violationCount}</span>
+                            Strict proctoring is active. Switching tabs or minimizing is prohibited. 
+                            <br/><span className="text-red-400 font-bold block mt-4 text-xl">Warning {violationCount} / 3</span>
                         </p>
                         <button 
                             onClick={enterFullScreen}
-                            className="bg-white text-slate-900 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-2xl active:scale-95"
+                            className="bg-blue-600 text-white px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] active:scale-95"
                         >
-                            Resume Test
+                            Resume Assessment
                         </button>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <div className={`max-w-6xl mx-auto flex flex-col gap-6 h-full min-h-[90vh] transition-all duration-500 ${isOutOfSync ? 'blur-md scale-95 opacity-50' : ''}`}>
-                {/* Header */}
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white/5 p-3 sm:p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-white/10 shadow-2xl backdrop-blur-md gap-3 md:gap-4 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-blue-600/5 pointer-events-none"></div>
-                    <div className="flex items-center gap-5 relative z-10 w-full md:w-auto">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
-                            <Zap size={20} className="text-white sm:w-6 sm:h-6 md:w-7 md:h-7"/>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <h2 className="font-black text-base sm:text-lg md:text-xl lg:text-2xl tracking-tighter text-white leading-none mb-1 sm:mb-1.5 truncate">{testInfo?.title}</h2>
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                <span className="flex items-center gap-1"><BookOpen size={10} className="sm:w-3 sm:h-3"/> {questions.length} Items</span>
-                                <span className="flex items-center gap-1 text-green-400"><CheckCircle size={10} className="sm:w-3 sm:h-3"/> {Object.keys(answers).length} Saved</span>
-                                <span className="hidden sm:flex items-center gap-1 text-amber-400"><Target size={10} className="sm:w-3 sm:h-3"/> {questions.length - Object.keys(answers).length} Pending</span>
+            <div className={`max-w-7xl mx-auto flex flex-col gap-6 h-full min-h-[92vh] transition-all duration-700 ${isOutOfSync ? 'blur-2xl scale-95 opacity-30 grayscale' : ''}`}>
+                
+                {/* Global Notification Hub */}
+                <AnimatePresence mode="wait">
+                    {broadcastMessage && (
+                        <motion.div 
+                            initial={{ height: 0, opacity: 0, y: -20 }}
+                            animate={{ height: 'auto', opacity: 1, y: 0 }}
+                            exit={{ height: 0, opacity: 0, y: -20 }}
+                            className="w-full relative z-[100]"
+                        >
+                            <div className="bg-blue-600 border border-blue-400/50 rounded-2xl p-5 flex items-center gap-6 shadow-[0_10px_40px_rgba(37,99,235,0.3)]">
+                                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 animate-bounce">
+                                    <Megaphone size={20} className="text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-100 mb-1">Official Test Broadcast</h4>
+                                    <p className="text-base font-bold text-white leading-tight">{broadcastMessage.message}</p>
+                                </div>
+                                <button onClick={() => setBroadcastMessage(null)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all">
+                                    <X size={20} className="text-white" />
+                                </button>
                             </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Header */}
+                <header className="flex flex-col md:flex-row justify-between items-stretch bg-white/5 p-4 sm:p-5 md:p-6 lg:p-7 rounded-[2.5rem] border border-white/10 shadow-2xl glass-dark gap-6 relative overflow-hidden premium-border">
+                    <div className="flex items-center gap-6 relative z-10">
+                        <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-800 rounded-2xl md:rounded-[1.5rem] flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.3)] shrink-0 border border-white/20">
+                            <Zap size={28} className="text-white"/>
+                        </div>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-3 mb-1">
+                                <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-500/20">Live Secure</span>
+                                <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 text-[8px] font-black uppercase tracking-widest border border-blue-500/20">Syncing...</span>
+                            </div>
+                            <h2 className="font-black text-lg md:text-2xl lg:text-3xl tracking-tighter text-white leading-none truncate italic uppercase">{testInfo?.title}</h2>
                         </div>
                     </div>
                     
-                    <div className={`relative z-10 w-full md:w-auto flex justify-end`}>
-                        <div className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-xl md:rounded-2xl border font-mono text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black shadow-inner tracking-tight transition-all tabular-nums ${timeLeft < 300 ? 'text-red-500 border-red-500/30 bg-red-500/10 animate-pulse' : 'text-blue-400 border-blue-400/20 bg-blue-400/5'}`}>
-                            {mins}:{String(secs).padStart(2, '0')}
+                    <div className="flex items-center gap-4 md:gap-8 bg-black/40 p-2 pr-4 md:pr-8 rounded-[2rem] border border-white/5">
+                        <div className="hidden sm:flex flex-col items-end border-r border-white/10 pr-6">
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Completion</span>
+                            <div className="flex items-center gap-2">
+                                <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-blue-600 transition-all duration-1000" 
+                                        style={{ width: `${(Object.keys(answers).length / questions.length) * 100}%` }}
+                                    ></div>
+                                </div>
+                                <span className="text-xs font-black text-blue-400">{Math.round((Object.keys(answers).length / questions.length) * 100)}%</span>
+                            </div>
+                        </div>
+                        <div className={`p-1 flex flex-col items-center justify-center min-w-[120px] md:min-w-[150px]`}>
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Ends In</span>
+                            <div className={`text-2xl md:text-4xl font-black font-mono transition-all tabular-nums text-glow ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+                                {mins}<span className="opacity-30 mx-1">:</span>{String(secs).padStart(2, '0')}
+                            </div>
                         </div>
                     </div>
                 </header>
 
-                <div className="grid lg:grid-cols-4 gap-6 flex-1 items-start">
-                    {/* Navigator */}
-                    <div className="hidden lg:flex flex-col bg-white/5 p-6 rounded-[2rem] border border-white/10 h-[calc(100vh-200px)] sticky top-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Question Navigator</h3>
-                            <span className="text-[10px] text-slate-600 font-bold">{Math.round((Object.keys(answers).length / questions.length) * 100)}%</span>
+                <div className="grid lg:grid-cols-4 gap-8 flex-1 items-start">
+                    {/* Navigator - Redesigned Sidebar */}
+                    <aside className="hidden lg:flex flex-col bg-white/5 p-7 rounded-[3rem] border border-white/10 h-[calc(100vh-240px)] sticky top-8 glass-dark">
+                        <div className="flex items-center justify-between mb-8">
+                            <div>
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">The Board</h3>
+                                <p className="text-xs font-bold text-white uppercase italic">Assessment Map</p>
+                            </div>
+                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                                <Target size={20} />
+                            </div>
                         </div>
-                        <div className="grid grid-cols-4 gap-3 overflow-y-auto pr-2 custom-scrollbar flex-1 content-start">
-                            {questions.map((_, i) => (
-                                <button 
-                                    key={i} 
-                                    disabled={submitting || timeLeft <= 0}
-                                    onClick={() => setCurrentQuestion(i)} 
-                                    className={`aspect-square rounded-xl text-xs font-bold transition-all flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed border-2 ${
-                                        currentQuestion === i 
-                                        ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20 scale-105 z-10' 
-                                        : answers[questions[i]._id] 
-                                            ? 'bg-green-500/10 border-green-500/30 text-green-400' 
-                                            : 'bg-white/5 border-transparent text-slate-500 hover:bg-white/10 hover:border-white/10'
-                                    }`}
-                                >
-                                    {i+1}
-                                </button>
-                            ))}
+                        
+                        <div className="grid grid-cols-4 gap-3 overflow-y-auto pr-4 custom-scrollbar flex-1 content-start py-2">
+                            {questions.map((_, i) => {
+                                const isAnswered = !!answers[questions[i]._id];
+                                const isActive = currentQuestion === i;
+                                return (
+                                    <button 
+                                        key={i} 
+                                        disabled={submitting || timeLeft <= 0}
+                                        onClick={() => setCurrentQuestion(i)} 
+                                        className={`aspect-square rounded-2xl text-[11px] font-black transition-all flex items-center justify-center border-2 ${
+                                            isActive 
+                                            ? 'bg-blue-600 border-white/30 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] scale-110 z-10' 
+                                            : isAnswered 
+                                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                                                : 'bg-white/5 border-transparent text-slate-600 hover:border-white/20 hover:text-white'
+                                        }`}
+                                    >
+                                        {i+1}
+                                    </button>
+                                );
+                            })}
                         </div>
-                    </div>
 
-                    {/* Question Area */}
-                    <div className="lg:col-span-3 flex flex-col gap-6">
+                        <div className="mt-8 pt-6 border-t border-white/10 space-y-3">
+                             <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest opacity-40">
+                                <span>Answered</span>
+                                <span className="text-emerald-400">{Object.keys(answers).length}</span>
+                             </div>
+                             <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest opacity-40">
+                                <span>Remaining</span>
+                                <span className="text-blue-400">{questions.length - Object.keys(answers).length}</span>
+                             </div>
+                        </div>
+                    </aside>
+
+                    {/* Question Hub */}
+                    <main className="lg:col-span-3 flex flex-col gap-8">
                         <motion.div 
                             key={currentQuestion} 
-                            initial={{ opacity: 0, y: 10 }} 
-                            animate={{ opacity: 1, y: 0 }} 
-                            className="bg-white/5 p-6 md:p-10 rounded-[2.5rem] border border-white/10 flex-1 relative overflow-hidden min-h-[400px]"
+                            initial={{ opacity: 0, x: 20 }} 
+                            animate={{ opacity: 1, x: 0 }} 
+                            className="bg-white/5 p-8 md:p-12 rounded-[3.5rem] border border-white/10 flex-1 relative overflow-hidden min-h-[480px] glass-dark shadow-2xl"
                         >
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px] pointer-events-none"></div>
+                            {/* Decorative glow inside card */}
+                            <div className="absolute -top-20 -right-20 w-80 h-80 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"></div>
                             
-                            <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-6">
-                                    <span className="inline-block px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-blue-400 uppercase tracking-widest">
-                                        Question {currentQuestion + 1}
-                                    </span>
+                            <div className="relative z-10 h-full flex flex-col">
+                                <div className="flex items-center gap-4 mb-10">
+                                    <span className="w-12 h-1 bg-blue-600 rounded-full"></span>
+                                    <span className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">Sector {currentQuestion + 1} of {questions.length}</span>
                                 </div>
                                 
-                                <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-6 sm:mb-8 md:mb-10 leading-snug text-slate-100 max-w-3xl">
+                                <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black mb-12 lg:mb-16 leading-[1.2] text-white tracking-tight">
                                     {questions[currentQuestion]?.questionText}
                                 </h3>
                                 
-                                <div className="grid gap-3 sm:gap-4 max-w-3xl">
-                                    {questions[currentQuestion]?.options.map((opt, i) => (
-                                        <button 
-                                            key={i} 
-                                            disabled={submitting || timeLeft <= 0}
-                                            onClick={() => handleAnswer(questions[currentQuestion]._id, opt)}
-                                            className={`group w-full text-left p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl border-2 transition-all flex items-center gap-3 sm:gap-4 md:gap-5 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden min-h-[48px] sm:min-h-[56px] ${
-                                                answers[questions[currentQuestion]._id] === opt 
-                                                ? 'border-blue-500 bg-blue-600/10 shadow-lg shadow-blue-900/20' 
-                                                : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 text-slate-400'
-                                            }`}
-                                        >
-                                            <div className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-lg sm:rounded-xl flex items-center justify-center font-black text-xs sm:text-sm transition-colors shrink-0 ${
-                                                answers[questions[currentQuestion]._id] === opt 
-                                                ? 'bg-blue-600 text-white shadow-md' 
-                                                : 'bg-white/10 text-slate-500 group-hover:bg-white/20 group-hover:text-white'
-                                            }`}>
-                                                {String.fromCharCode(65+i)}
-                                            </div>
-                                            <span className={`font-medium text-sm sm:text-base md:text-lg transition-colors leading-relaxed ${
-                                                answers[questions[currentQuestion]._id] === opt ? 'text-white' : 'group-hover:text-slate-200'
-                                            }`}>
-                                                {opt}
-                                            </span>
-                                        </button>
-                                    ))}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-auto">
+                                    {questions[currentQuestion]?.options.map((opt, i) => {
+                                        const isSelected = answers[questions[currentQuestion]._id] === opt;
+                                        return (
+                                            <button 
+                                                key={i} 
+                                                disabled={submitting || timeLeft <= 0}
+                                                onClick={() => handleAnswerSelect(questions[currentQuestion]._id, opt)}
+                                                className={`group relative text-left p-5 sm:p-6 rounded-[2rem] border-2 transition-all flex items-center gap-5 disabled:opacity-50 disabled:cursor-not-allowed group shadow-sm ${
+                                                    isSelected 
+                                                    ? 'border-blue-500 bg-blue-600/20 shadow-[0_0_40px_rgba(37,99,235,0.15)]' 
+                                                    : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
+                                                }`}
+                                            >
+                                                {isSelected && (
+                                                    <motion.div layoutId="selection" className="absolute inset-0 bg-blue-600/10 rounded-[2rem] pointer-events-none" />
+                                                )}
+                                                <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center font-black text-lg transition-all shrink-0 ${
+                                                    isSelected 
+                                                    ? 'bg-blue-600 text-white shadow-lg' 
+                                                    : 'bg-white/10 text-slate-600 group-hover:bg-white/20 group-hover:text-white'
+                                                }`}>
+                                                    {String.fromCharCode(65+i)}
+                                                </div>
+                                                <span className={`font-bold text-base sm:text-lg md:text-xl transition-colors leading-snug flex-1 ${
+                                                    isSelected ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
+                                                }`}>
+                                                    {opt}
+                                                </span>
+                                                {isSelected && (
+                                                    <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(59,130,246,1)]"></div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </motion.div>
                         
-                        {/* Control Bar */}
-                        <div className="flex justify-between items-center p-2 sm:p-3 bg-white/5 rounded-xl sm:rounded-[1.5rem] border border-white/10 backdrop-blur-md gap-2">
+                        {/* Control Interface */}
+                        <div className="flex flex-col sm:flex-row justify-between items-center p-3 bg-white/5 rounded-[2.5rem] border border-white/10 glass-dark backdrop-blur-3xl gap-4 shadow-2xl">
                             <button 
                                 disabled={submitting || timeLeft <= 0 || currentQuestion === 0}
                                 onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))} 
-                                className="px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl text-slate-400 font-bold hover:text-white hover:bg-white/5 transition-all disabled:opacity-20 disabled:cursor-not-allowed text-xs sm:text-sm uppercase tracking-widest min-h-[44px]"
+                                className="w-full sm:w-auto px-10 py-5 rounded-2xl text-slate-500 font-black hover:text-white hover:bg-white/5 transition-all disabled:opacity-5 disabled:cursor-not-allowed text-[10px] uppercase tracking-[0.2em] italic"
                             >
-                                <span className="hidden sm:inline">Previous</span>
-                                <span className="sm:hidden">Prev</span>
+                                [ Back Step ]
                             </button>
                                 
-                                {currentQuestion === questions.length - 1 ? 
-                                    <button 
-                                        disabled={submitting}
-                                        onClick={() => handleSubmitTest(false)} 
-                                        className="bg-green-600 px-6 sm:px-10 py-3 sm:py-4 rounded-lg sm:rounded-xl font-black text-xs sm:text-sm uppercase tracking-widest shadow-xl shadow-green-600/20 hover:bg-green-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-h-[44px]"
-                                    >
-                                        {submitting ? 'Submitting...' : 'Submit Answers'}
-                                    </button> :
-                                    <button 
-                                        disabled={submitting || timeLeft <= 0}
-                                        onClick={() => setCurrentQuestion(currentQuestion+1)} 
-                                        className="bg-blue-600 px-6 sm:px-10 py-3 sm:py-4 rounded-lg sm:rounded-xl font-black text-xs sm:text-sm uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 group min-h-[44px]"
-                                    >
-                                        Next <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform sm:w-4 sm:h-4"/>
-                                    </button>
+                            <div className="hidden sm:flex gap-2">
+                                {Array.from({ length: Math.min(5, questions.length) }).map((_, idx) => (
+                                    <div key={idx} className={`w-1.5 h-1.5 rounded-full ${idx === currentQuestion % 5 ? 'bg-blue-600 scale-125' : 'bg-white/10'}`}></div>
+                                ))}
+                            </div>
+
+                            {currentQuestion === questions.length - 1 ? 
+                                <button 
+                                    disabled={submitting}
+                                    onClick={() => handleSubmitTest(false)} 
+                                    className="w-full sm:w-auto bg-emerald-600 px-12 py-5 rounded-2xl font-black text-xs uppercase italic tracking-[0.2em] shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center gap-3"
+                                >
+                                    {submitting ? 'Encrypting...' : 'Final Submission'} <ChevronRight size={18} />
+                                </button> :
+                                <button 
+                                    disabled={submitting || timeLeft <= 0}
+                                    onClick={() => setCurrentQuestion(currentQuestion+1)} 
+                                    className="w-full sm:w-auto bg-blue-600 px-12 py-5 rounded-2xl font-black text-xs uppercase italic tracking-[0.2em] shadow-[0_0_40px_rgba(37,99,235,0.3)] hover:bg-blue-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center gap-3 text-white"
+                                >
+                                    Proceed Next <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                </button>
                             }
                         </div>
-                    </div>
+                    </main>
                 </div>
             </div>
             
-            {/* Global Styles for Scrollbar */}
+            {/* Global Style Injector */}
             <style>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.02); 
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.1); 
-                    border-radius: 4px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(255, 255, 255, 0.2); 
-                }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(37, 99, 235, 0.5); }
+                body { background-color: #030712; }
             `}</style>
         </div>
     );

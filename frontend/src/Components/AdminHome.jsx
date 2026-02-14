@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { base_url } from '../utils/info';
-import { Users, ShieldCheck, ShieldAlert, BadgeCheck, Mail, ArrowRight, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Users, ShieldCheck, ShieldAlert, BadgeCheck, Mail, ArrowRight, RotateCcw, AlertTriangle, Megaphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { io } from 'socket.io-client';
 
 const AdminHome = () => {
   const [stats, setStats] = useState({
@@ -19,11 +20,16 @@ const AdminHome = () => {
   });
   const [monitorData, setMonitorData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    const socketUrl = base_url.replace('/api', '');
+    const newSocket = io(socketUrl, { auth: { token } });
+    setSocket(newSocket);
+
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('adminToken');
         const res = await axios.get(`${base_url}/api/admins/admin/stats`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -35,7 +41,6 @@ const AdminHome = () => {
 
     const fetchMonitorData = async () => {
       try {
-        const token = localStorage.getItem('adminToken');
         const res = await axios.get(`${base_url}/api/admins/admin/monitor`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -50,13 +55,95 @@ const AdminHome = () => {
     fetchStats();
     fetchMonitorData();
 
-    const interval = setInterval(() => {
-        fetchStats();
-        fetchMonitorData();
-    }, 5000); // Poll every 5 seconds for "LIVE" feel
+    // Join Admin Monitor Room
+    newSocket.on('connect', () => {
+        newSocket.emit('join_admin_monitor');
+    });
 
-    return () => clearInterval(interval);
+    // Real-time Update Listeners
+    newSocket.on('student_joined', (data) => {
+        fetchMonitorData(); 
+        fetchStats();
+    });
+
+    newSocket.on('student_progress', (data) => {
+        setMonitorData(prev => prev.map(s => 
+            s._id === data.studentId 
+            ? { ...s, attemptedCount: data.attemptedCount, lastQuestion: data.currentQuestion, totalQuestions: data.totalQuestions } 
+            : s
+        ));
+    });
+
+    newSocket.on('risk_alert', (data) => {
+        setMonitorData(prev => prev.map(s => 
+            s._id === data.studentId 
+            ? { ...s, violationCount: (s.violationCount || 0) + 1 } 
+            : s
+        ));
+        
+        // Dynamic Toast for Admin
+        Swal.fire({
+            title: 'Risk Detected!',
+            text: `${data.email} committed ${data.violation}`,
+            icon: 'warning',
+            toast: true,
+            position: 'top-end',
+            timer: 4000,
+            showConfirmButton: false
+        });
+    });
+
+    const interval = setInterval(fetchStats, 10000); 
+
+    return () => {
+        clearInterval(interval);
+        newSocket.disconnect();
+    };
   }, []);
+
+  const handleBroadcast = async () => {
+    if (!socket) return;
+
+    // First, let's get the active tests to choose from
+    const activeTests = await axios.get(`${base_url}/api/admin/test-config/active`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
+    });
+
+    if (!activeTests.data || activeTests.data.length === 0) {
+        Swal.fire('No Active Tests', 'There are no live exams running to broadcast to.', 'info');
+        return;
+    }
+
+    const { value: formValues } = await Swal.fire({
+        title: 'Group Broadcast',
+        html:
+            '<label class="block text-left text-[10px] font-black uppercase text-slate-400 mb-2">Select Target Test Group (Security Key)</label>' +
+            `<select id="swal-test" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold mb-4">` +
+            activeTests.data.map(t => `<option value="${t._id}">${t.title} (Key: ${t.testAccessKey})</option>`).join('') +
+            '</select>' +
+            '<label class="block text-left text-[10px] font-black uppercase text-slate-400 mb-2">Notice Message</label>' +
+            '<textarea id="swal-msg" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium h-24" placeholder="Type your instruction..."></textarea>',
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: '🚀 Send Broadcast',
+        customClass: { popup: 'rounded-[2rem]' },
+        preConfirm: () => {
+            return {
+                testId: document.getElementById('swal-test').value,
+                message: document.getElementById('swal-msg').value
+            }
+        }
+    });
+
+    if (formValues && formValues.message) {
+        socket.emit('send_broadcast', { 
+            testId: formValues.testId, 
+            message: formValues.message,
+            type: 'announcement'
+        });
+        Swal.fire({ title: 'Broadcast Sent', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+    }
+  };
 
   const handleReset = async (studentId, studentName) => {
     const result = await Swal.fire({
@@ -236,12 +323,16 @@ const AdminHome = () => {
                 <h2 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">Live <span className="text-blue-600">Assessment Monitor</span></h2>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time student progress tracking</p>
             </div>
-            <div className="flex items-center gap-3">
+                <button 
+                  onClick={handleBroadcast}
+                  className="px-4 py-1.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg active:scale-95"
+                >
+                    <Megaphone size={14} /> Broadcast to Group
+                </button>
                 <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[9px] font-black border border-blue-100">
                     <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>
-                    POLLING: 5S
+                    REAL-TIME: SOCKET
                 </div>
-            </div>
         </div>
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
