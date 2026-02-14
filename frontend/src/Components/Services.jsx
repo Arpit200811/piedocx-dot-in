@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Laptop, Smartphone, TrendingUp, Palette,
-  Globe, Server, Settings, Activity, Layout,
+  Globe, Server, Settings, Activity,
   ArrowRight, Code2, Database, ShieldCheck,
   Cloud, Cpu, Zap, CheckCircle, Box,
   Layers, Search, Rocket, MoveUpRight, Wifi,

@@ -7,7 +7,7 @@ import {
     Lock,
     Key,
     Eye,
-    FileShield,
+    ShieldAlert,
     Network,
     ArrowRight,
     Fingerprint,
@@ -43,7 +43,7 @@ const SecuritySolutions = () => {
         {
             title: "Governance & Compliance",
             desc: "Aligning your digital artifacts with SOC2, GDPR, and ISO security standards.",
-            icon: <FileShield className="w-5 h-5" />,
+            icon: <ShieldAlert className="w-5 h-5" />,
             delay: 150
         },
         {

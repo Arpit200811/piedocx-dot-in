@@ -5,7 +5,7 @@ import "aos/dist/aos.css";
 import {
     Palette,
     MousePointer2,
-    Layout,
+    LayoutGrid,
     Smartphone,
     Layers,
     PenTool,
@@ -37,7 +37,7 @@ const UiUxDesign = () => {
         {
             title: "Interactive Prototypes",
             desc: "High-fidelity clickable blueprints that breathe life into logic before a single line of code.",
-            icon: <Layout className="w-5 h-5" />,
+            icon: <LayoutGrid className="w-5 h-5" />,
             delay: 100
         },
         {
