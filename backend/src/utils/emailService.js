@@ -9,12 +9,11 @@ export const getTransporter = () => {
     throw new Error('Email credentials (EMAIL_USER or EMAIL_PASS) are missing in .env file');
   }
 
-  // If host is provided, use custom SMTP (SendGrid, SES, Mailtrap etc.)
   if (EMAIL_HOST) {
     return nodemailer.createTransport({
       host: EMAIL_HOST,
       port: parseInt(EMAIL_PORT || "587"),
-      secure: EMAIL_SECURE === 'true', // true for 465, false for other ports
+      secure: EMAIL_SECURE === 'true', 
       auth: {
         user: EMAIL_USER,
         pass: EMAIL_PASS,
@@ -22,7 +21,6 @@ export const getTransporter = () => {
     });
   }
 
-  // Default to Gmail if no host is specified
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -83,23 +81,33 @@ export const sendCertificateEmail = async (studentEmail, studentName, certificat
   }
 };
 
-export const sendAdminOTP = async (adminEmail, otp) => {
+export const sendAdminOTP = async (adminEmail, otp, type = 'login') => {
   let status = 'sent';
   let errorMessage = '';
+  const isReset = type === 'reset';
+  const subject = isReset 
+    ? `Action Required: Password Reset OTP - ${otp}` 
+    : `Secure Access: Your Login OTP - ${otp}`;
+
   try {
     const transporter = getTransporter();
     const mailOptions = {
       from: `"Piedocx Security" <${process.env.EMAIL_USER}>`,
       to: adminEmail,
-      subject: `Your Admin Login OTP: ${otp}`,
+      subject: subject,
       html: `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 24px; text-align: center;">
           <h2 style="color: #0f172a; font-weight: 800; font-size: 24px;">Admin Security Check</h2>
-          <p style="color: #64748b; font-size: 16px;">You are attempting to log in to the Piedocx Admin Panel. Use the following OTP to verify your identity.</p>
-          <div style="margin: 30px 0; background: #f8fafc; padding: 20px; border-radius: 16px; border: 2px solid #3b82f6;">
+          <p style="color: #64748b; font-size: 16px;">
+            ${isReset 
+              ? "You requested a password reset for your Piedocx Admin account. Use the code below to complete the recovery." 
+              : "You are attempting to log in to the Piedocx Admin Panel. Use the following OTP to verify your identity."
+            }
+          </p>
+          <div style="margin: 30px 0; background: #f8fafc; padding: 20px; border-radius: 16px; border: 2px solid ${isReset ? '#8b5cf6' : '#3b82f6'};">
              <span style="font-family: monospace; font-size: 42px; font-weight: 800; color: #1e3a8a; letter-spacing: 12px; margin-left: 12px;">${otp}</span>
           </div>
-          <p style="color: #ef4444; font-size: 12px; font-weight: bold;">This OTP will expire in 5 minutes.</p>
+          <p style="color: #ef4444; font-size: 12px; font-weight: bold;">This OTP will expire in ${isReset ? '10' : '5'} minutes.</p>
           <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
           <p style="color: #94a3b8; font-size: 11px;">If you did not request this code, please ignore this email or change your password immediately.</p>
         </div>

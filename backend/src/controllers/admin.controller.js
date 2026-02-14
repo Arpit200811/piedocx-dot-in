@@ -32,12 +32,13 @@ const hashPassword = (password) => {
 export const adminRequestLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = email.toLowerCase();
     const hashedPassword = hashPassword(password);
     
     // Check for both hashed and plain (for backward compatibility during migration)
-    let admin = await Admin.findOne({ email, password: hashedPassword });
+    let admin = await Admin.findOne({ email: normalizedEmail, password: hashedPassword });
     if (!admin) {
-        admin = await Admin.findOne({ email, password });
+        admin = await Admin.findOne({ email: normalizedEmail, password });
     }
     
     if (!admin) {
@@ -67,7 +68,7 @@ export const adminRequestLogin = async (req, res) => {
 export const verifyAdminOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    const admin = await Admin.findOne({ email, otp });
+    const admin = await Admin.findOne({ email: email.toLowerCase(), otp });
 
     if (!admin || !admin.otpExpires || admin.otpExpires < new Date()) {
       return res.status(401).json({ message: "Invalid or expired OTP!" });
@@ -318,7 +319,8 @@ export const getResultMetadata = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const admin = await Admin.findOne({ email });
+    const normalizedEmail = email.toLowerCase();
+    const admin = await Admin.findOne({ email: normalizedEmail });
 
     if (!admin) {
       return res.status(404).json({ message: "Admin not found with this email!" });
@@ -331,7 +333,7 @@ export const forgotPassword = async (req, res) => {
     admin.otpExpires = otpExpires;
     await admin.save();
 
-    const emailSent = await sendAdminOTP(email, otp);
+    const emailSent = await sendAdminOTP(normalizedEmail, otp, 'reset');
     if (emailSent) {
       res.status(200).json({ message: "Reset OTP sent to your email!" });
     } else {
@@ -346,7 +348,7 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
-    const admin = await Admin.findOne({ email, otp });
+    const admin = await Admin.findOne({ email: email.toLowerCase(), otp });
 
     if (!admin || !admin.otpExpires || admin.otpExpires < new Date()) {
       return res.status(401).json({ message: "Invalid or expired OTP!" });
