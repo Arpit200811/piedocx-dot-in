@@ -22,11 +22,17 @@ export const getTransporter = () => {
   }
 
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // SSL
+    pool: true,
     auth: {
       user: EMAIL_USER,
       pass: EMAIL_PASS,
     },
+    connectionTimeout: 20000, // 20 seconds
+    greetingTimeout: 20000,
+    socketTimeout: 30000,
   });
 };
 

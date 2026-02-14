@@ -163,7 +163,7 @@ export const getLiveTestMonitor = async (req, res) => {
         const mappedExam = examStudents.map(s => ({
             ...s.toObject(),
             totalQuestions: s.assignedQuestions?.length || 0,
-            assignedQuestions: undefined // Don't send the whole array to UI
+            assignedQuestions: undefined 
         }));
 
         const mappedInterns = internStudents.map(s => ({
@@ -200,7 +200,7 @@ export const resetStudentTest = async (req, res) => {
             wrongCount: 0,
             violationCount: 0,
             feedbackSubmitted: false,
-            assignedQuestions: [] // Clear previously assigned set
+            assignedQuestions: [] 
         });
         res.json({ message: "Student test session has been reset successfully." });
     } catch (error) {
@@ -213,13 +213,8 @@ export const closeGroupSession = async (req, res) => {
     try {
         const { yearGroup, branchGroup, college } = req.body;
         
-        // Build query based on group mapping
-        // We need to fetch students first to know which ones to update and record
         const students = await ExamStudent.find({
             testAttempted: false,
-            // Filtering by raw branch/year strings isn't easy here without re-running the utility
-            // But we can filter by the mapped groups if we join or just filter all for now
-            // For safety and precision, let's filter all and compute groups in memory or just use college if provided
         });
 
         const { getBranchGroup, getYearGroup } = await import("../utils/branchMapping.js");
@@ -237,13 +232,10 @@ export const closeGroupSession = async (req, res) => {
         const todayStr = new Date().toISOString().split('T')[0];
         const studentIds = targetedStudents.map(s => s._id);
 
-        // 1. Bulk update status to attempted
         await ExamStudent.updateMany(
             { _id: { $in: studentIds } },
             { $set: { testAttempted: true, score: 0, correctCount: 0, wrongCount: 0 } }
         );
-
-        // 2. Create historical records for archives
         const resultsToCreate = targetedStudents.map(s => ({
             student: s._id,
             fullName: s.fullName,
@@ -306,12 +298,8 @@ export const getTestResultDetail = async (req, res) => {
         const { id } = req.params;
         const result = await TestResult.findById(id).lean();
         if (!result) return res.status(404).json({ message: "Result not found" });
-
-        // Fetch Session Data for Risk Analysis
-        // We find the session that matches student and was completed/terminated around the test date
         const session = await ExamSession.findOne({ 
             studentId: result.student,
-            // optional: match testId if available in result
         }).sort({ startTime: -1 }).lean(); 
 
         res.json({
@@ -358,8 +346,6 @@ export const forgotPassword = async (req, res) => {
     admin.otp = otp;
     admin.otpExpires = otpExpires;
     await admin.save();
-
-    // Debugging for API Tests
     console.log(`[AUTH-DEBUG] OTP for ${normalizedEmail}: ${otp}`);
 
     const { success: emailSent, error: smtpError } = await sendAdminOTP(admin.email, otp, 'reset');
@@ -404,8 +390,6 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Internal server error!" });
   }
 };
-
-// --- Bulletin Management ---
 export const getBulletins = async (req, res) => {
     try {
         const bulletins = await Bulletin.find().sort({ createdAt: -1 });
@@ -433,7 +417,6 @@ export const deleteBulletin = async (req, res) => {
     }
 };
 
-// --- Resource Management ---
 export const getResources = async (req, res) => {
     try {
         const resources = await Resource.find().sort({ createdAt: -1 });
