@@ -15,8 +15,8 @@ export const getTransporter = () => {
     port: EMAIL_PORT ? parseInt(EMAIL_PORT) : 587,
     secure: false, // Force false for 587 (STARTTLS)
     auth: {
-      user: EMAIL_USER,
-      pass: EMAIL_PASS,
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
     // tls: {
     //   rejectUnauthorized: false
