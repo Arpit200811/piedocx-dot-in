@@ -60,6 +60,7 @@ export const adminRequestLogin = async (req, res) => {
       return res.status(500).json({ message: "Server configuration error." });
     }
 
+    console.log(`[AUTH] Admin login successful for ${admin.email}. Generating token...`);
     const token = jwt.sign(
       { id: admin._id, email: admin.email, role: 'admin' }, 
       process.env.SECRET_KEY, 
