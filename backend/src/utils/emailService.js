@@ -17,7 +17,6 @@ export const getTransporter = () => {
       pass: process.env.EMAIL_PASS,
     },
   });
-  });
 
   return transporter;
 };
