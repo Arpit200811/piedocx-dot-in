@@ -21,8 +21,11 @@ const AdminLogin = () => {
     setLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      await axios.post(`${base_url}/api/admins/admin/request-login`, { email: normalizedEmail, password });
-      setStep(2);
+      const res = await axios.post(`${base_url}/api/admins/admin/request-login`, { email: normalizedEmail, password });
+
+      localStorage.setItem('adminToken', res.data.token);
+      localStorage.setItem('adminUser', JSON.stringify(res.data.admin));
+      navigate('/admin-dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed.');
     } finally {
@@ -30,22 +33,7 @@ const AdminLogin = () => {
     }
   };
 
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const normalizedEmail = email.trim().toLowerCase();
-      const res = await axios.post(`${base_url}/api/admins/admin/verify-otp`, { email: normalizedEmail, otp });
-      localStorage.setItem('adminToken', res.data.token);
-      localStorage.setItem('adminUser', JSON.stringify(res.data.admin));
-      navigate('/admin-dashboard');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid or expired OTP.');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleForgotRequest = async (e) => {
     e.preventDefault();
@@ -143,22 +131,7 @@ const AdminLogin = () => {
             </form>
           )}
 
-          {step === 2 && (
-            <form onSubmit={handleVerifyOtp} className="space-y-6">
-              <div className="text-center mb-6 md:mb-8">
-                <div className="inline-block p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20 mb-4 font-black">
-                  <KeyRound className="w-8 h-8 text-blue-400" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold text-white mb-1">Verify Identity</h3>
-                <p className="text-slate-500 text-xs md:text-sm">OTP has been sent to <span className="text-blue-400 font-bold break-all">{email}</span></p>
-              </div>
-              <input type="text" maxLength="6" required autoFocus placeholder="0 0 0 0 0 0" className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 md:py-6 text-center text-3xl md:text-4xl font-black text-white tracking-[0.5em] placeholder:text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} />
-              <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white py-4 md:py-5 rounded-2xl font-black text-base md:text-lg shadow-xl active:scale-95">
-                {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'AUTHORIZE & ACCESS'}
-              </button>
-              <button type="button" onClick={() => setStep(1)} className="w-full text-slate-500 text-[10px] md:text-xs font-black uppercase tracking-widest hover:text-white transition-colors pt-4">← Back to Login</button>
-            </form>
-          )}
+
 
           {step === 3 && (
             <form onSubmit={handleForgotRequest} className="space-y-6">
