@@ -11,21 +11,12 @@ export const getTransporter = () => {
 
   // Robust configuration for Render + Gmail
   const transporter = nodemailer.createTransport({
-    host: EMAIL_HOST || 'smtp.googlemail.com',
-    port: EMAIL_PORT ? parseInt(EMAIL_PORT) : 587,
-    secure: false, // Force false for 587 (STARTTLS)
+    service: "gmail",   // ⭐ BEST OPTION
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    // tls: {
-    //   rejectUnauthorized: false
-    // },
-    // family: 4, // Force IPv4 to prevent ENETUNREACH
-    // pool: true,
-    // connectionTimeout: 10000,
-    // greetingTimeout: 10000,
-    // socketTimeout: 30000
+  });
   });
 
   return transporter;
@@ -36,8 +27,6 @@ export const sendCertificateEmail = async (studentEmail, studentName, certificat
   let errorMessage = '';
   try {
     const transporter = getTransporter();
-    // await verifyConnection(transporter); // Optional: verify before sending if dealing with strict firewalls
-    
     const mailOptions = {
       from: `"Piedocx Technologies" <${process.env.EMAIL_USER}>`,
       to: studentEmail,
