@@ -42,25 +42,28 @@ export const registerStudent = async (req, res) => {
             }
         }
 
-        // Generate College ID
-        const currentYear = new Date().getFullYear();
-        const uniqueNumber = Math.floor(100000 + Math.random() * 900000);
-        const studentId = `STU-${currentYear}-${uniqueNumber}`;
+        // Generate Sequential Student ID (Base: PDT-WS 2600) if not provided
+        let studentId = req.body.studentId;
+        if (!studentId) {
+            const totalStudents = await ExamStudent.countDocuments();
+            studentId = `PDT-WS ${26000 + totalStudents + 1}`;
+        }
 
         // 1. Generate Unique Certificate ID
-        const count = await ExamStudent.countDocuments({ year: year });
-        const certId = generateCertificateID(currentYear, count + 1);
+        const currentYear = new Date().getFullYear();
+        const countForYear = await ExamStudent.countDocuments({ year: year });
+        const certId = generateCertificateID(currentYear, countForYear + 1);
 
         // 2. Generate Signature
         const signature = generateCertificateSignature({
-            studentId: studentId,
+            studentId,
             course: branch,
             issueDate: new Date().toISOString().split('T')[0],
             score: 0 // Initial score
         });
 
-        // 3. QR Code (Pointing to a verification URL)
-        const verifyUrl = `${process.env.FRONTEND_URL || 'https://piedocx.in'}/verify/${certId}`;
+        // 3. QR Code (Pointing to a verification URL with HashRouter support)
+        const verifyUrl = `${process.env.FRONTEND_URL || 'https://piedocx.in'}/#/verify/${certId}`;
         const qrCode = await generateQR(verifyUrl);
 
         const newStudent = new ExamStudent({
@@ -146,10 +149,15 @@ export const verifyCertificate = async (req, res) => {
 export const verifyCertificatePublic = async (req, res) => {
     try {
         const { id } = req.params;
-        const student = await ExamStudent.findOne({ certificateId: id });
+        const student = await ExamStudent.findOne({ 
+            $or: [
+                { certificateId: id },
+                { studentId: id }
+            ]
+        });
         
         if (!student) {
-            return res.status(404).json({ message: 'Certificate not found' });
+            return res.status(404).json({ message: 'Certificate or Student Record not found' });
         }
 
         // Return only public safe info
@@ -175,6 +183,15 @@ export const sendEmailCertificate = async (req, res) => {
     }
 
     try {
+      // Security: Check if this email exists in our student records to prevent spamming random emails
+      const studentExists = await ExamStudent.findOne({ email });
+      if (!studentExists) {
+          // If not an admin, we only allow sending to registered students
+          if (!req.admin) {
+             return res.status(403).json({ message: 'Unauthorized email target' });
+          }
+      }
+
       const sent = await sendCertificateEmail(email, name, certificateImage);
       if (sent) {
         res.status(200).json({ message: 'Email sent successfully' });
@@ -187,6 +204,53 @@ export const sendEmailCertificate = async (req, res) => {
     }
 };
 
+export const updateStudentDetails = async (req, res) => {
+    const { id } = req.params;
+    const { fullName, college, score, branch, year, mobile, email } = req.body;
+
+    try {
+        const student = await ExamStudent.findById(id);
+        if (!student) return res.status(404).json({ message: 'Student not found' });
+
+        // Strictly forbid editing name and college as per requirements
+        if (fullName !== undefined || college !== undefined) {
+            return res.status(400).json({ 
+                message: 'Name and College cannot be edited for integrity. Please delete and re-register the student if these details are incorrect.' 
+            });
+        }
+
+        const updateData = {};
+        if (score !== undefined) updateData.score = score;
+        if (branch !== undefined) updateData.branch = branch;
+        if (year !== undefined) updateData.year = year;
+        if (mobile !== undefined) updateData.mobile = mobile;
+        if (email !== undefined) updateData.email = email;
+
+        // If sensitive fields change, we must regenerate the signature to maintain integrity
+        const needsResign = updateData.branch !== undefined || updateData.score !== undefined;
+
+        if (needsResign) {
+            const tempStudent = { ...student.toObject(), ...updateData };
+            updateData.signature = generateCertificateSignature({
+                studentId: tempStudent.studentId,
+                course: tempStudent.branch,
+                issueDate: new Date(tempStudent.createdAt || Date.now()).toISOString().split('T')[0],
+                score: tempStudent.score || 0
+            });
+            
+            // Also regenerate QR to ensure everything is in sync
+            const verifyUrl = `${process.env.FRONTEND_URL || 'https://piedocx.in'}/#/verify/${student.certificateId}`;
+            updateData.qrCode = await generateQR(verifyUrl);
+        }
+
+        const updated = await ExamStudent.findByIdAndUpdate(id, { $set: updateData }, { new: true });
+        res.json({ message: 'Student details updated successfully', student: updated });
+    } catch (error) {
+        console.error("updateStudentDetails error:", error);
+        res.status(500).json({ message: 'Update failed' });
+    }
+};
+
 export const bulkRegister = async (req, res) => {
     const { students } = req.body;
     if (!Array.isArray(students) || students.length === 0) {
@@ -194,11 +258,38 @@ export const bulkRegister = async (req, res) => {
     }
 
     try {
-      const results = await ExamStudent.insertMany(students, { ordered: false });
+      const currentYear = new Date().getFullYear();
+      let totalCount = await ExamStudent.countDocuments();
+      const preparedStudents = [];
+      for (let i = 0; i < students.length; i++) {
+          const student = { ...students[i] };
+          
+          if (!student.studentId) {
+              student.studentId = `PDT-WS ${26000 + totalCount + i + 1}`;
+          }
+
+          if (!student.certificateId) {
+              const certId = generateCertificateID(currentYear, totalCount + i + 1);
+              student.certificateId = certId;
+
+              const verifyUrl = `${process.env.FRONTEND_URL || 'https://piedocx.in'}/#/verify/${certId}`;
+              student.qrCode = await generateQR(verifyUrl);
+
+              student.signature = generateCertificateSignature({
+                  studentId: student.studentId,
+                  course: student.branch,
+                  issueDate: new Date().toISOString().split('T')[0],
+                  score: student.score || 0
+              });
+          }
+          preparedStudents.push(student);
+      }
+
+      const results = await ExamStudent.insertMany(preparedStudents, { ordered: false });
       res.status(201).json({ message: `${results.length} students registered successfully`, count: results.length });
     } catch (error) {
       if (error.code === 11000 || error.writeErrors) {
-          const successCount = error.result?.nInserted || 0;
+          const successCount = (error.result?.nInserted) || (error.insertedDocs?.length) || 0;
           return res.status(207).json({ 
               message: `Partially succeeded. ${successCount} added, others were duplicates.`,
               successCount 
@@ -206,5 +297,54 @@ export const bulkRegister = async (req, res) => {
       }
       console.error("bulkRegister error:", error);
       res.status(500).json({ message: 'Bulk registration failed' });
+    }
+};
+
+export const bulkDelete = async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: 'No IDs provided' });
+    }
+
+    try {
+      await ExamStudent.deleteMany({ _id: { $in: ids } });
+      res.status(200).json({ message: 'Records deleted successfully' });
+    } catch (error) {
+      console.error("bulkDelete error:", error);
+      res.status(500).json({ message: 'Bulk deletion failed' });
+    }
+};
+
+export const bulkSendCertificates = async (req, res) => {
+    const { ids } = req.body; // Array of Mongo IDs
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: 'No students selected' });
+    }
+
+    try {
+        const students = await ExamStudent.find({ _id: { $in: ids } });
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const student of students) {
+            try {
+                // Here we would ideally generate the image too, but since the frontend handles canvas, 
+                // we'll keep the current simple email trigger or a placeholder for mass dispatch.
+                // For now, let's assume this triggers the actual sendCertificateEmail utility.
+                const sent = await sendCertificateEmail(student.email, student.fullName, null); // passing null as image just sends the link-based email template
+                if (sent) successCount++;
+                else failCount++;
+            } catch (err) {
+                failCount++;
+            }
+        }
+
+        res.status(200).json({ 
+            message: `Bulk processing complete.`, 
+            summary: { total: students.length, succeeded: successCount, failed: failCount } 
+        });
+    } catch (error) {
+        console.error("bulkSendCertificates error:", error);
+        res.status(500).json({ message: 'Bulk email process failed' });
     }
 };

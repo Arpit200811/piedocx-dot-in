@@ -134,8 +134,28 @@ router.post('/', adminAuth, async (req, res) => {
         // If Key is changed or newly created, reset student attempts for this group
         if (keyChanged) {
             console.log(`[TestConfig] Access Key changed for ${yearGroup}/${branchGroup}. Resetting student attempts...`);
+            
+            // Comprehensive branch list matching branchMapping.js
+            const csItBranches = ['CSE', 'IT', 'Computer Science', 'Information Technology', 'CS', 'Software Engineering', 'AI', 'Data Science', 'DS'];
+            const coreBranches = ['ECE', 'EE', 'ME', 'Civil', 'Auto', 'Automobile', 'Electronics', 'Electrical', 'Mechanical'];
+
+            const branchFilter = branchGroup === 'CS-IT' 
+                ? { $in: csItBranches.map(b => new RegExp(b, 'i')) }
+                : { $in: coreBranches.map(b => new RegExp(b, 'i')) };
+
+            const yearPrefixes = yearGroup.split('-'); // ['1', '2'] or ['3']
+
             await ExamStudent.updateMany(
-                { year: { $in: yearGroup.split('-') }, branch: branchGroup === 'CS-IT' ? { $in: ['CS', 'IT'] } : branchGroup }, 
+                { 
+                    $or: [
+                        { year: { $in: yearPrefixes } },
+                        { year: { $in: yearPrefixes.map(y => `${y}st`) } },
+                        { year: { $in: yearPrefixes.map(y => `${y}nd`) } },
+                        { year: { $in: yearPrefixes.map(y => `${y}rd`) } },
+                        { year: { $in: yearPrefixes.map(y => `${y}th`) } }
+                    ],
+                    branch: branchFilter 
+                }, 
                 { 
                     $set: { 
                         testAttempted: false,

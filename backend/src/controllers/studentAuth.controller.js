@@ -174,32 +174,39 @@ export const getQuestions = async (req, res) => {
         }
         const studentYearGroup = getYearGroup(student.year);
         const studentBranchGroup = getBranchGroup(student.branch);
-        
-        let config = await TestConfig.findOne({
+        const studentCollege = student.college ? student.college.trim().toLowerCase() : null;
+        const now = new Date();
+
+        // MATCHING QUERY LOGIC WITH getTestInfo
+        const query = {
             yearGroup: studentYearGroup,
             branchGroup: studentBranchGroup,
-            isActive: true
-        }).sort({ createdAt: -1 });
+            isActive: true,
+            endDate: { $gt: now },
+            $or: [
+                { targetCollege: { $regex: /^all$/i } },
+                { targetCollege: null }
+            ]
+        };
+
+        if (studentCollege) {
+            query.$or.unshift({ targetCollege: { $regex: new RegExp(`^${studentCollege}$`, "i") } });
+        }
+        
+        console.log(`[getQuestions] Searching for student ${student.email}. Query:`, JSON.stringify(query));
+
+        let config = await TestConfig.findOne(query).sort({ createdAt: -1 });
 
         if (!config) {
-            config = await TestConfig.findOne({ isActive: true }).sort({ createdAt: -1 });
+            console.log(`[getQuestions] No group-specific test. Checking latest active overall.`);
+            config = await TestConfig.findOne({ isActive: true, endDate: { $gt: now } }).sort({ createdAt: -1 });
         }
 
         if (!config) {
             return res.status(404).json({ message: "No active tests found." });
         }
 
-        // COLLEGE RESTRICTION CHECK
-        if (config.targetCollege && config.targetCollege !== 'All') {
-            const studentCollege = student.college?.trim().toLowerCase();
-            const target = config.targetCollege?.trim().toLowerCase();
-            
-            if (studentCollege !== target) {
-                return res.status(403).json({ 
-                    message: `This test is only for students of ${config.targetCollege}.` 
-                });
-            }
-        }
+        // ACCESS KEY CHECK
         if (config.testAccessKey && config.testAccessKey.trim() !== "") {
             const { accessKey } = req.body;
             if (!accessKey || accessKey.trim() !== config.testAccessKey.trim()) {
@@ -210,7 +217,6 @@ export const getQuestions = async (req, res) => {
             }
         }
 
-        const now = new Date();
         if (now < new Date(config.startDate)) {
             return res.status(403).json({ message: 'Test has not started yet.' });
         }
@@ -288,7 +294,6 @@ export const getQuestions = async (req, res) => {
 
         let remainingSeconds = config.duration * 60;
         if (student.testEndTime) {
-             const now = new Date();
              const diff = Math.floor((new Date(student.testEndTime) - now) / 1000);
              remainingSeconds = Math.max(0, diff);
              if (remainingSeconds <= 0) {
