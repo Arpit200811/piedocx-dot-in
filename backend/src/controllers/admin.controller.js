@@ -55,25 +55,22 @@ export const adminRequestLogin = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials!" });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 5 * 60000); // 5 mins
-
-    admin.otp = otp;
-    admin.otpExpires = otpExpires;
-    await admin.save();
-
-    const { success: emailSent, error: smtpError } = await sendAdminOTP(admin.email, otp);
-    
-    if (emailSent) {
-      res.status(200).json({ message: "OTP sent to your email!" });
-    } else {
-      console.error(`[LOGIN-SMTP-FAILURE] Target: ${admin.email}, Error: ${smtpError}`);
-      res.status(500).json({ 
-        message: "Failed to send OTP.", 
-        error: smtpError,
-        tip: "Check terminal for [AUTH-DEBUG] OTP if this is a test."
-      });
+    if (!process.env.SECRET_KEY) {
+      console.error("SECRET_KEY missing in adminRequestLogin");
+      return res.status(500).json({ message: "Server configuration error." });
     }
+
+    const token = jwt.sign(
+      { id: admin._id, email: admin.email, role: 'admin' }, 
+      process.env.SECRET_KEY, 
+      { expiresIn: '24h' }
+    );
+
+    res.status(200).json({ 
+      message: "Login successful!", 
+      token,
+      admin: { name: admin.name, email: admin.email }
+    });
   } catch (error) {
     console.error("Login Controller Error:", error);
     res.status(500).json({ message: "Internal server error!" });

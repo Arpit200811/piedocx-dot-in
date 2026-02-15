@@ -113,35 +113,39 @@ export const getTestInfo = async (req, res) => {
             }
         }
 
-        // Prioritize specific college config over 'All'
+        const now = new Date();
+        // Prioritize specific college config over 'All', and only pick non-expired ones
         const query = {
             yearGroup: studentYearGroup,
             branchGroup: studentBranchGroup,
             isActive: true,
+            endDate: { $gt: now },
             $or: [
-                { targetCollege: 'All' },
+                { targetCollege: { $regex: /^all$/i } },
                 { targetCollege: null }
             ]
         };
 
         if (studentCollege) {
-            query.$or.unshift({ targetCollege: studentCollege });
+            query.$or.unshift({ targetCollege: { $regex: new RegExp(`^${studentCollege}$`, "i") } });
         }
+
+        console.log(`[getTestInfo] Searching for student ${student?.email} (${studentYearGroup}/${studentBranchGroup}). Query:`, JSON.stringify(query));
 
         let config = await TestConfig.findOne(query).sort({ createdAt: -1 });
 
         if (!config) {
-            console.log(`No specific config found for ${studentYearGroup}/${studentBranchGroup}/${studentCollege}. Scanning for generic fallback...`);
-            config = await TestConfig.findOne({ isActive: true }).sort({ createdAt: -1 });
+            console.log(`[getTestInfo] No active group-specific test. Checking latest active overall.`);
+            config = await TestConfig.findOne({ isActive: true, endDate: { $gt: now } }).sort({ createdAt: -1 });
         }
 
         if (!config) {
             return res.status(404).json({ message: "No active tests available." });
         }
         
+        console.log(`[getTestInfo] Selected Config: ${config.title} (ID: ${config._id}) Dates: ${config.startDate} to ${config.endDate}`);
+        
         const hasKey = !!(config.testAccessKey && config.testAccessKey.trim().length > 0);
-        // Debug: Test config loaded successfully
-        // console.log(`getTestInfo: Found '${config.title}' (ID: ${config._id}). HasKey: ${hasKey} (Raw: '${config.testAccessKey}')`);
         
         res.json({
             id: config._id,

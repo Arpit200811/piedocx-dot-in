@@ -58,7 +58,7 @@ app.use(helmet({
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "script-src": ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://widget.tidiochat.com"],
       "frame-src": ["'self'", "https://accounts.google.com", "https://widget.tidiochat.com"],
-      "connect-src": ["'self'", "https://accounts.google.com", "https://*.tidiochat.com", "*.onrender.com"],
+      "connect-src": ["'self'", "https://accounts.google.com", "https://*.tidiochat.com", "*.onrender.com", "http://localhost:5002"],
       "img-src": ["'self'", "data:", "https://*.googleusercontent.com"],
     },
   },

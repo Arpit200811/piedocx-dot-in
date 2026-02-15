@@ -34,6 +34,7 @@ export const initSocket = (server) => {
 
     // 1. Join Exam Room
     socket.on('join_exam', async ({ testId, deviceInfo }) => {
+      console.log(`[Socket] join_exam request from ${socket.email} for test ${testId}`);
       socket.join(testId);
       socket.testId = testId;
 
@@ -163,7 +164,7 @@ export const initSocket = (server) => {
     });
 
     socket.on('disconnect', async () => {
-      console.log(`❌ Disconnected: ${socket.email}`);
+      // console.log(`❌ Disconnected: ${socket.email}`);
       if (socket.sessionId) {
           await ExamSession.findByIdAndUpdate(socket.sessionId, { 
               status: 'disconnected',

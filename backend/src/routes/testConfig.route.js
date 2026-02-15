@@ -1,6 +1,7 @@
 
 import express from 'express';
 import TestConfig from '../models/TestConfig.js';
+import ExamStudent from '../models/ExamStudent.js';
 import { adminAuth } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -12,7 +13,8 @@ router.get('/', adminAuth, async (req, res) => {
         let config;
 
         if (yearGroup && branchGroup) {
-            config = await TestConfig.findOne({ yearGroup, branchGroup });
+            // Pick the LATEST one created for this group
+            config = await TestConfig.findOne({ yearGroup, branchGroup }).sort({ createdAt: -1 });
         } else {
             // Fallback: Get the most recently created one
             config = await TestConfig.findOne().sort({ createdAt: -1 });
@@ -40,15 +42,25 @@ router.get('/active', adminAuth, async (req, res) => {
 router.get('/time-check', async (req, res) => {
     try {
         const { yearGroup, branchGroup } = req.query;
-        const config = await TestConfig.findOne({ yearGroup, branchGroup });
-        if (!config) return res.status(404).json({ message: 'Config not found' });
-        
         const now = new Date();
-        // Exam is live if:
-        // 1. Current time >= Start Time
-        // 2. Current time <= End Time
-        // 3. Config is marked active
-        const isLive = now >= new Date(config.startDate) && now <= new Date(config.endDate) && config.isActive;
+        // CRITICAL: Filter for tests that haven't ended yet and sort by latest created
+        const config = await TestConfig.findOne({ 
+            yearGroup, 
+            branchGroup,
+            endDate: { $gt: now } 
+        }).sort({ createdAt: -1 });
+        
+        if (!config) {
+            console.log(`[TimeCheck] No ACTIVE config found for ${yearGroup}/${branchGroup}. Checked at: ${now.toISOString()}`);
+            return res.status(404).json({ message: 'No live or upcoming config found' });
+        }
+        
+        const start = new Date(config.startDate);
+        const end = new Date(config.endDate);
+        
+        const isLive = now >= start && now <= end && config.isActive;
+
+        console.log(`[TimeCheck] Using Config ID: ${config._id}, Title: ${config.title}, Live: ${isLive}`);
 
         res.json({
             serverTime: now,
@@ -57,6 +69,7 @@ router.get('/time-check', async (req, res) => {
             isLive
         });
     } catch (error) {
+        console.error("[TimeCheck] Error:", error);
         res.status(500).json({ message: 'Time Sync Error' });
     }
 });
@@ -75,36 +88,71 @@ router.post('/', adminAuth, async (req, res) => {
     }
 
     try {
-        // Check if config exists for this SPECIFIC group combo
-        let config = await TestConfig.findOne({ yearGroup, branchGroup });
+        console.log(`[TestConfig] POST Request Received. Body:`, JSON.stringify(req.body, null, 2));
+        
+        // Check if config exists for this SPECIFIC group combo - pick LATEST
+        let config = await TestConfig.findOne({ yearGroup, branchGroup }).sort({ createdAt: -1 });
+        let keyChanged = false;
         
         if (config) {
+            console.log(`[TestConfig] Found existing config to update: ${config._id}`);
+            if (config.testAccessKey !== testAccessKey) {
+                keyChanged = true;
+            }
             config.title = title;
-            config.startDate = startDate;
-            config.endDate = endDate;
+            config.startDate = new Date(startDate);
+            config.endDate = new Date(endDate);
             config.duration = duration;
             config.questions = questions;
             config.targetCollege = targetCollege || 'all';
             config.testAccessKey = testAccessKey;
+            config.isActive = true; // Force active
             if (resultsPublished !== undefined) config.resultsPublished = resultsPublished;
+            
+            console.log(`[TestConfig] Saving updated config. New Dates: ${config.startDate} to ${config.endDate}`);
             await config.save();
         } else {
+            console.log(`[TestConfig] No existing config found for ${yearGroup}/${branchGroup}. Creating NEW.`);
             config = new TestConfig({ 
                 title, 
                 yearGroup,
                 branchGroup,
-                startDate, 
-                endDate, 
+                startDate: new Date(startDate), 
+                endDate: new Date(endDate), 
                 duration, 
                 questions,
                 targetCollege: targetCollege || 'all',
                 testAccessKey,
+                isActive: true,
                 resultsPublished: resultsPublished || false
             });
+            console.log(`[TestConfig] Saving NEW config. Dates: ${config.startDate} to ${config.endDate}`);
             await config.save();
+            keyChanged = true; // New test count as key changed
+        }
+
+        // If Key is changed or newly created, reset student attempts for this group
+        if (keyChanged) {
+            console.log(`[TestConfig] Access Key changed for ${yearGroup}/${branchGroup}. Resetting student attempts...`);
+            await ExamStudent.updateMany(
+                { year: { $in: yearGroup.split('-') }, branch: branchGroup === 'CS-IT' ? { $in: ['CS', 'IT'] } : branchGroup }, 
+                { 
+                    $set: { 
+                        testAttempted: false,
+                        score: 0,
+                        correctCount: 0,
+                        wrongCount: 0,
+                        assignedQuestions: [],
+                        savedAnswers: {},
+                        testStartTime: null,
+                        testEndTime: null,
+                        violationCount: 0
+                    } 
+                }
+            );
         }
         
-        res.json({ message: `Test configuration for ${yearGroup} / ${branchGroup} saved successfully`, config });
+        res.json({ message: `Test configuration for ${yearGroup} / ${branchGroup} saved successfully ${keyChanged ? '(Attempts Reset)' : ''}`, config });
     } catch (error) {
         console.error("saveConfig error:", error);
         res.status(500).json({ message: 'Error saving config' });
