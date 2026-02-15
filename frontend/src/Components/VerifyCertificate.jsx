@@ -1,15 +1,19 @@
-
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { base_url } from '../utils/info';
-import { ShieldCheck, ShieldAlert, Award, Loader2, Calendar, User, Printer, Download } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ShieldCheck, ShieldAlert, Award, Loader2, Calendar, User, Printer, Download, Eye, X, Home } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Lazy load Certificate to keep verification page light
+const Certificate = lazy(() => import('./Certificate'));
 
 const VerifyCertificate = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [status, setStatus] = useState('loading'); // loading, valid, invalid, error
     const [data, setData] = useState(null);
+    const [showPreview, setShowPreview] = useState(false);
 
     useEffect(() => {
         const verify = async () => {
@@ -42,122 +46,194 @@ const VerifyCertificate = () => {
 
     return (
         <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans no-bg-on-print">
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white w-full max-w-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 relative certificate-card"
+            {/* Home Navigation */}
+            <button
+                onClick={() => navigate('/')}
+                className="absolute top-6 left-6 p-3 bg-white rounded-2xl shadow-xl text-slate-400 hover:text-blue-600 transition-all z-20 no-print"
+            >
+                <Home size={20} />
+            </button>
+
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white w-full max-w-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 relative certificate-card z-10"
             >
                 {/* Status Banner */}
-                <div className={`p-6 sm:p-8 text-center relative overflow-hidden ${status === 'valid' ? 'bg-emerald-500' : 'bg-red-500'}`}>
-                    <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] no-print"></div>
-                    <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-4">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
-                            {status === 'valid' ? <ShieldCheck size={32} className="text-emerald-500 sm:w-10 sm:h-10" /> : <ShieldAlert size={32} className="text-red-500 sm:w-10 sm:h-10" />}
+                <div className={`p-8 sm:p-10 text-center relative overflow-hidden ${status === 'valid' ? 'bg-[#0f172a]' : 'bg-red-500'}`}>
+                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] no-print"></div>
+                    <div className={`absolute top-0 right-0 w-32 h-32 bg-emerald-500 transform translate-x-16 -translate-y-16 rotate-45 z-0 ${status !== 'valid' && 'hidden'}`}></div>
+
+                    <div className="relative z-10 flex flex-col items-center gap-4">
+                        <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center shadow-2xl relative bg-white`}>
+                            {status === 'valid' ? (
+                                <>
+                                    <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 animate-ping"></div>
+                                    <ShieldCheck size={40} className="text-emerald-500 sm:w-12 sm:h-12" />
+                                </>
+                            ) : (
+                                <ShieldAlert size={40} className="text-red-500 sm:w-12 sm:h-12" />
+                            )}
                         </div>
-                        <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
-                            {status === 'valid' ? 'Verified Certificate' : 'Invalid Certificate'}
+                        <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tighter">
+                            {status === 'valid' ? 'Credential Verified' : 'Invalid ID'}
                         </h1>
-                        <p className="text-white/80 text-[10px] sm:text-xs font-medium uppercase tracking-widest">
-                            {status === 'valid' ? 'Official Academic Record' : 'Record Not Found or Tampered'}
-                        </p>
+                        <div className={`flex items-center gap-2 bg-emerald-500/20 px-4 py-1.5 rounded-full border border-emerald-500/30 ${status !== 'valid' && 'hidden'}`}>
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Active & Authenticated</span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
+                <div className="p-6 sm:p-10 space-y-6">
                     {status === 'valid' && data ? (
                         <>
-                            {/* Student Details */}
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400">
-                                        <User size={24} />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Student Name</p>
-                                        <p className="text-lg font-bold text-slate-800">{data.fullName}</p>
-                                    </div>
+                            {/* Verification Header */}
+                            <div className="flex justify-between items-start border-b border-slate-100 pb-6">
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Authenticated Asset</p>
+                                    <h2 className="text-xl font-bold text-slate-800">Student Record</h2>
                                 </div>
-                                
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400">
-                                        <Award size={24} />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Course / Distinction</p>
-                                        <p className="text-lg font-bold text-slate-800">{data.branch}</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400">
-                                        <Calendar size={24} />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Year of Issue</p>
-                                        <p className="text-lg font-bold text-slate-800">{data.year || new Date().getFullYear()}</p>
-                                    </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md uppercase">Verified</span>
                                 </div>
                             </div>
 
-                            {/* ID Badge */}
-                            <div className="bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-300 text-center">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Certificate ID</p>
-                                <p className="text-xl font-mono font-bold text-blue-600 tracking-wider select-all">{data.certificateId || id}</p>
+                            {/* Data Grid */}
+                            <div className="grid gap-4">
+                                <div className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                    <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 border border-slate-100 shrink-0">
+                                        <User size={20} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Candidate</p>
+                                        <p className="text-base font-black text-slate-900 leading-none truncate">{data.fullName}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Year</p>
+                                        <p className="text-sm font-bold text-slate-800">{data.year}</p>
+                                    </div>
+                                    <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Grade</p>
+                                        <p className="text-sm font-bold text-emerald-600">A++</p>
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Branch</p>
+                                    <p className="text-sm font-bold text-slate-800 uppercase line-clamp-1">{data.branch}</p>
+                                </div>
+                            </div>
+
+                            {/* Official Token */}
+                            <div className="relative bg-[#f8fafc] p-5 rounded-2xl border border-slate-100 text-center">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 italic">Global Credential ID</p>
+                                <p className="text-lg font-mono font-bold text-[#0f172a] tracking-wider select-all">{data.certificateId || id}</p>
+                            </div>
+
+                            {/* Official Footer */}
+                            <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <img src="/Logo_Pie.png" alt="" className="h-6 w-auto grayscale opacity-40 shrink-0" />
+                                    <div className="h-4 w-[1px] bg-slate-200"></div>
+                                    <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tight">
+                                        Piedocx Technologies Pvt Ltd
+                                    </p>
+                                </div>
+                                <p className="text-[8px] text-slate-300 font-bold italic">ISO 9001:2015</p>
                             </div>
                         </>
                     ) : (
                         <div className="p-4 text-center space-y-6">
-                            <p className="text-slate-500 font-medium leading-relaxed">
-                                The certificate ID provided <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">{id}</span> does not match any official records in our database.
-                            </p>
-                            <div className="bg-amber-50 p-4 rounded-xl text-amber-700 text-[10px] font-black uppercase tracking-widest border border-amber-100">
-                                Warning: Potential Typos or Forgery Detected
+                            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto text-red-500">
+                                <ShieldAlert size={32} />
                             </div>
+                            <p className="text-slate-500 font-medium leading-relaxed">
+                                ID <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">{id}</span> was not found.
+                            </p>
                         </div>
                     )}
 
-                    {/* Footer Info */}
-                    <div className="text-center">
-                        <p className="text-[10px] text-slate-400 font-medium italic">
-                            Cryptographically verified dynamic asset of Piedocx Private Limited.
-                        </p>
+                    {/* Actions */}
+                    <div className="space-y-3 no-print">
+                        {status === 'valid' && (
+                            <>
+                                <button
+                                    onClick={() => setShowPreview(true)}
+                                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 active:scale-95"
+                                >
+                                    <Eye size={18} /> View & Download Certificate
+                                </button>
+                                <button
+                                    onClick={() => window.print()}
+                                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
+                                >
+                                    <Printer size={16} /> Print Official Transcript
+                                </button>
+                            </>
+                        )}
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-blue-600"
+                        >
+                            Return To Hub
+                        </button>
                     </div>
                 </div>
-
-                {/* Print & Download Action - No Print */}
-                <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex flex-col items-center gap-3 no-print">
-                    {status === 'valid' && (
-                        <>
-                            <button 
-                                onClick={() => {
-                                    const btn = document.querySelector('.no-print-container');
-                                    import('html2canvas').then(html2canvas => {
-                                        html2canvas.default(document.querySelector('.certificate-card'), {
-                                            scale: 3,
-                                            useCORS: true,
-                                            backgroundColor: '#ffffff'
-                                        }).then(canvas => {
-                                            const link = document.createElement('a');
-                                            link.download = `Certificate_${data.fullName.replace(/\s+/g, '_')}.png`;
-                                            link.href = canvas.toDataURL('image/png');
-                                            link.click();
-                                        });
-                                    });
-                                }}
-                                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 active:scale-95"
-                            >
-                                <Download size={16} /> Download High-Res Certificate
-                            </button>
-                            <button 
-                                onClick={() => window.print()}
-                                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
-                            >
-                                <Printer size={16} /> Print Official Transcript
-                            </button>
-                        </>
-                    )}
-                </div>
             </motion.div>
+
+            {/* PREVIEW OVERLAY */}
+            <AnimatePresence>
+                {showPreview && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-10"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className="relative w-full max-w-6xl max-h-screen overflow-auto bg-white rounded-[2rem] shadow-2xl p-4 md:p-8"
+                        >
+                            <button
+                                onClick={() => setShowPreview(false)}
+                                className="absolute top-6 right-6 p-3 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-600 transition-all z-50 shadow-lg"
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <div className="mb-8 text-center md:text-left">
+                                <h2 className="text-2xl font-black text-slate-900 tracking-tighter italic">CERTIFICATE <span className="text-blue-600">PREVIEW</span></h2>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] italic">Official Academic Asset Node: {id}</p>
+                            </div>
+
+                            <Suspense fallback={<div className="h-[400px] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>}>
+                                <div className="flex justify-center origin-top transform scale-[0.95] md:scale-100">
+                                    <Certificate
+                                        student={{
+                                            name: data.fullName,
+                                            college: data.college,
+                                            branch: data.branch,
+                                            year: data.year,
+                                            studentId: data.studentId || id,
+                                            certificateId: data.certificateId || id,
+                                            _id: data._id
+                                        }}
+                                        userEmail={data.email}
+                                        autoSend={false}
+                                    />
+                                </div>
+                            </Suspense>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <style>{`
                 @media print {
@@ -166,9 +242,8 @@ const VerifyCertificate = () => {
                     .no-print { display: none !important; }
                     .no-bg-on-print { background: white !important; padding: 0 !important; height: auto !important; min-height: 0 !important; }
                     .min-h-screen { background: white !important; min-height: 0 !important; padding: 0 !important; }
-                    div[class*="bg-white"] { box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; padding: 20px !important; }
-                    .rounded-\[2\.5rem\] { border-radius: 0 !important; border: 1px solid #eee !important; }
                 }
+                .origin-top { transform-origin: top center; }
             `}</style>
         </div>
     );
