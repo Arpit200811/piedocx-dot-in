@@ -3,6 +3,7 @@ import EmailLog from '../models/EmailLog.js';
 
 export const getTransporter = () => {
   const { EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, EMAIL_SECURE } = process.env;
+  console.log("env bala data",EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, EMAIL_SECURE);
 
   if (!EMAIL_USER || !EMAIL_PASS) {
     throw new Error('Email credentials (EMAIL_USER or EMAIL_PASS) are missing in .env file');
