@@ -15,6 +15,10 @@ const AdminLogin = () => {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    console.log("AdminLogin Component Mounted - Version: NO-OTP");
+  }, []);
+
   const handleRequestLogin = async (e) => {
     e.preventDefault();
     setError(''); setSuccess('');
@@ -22,10 +26,17 @@ const AdminLogin = () => {
     try {
       const normalizedEmail = email.trim().toLowerCase();
       const res = await axios.post(`${base_url}/api/admins/admin/request-login`, { email: normalizedEmail, password });
+      console.log("Login API Response:", res.data);
 
-      localStorage.setItem('adminToken', res.data.token);
-      localStorage.setItem('adminUser', JSON.stringify(res.data.admin));
-      navigate('/admin-dashboard');
+      if (res.data.token) {
+        localStorage.setItem('adminToken', res.data.token);
+        localStorage.setItem('adminUser', JSON.stringify(res.data.admin));
+        console.log("Token stored, navigating to dashboard...");
+        navigate('/admin-dashboard');
+      } else {
+        console.error("No token in response!");
+        setError("Invalid response from server.");
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed.');
     } finally {
@@ -166,6 +177,13 @@ const AdminLogin = () => {
               <button type="button" onClick={() => setStep(1)} className="w-full text-slate-500 text-[10px] md:text-xs font-black uppercase tracking-widest hover:text-white pt-4">← Cancel Recovery</button>
             </form>
           )}
+
+          {/* Version Indicator */}
+          <div className="mt-8 pt-6 border-t border-white/5 text-center">
+            <span className="text-[9px] font-black text-blue-500/40 uppercase tracking-[0.3em]">
+              Security Protocol: DIRECT_AUTH_LEGACY_PASS
+            </span>
+          </div>
         </div>
       </div>
     </div>
