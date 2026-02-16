@@ -210,17 +210,18 @@ router.post('/bulk-upload-questions', adminAuth, async (req, res) => {
         
         console.log(`[Bulk Upload] Request received for ${yearGroup}/${branchGroup}`);
 
+        if (!yearGroup || !branchGroup) {
+            return res.status(400).json({ message: 'Missing group identifiers (yearGroup/branchGroup)' });
+        }
+
         if (!questions || !Array.isArray(questions)) {
-             // Try parsing if it's a string (sometimes happens with form-data misconfiguration)
              if (typeof questions === 'string') {
                  try {
                      questions = JSON.parse(questions);
                  } catch (e) {
-                    console.error("[Bulk Upload] Failed to parse questions string:", e.message);
-                    return res.status(400).json({ message: 'Invalid questions format: Could not parse JSON string' });
+                    return res.status(400).json({ message: 'Invalid JSON format in questions string' });
                  }
              } else {
-                console.error("[Bulk Upload] Questions is not an array. Type:", typeof questions);
                 return res.status(400).json({ message: 'Invalid questions format: Must be an array' });
              }
         }
@@ -229,60 +230,45 @@ router.post('/bulk-upload-questions', adminAuth, async (req, res) => {
             return res.status(400).json({ message: 'No questions provided' });
         }
 
-        if (!yearGroup || !branchGroup) {
-            return res.status(400).json({ message: 'Missing group identifiers (yearGroup/branchGroup)' });
-        }
-
         // Validate structure of each question
-        const validatedQuestions = questions.map((q, i) => {
-            // Map incoming keys to expected keys (Support variations)
-            const questionText = q.questionText || q.question;
+        const validatedQuestions = [];
+        for (let i = 0; i < questions.length; i++) {
+            const q = questions[i];
+            const questionText = (q.questionText || q.question || '').trim();
             const rawOptions = q.options;
             const rawCorrectAnswer = q.correctAnswer || q.answer;
 
-            // Detailed validation for debugging
             if (!questionText) {
-                const msg = `Question index ${i + 1}: Missing 'questionText' (or 'question'). Received keys: ${Object.keys(q).join(', ')}`;
-                console.error(`[Bulk Upload] ${msg}`);
-                console.error(`[Bulk Upload] Failed Object:`, JSON.stringify(q, null, 2));
-                throw new Error(msg);
+                return res.status(400).json({ message: `Question ${i + 1}: Question text is missing.` });
             }
-            if (!Array.isArray(rawOptions)) {
-                const msg = `Question index ${i + 1}: 'options' must be an array.`;
-                console.error(`[Bulk Upload] ${msg}`);
-                console.error(`[Bulk Upload] Failed Object:`, JSON.stringify(q, null, 2));
-                throw new Error(msg);
-            }
-            if (rawOptions.length !== 4) {
-                 const msg = `Question index ${i + 1}: 'options' must have exactly 4 items. Found ${rawOptions.length}.`;
-                 console.error(`[Bulk Upload] ${msg}`);
-                 console.error(`[Bulk Upload] Failed Object:`, JSON.stringify(q, null, 2));
-                 throw new Error(msg);
-            }
-            if (!rawCorrectAnswer) {
-                const msg = `Question index ${i + 1}: Missing 'correctAnswer' (or 'answer').`;
-                console.error(`[Bulk Upload] ${msg}`);
-                console.error(`[Bulk Upload] Failed Object:`, JSON.stringify(q, null, 2));
-                throw new Error(msg);
+            if (!Array.isArray(rawOptions) || rawOptions.length !== 4) {
+                return res.status(400).json({ message: `Question ${i + 1}: Must have exactly 4 options.` });
             }
             
-            // Normalize to string and trim 
-            const options = rawOptions.map(o => String(o).trim());
-            const correctAnswer = String(rawCorrectAnswer).trim();
-
-            if (!options.includes(correctAnswer)) {
-                const msg = `Correct answer not found in options at question index ${i + 1}. Options: ${JSON.stringify(options)}, Answer: ${correctAnswer}`;
-                console.error(`[Bulk Upload] ${msg}`);
-                throw new Error(msg);
+            const options = rawOptions.map(o => String(o || '').trim());
+            if (options.some(opt => !opt)) {
+                return res.status(400).json({ message: `Question ${i + 1}: All 4 options must be non-empty.` });
             }
-            return {
-                questionText: questionText,
-                options: options,
-                correctAnswer: correctAnswer
-            };
-        });
 
-        let config = await TestConfig.findOne({ yearGroup, branchGroup });
+            const correctAnswer = String(rawCorrectAnswer || '').trim();
+            if (!correctAnswer) {
+                return res.status(400).json({ message: `Question ${i + 1}: Correct answer is missing.` });
+            }
+            
+            if (!options.includes(correctAnswer)) {
+                return res.status(400).json({ message: `Question ${i + 1}: Correct answer "${correctAnswer}" not found in provided options.` });
+            }
+
+            validatedQuestions.push({
+                questionText,
+                options,
+                correctAnswer
+            });
+        }
+
+        // Find the LATEST config for this group
+        let config = await TestConfig.findOne({ yearGroup, branchGroup }).sort({ createdAt: -1 });
+        
         if (!config) {
              console.log(`[Bulk Upload] Config not found. Creating new skeleton for ${yearGroup}/${branchGroup}`);
              config = new TestConfig({
@@ -291,13 +277,14 @@ router.post('/bulk-upload-questions', adminAuth, async (req, res) => {
                  branchGroup,
                  startDate: new Date(),
                  endDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Default 24h window
+                 duration: 30, // Explicitly set required field
                  questions: [],
-                 isActive: true
+                 isActive: true,
+                 targetCollege: 'all'
              });
         }
 
-        // Use loop to avoid stack overflow with spread operator on large arrays
-        // config.questions.push(...validatedQuestions); 
+        // Append validated questions
         validatedQuestions.forEach(q => config.questions.push(q));
 
         await config.save();
@@ -306,13 +293,7 @@ router.post('/bulk-upload-questions', adminAuth, async (req, res) => {
         res.json({ message: `${validatedQuestions.length} questions uploaded successfully`, totalQuestions: config.questions.length });
     } catch (error) {
         console.error("[Bulk Upload] Error:", error);
-        
-        // Return 400 for validation errors we explicitly threw
-        if (error.message.startsWith('Invalid structure') || error.message.startsWith('Correct answer')) {
-             return res.status(400).json({ message: error.message });
-        }
-        
-        res.status(500).json({ message: error.message || 'Bulk upload failed' });
+        res.status(500).json({ message: error.message || 'Internal server error during bulk upload' });
     }
 });
 

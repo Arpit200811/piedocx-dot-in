@@ -104,7 +104,14 @@ export const registerStudent = async (req, res) => {
 
 export const getAllStudents = async (req, res) => {
     try {
-        const students = await ExamStudent.find().sort({ createdAt: -1 });
+        // Optimization: Select only necessary fields and exclude heavy fields like images/questions for the list view
+        const students = await ExamStudent.find({}, {
+            profilePicture: 0,
+            qrCode: 0,
+            signature: 0,
+            assignedQuestions: 0,
+            savedAnswers: 0
+        }).sort({ createdAt: -1 });
         res.json(students);
     } catch (error) {
         console.error("getAllStudents error:", error);
