@@ -22,8 +22,8 @@ export const getYearGroup = (year) => {
     if (yearNum === 1 || yearNum === 2 || year === '1st' || year === '2nd') {
         return '1-2';
     }
-    if (yearNum === 3 || year === '3rd') {
-        return '3';
+    if (yearNum === 3 || year === '3rd' || yearNum === 4 || year === '4th') {
+        return '3-4';
     }
     return '1-2'; // Default
 };

@@ -282,10 +282,18 @@ router.post('/bulk-upload-questions', adminAuth, async (req, res) => {
             };
         });
 
-        const config = await TestConfig.findOne({ yearGroup, branchGroup });
+        let config = await TestConfig.findOne({ yearGroup, branchGroup });
         if (!config) {
-             console.error(`[Bulk Upload] Test config not found for ${yearGroup}/${branchGroup}`);
-             return res.status(404).json({ message: `Test config not found for ${yearGroup} / ${branchGroup}` });
+             console.log(`[Bulk Upload] Config not found. Creating new skeleton for ${yearGroup}/${branchGroup}`);
+             config = new TestConfig({
+                 title: `Assessment for ${yearGroup} - ${branchGroup}`,
+                 yearGroup,
+                 branchGroup,
+                 startDate: new Date(),
+                 endDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Default 24h window
+                 questions: [],
+                 isActive: true
+             });
         }
 
         // Use loop to avoid stack overflow with spread operator on large arrays

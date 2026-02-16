@@ -11,7 +11,7 @@ const testConfigSchema = new mongoose.Schema({
   title: { type: String, default: 'General Assessment' },
   yearGroup: { 
     type: String, 
-    enum: ['1-2', '3'], 
+    enum: ['1-2', '3-4'], 
     required: true,
     default: '1-2'
   },
