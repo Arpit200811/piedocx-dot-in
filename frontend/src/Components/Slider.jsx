@@ -4,35 +4,37 @@ import Typewriter from 'typewriter-effect';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Star } from 'lucide-react';
 
+import { DeveloperIllustration, AppIllustration, CloudIllustration, TeamIllustration } from './Illustrations';
+
 const sliderData = [
   {
-    title: 'Innovate with Piedocx Architecture',
-    subtitle: 'Crafting elite digital artifacts!',
-    description: 'We translate complex business logic into high-performance web and mobile ecosystems at global scale.',
-    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80',
+    title: 'Enterprise Software Solutions',
+    subtitle: 'Building the backbone of modern business!',
+    description: 'We engineer complex, scalable enterprise applications that drive efficiency and growth for global organizations.',
+    component: <DeveloperIllustration />,
     color: 'from-blue-600 to-indigo-700'
   },
   {
-    title: 'Precision Full-Stack Engineering',
-    subtitle: 'Scale your vision with resilient code!',
-    description: 'Our labs utilize the MERN stack and cloud-native strategies to build architectures that never sleep.',
-    image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80',
+    title: 'Custom Web & Mobile Apps',
+    subtitle: 'From concept to multi-platform launch!',
+    description: 'Our expert team delivers high-performance, user-centric mobile and web ecosystems designed for the modern user.',
+    component: <AppIllustration />,
     color: 'from-blue-700 to-blue-900'
   },
   {
-    title: 'Data-Driven Future Logic',
-    subtitle: 'AI-embedded system orchestration!',
-    description: 'From MVPs to enterprise-grade neural networks, we architect the future of digital interaction.',
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+    title: 'Cloud-Native Engineering',
+    subtitle: 'Scalable architectures that grow with you!',
+    description: 'Leveraging cutting-edge cloud tech and microservices to build resilient systems that never experience downtime.',
+    component: <CloudIllustration />,
     color: 'from-blue-500 to-sky-600'
   },
   {
-    title: 'Global Performance Nodes',
-    subtitle: 'Reliability engineered into every byte.',
-    description: 'Collaborate with an elite engineering team where innovation, velocity, and security are non-negotiable.',
-    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80',
+    title: 'Dedicated Agile Teams',
+    subtitle: 'Your vision, our engineering excellence!',
+    description: 'Partner with elite developers who integrate seamlessly into your workflow to accelerate product delivery.',
+    component: <TeamIllustration />,
     color: 'from-blue-800 to-indigo-950'
-  },
+  }
 ];
 
 const Slider = () => {
@@ -47,13 +49,13 @@ const Slider = () => {
 
   return (
     <div className="relative w-full min-h-[600px] md:min-h-[750px] overflow-hidden bg-white flex items-center pt-14 md:pt-16 lg:pt-20">
-      
+
       {/* Dynamic Design Layer */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-full h-full opacity-[0.05] bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
         <div className="absolute -top-20 -left-20 w-[600px] h-[600px] bg-blue-100 rounded-full blur-[120px] opacity-40 animate-pulse"></div>
         <div className="absolute bottom-20 right-0 w-[400px] h-[400px] bg-indigo-100 rounded-full blur-[100px] opacity-30 animate-pulse-slow"></div>
-        
+
         {/* Animated Particles */}
         {[...Array(6)].map((_, i) => (
           <motion.div
@@ -79,12 +81,12 @@ const Slider = () => {
       </div>
 
       <div className="container mx-auto px-6 md:px-12 relative z-10">
-        <div className="flex flex-col-reverse lg:flex-row items-center gap-16 lg:gap-24">
-          
+        <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+
           {/* Enhanced Content Engine */}
           <div className="flex-1 max-w-2xl">
             <AnimatePresence mode="wait">
-              <motion.div 
+              <motion.div
                 key={`content-${current}`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -96,18 +98,18 @@ const Slider = () => {
                   <div className="w-2 h-2 rounded-full bg-blue-600 animate-ping"></div>
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Enterprise Ready</span>
                 </div>
-                
+
                 <h1 className="text-4xl md:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight group">
                   {sliderData[current].title.split(' ').map((word, i) => (
-                    <span key={i} className={`inline-block mr-3 ${word === 'Piedocx' || word === 'Build' || word === 'Innovate' ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600' : ''}`}>
+                    <span key={i} className={`inline-block mr-3 ${['Software', 'Enterprise', 'Solutions', 'Custom', 'Mobile', 'Cloud-Native', 'Dedicated', 'Agile'].includes(word) ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600' : ''}`}>
                       {word}
                     </span>
                   ))}
                 </h1>
 
                 <div className="min-h-[30px] text-xl md:text-2xl font-black text-blue-500 uppercase italic flex items-center gap-3">
-                   <div className="w-8 h-[2px] bg-blue-500/30"></div>
-                   <Typewriter
+                  <div className="w-8 h-[2px] bg-blue-500/30"></div>
+                  <Typewriter
                     key={current}
                     options={{
                       strings: [sliderData[current].subtitle],
@@ -129,7 +131,7 @@ const Slider = () => {
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <span className="relative z-10 flex items-center gap-3 font-black text-sm uppercase tracking-widest text-white">
-                      Initiate Project <ArrowRight size={18}/>
+                      Initiate Project <ArrowRight size={18} />
                     </span>
                   </Link>
                   <Link
@@ -146,7 +148,7 @@ const Slider = () => {
           {/* Visual Projection Frame */}
           <div className="flex-1 w-full flex justify-center items-center relative">
             <AnimatePresence mode="wait">
-              <motion.div 
+              <motion.div
                 key={`image-${current}`}
                 initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -157,21 +159,19 @@ const Slider = () => {
                 {/* Decorative Frame Elements */}
                 <div className="absolute inset-0 bg-blue-100 rounded-[4rem] group-hover:bg-blue-200 blur-3xl opacity-20 transition-colors duration-1000"></div>
                 <div className="absolute -inset-10 border border-blue-100 rounded-[5rem] opacity-50 group-hover:scale-110 transition-transform duration-1000"></div>
-                
-                <img
-                  src={sliderData[current].image}
-                  alt="System visual"
-                  className="relative w-full max-w-[400px] md:max-w-xl mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.1)] hover:drop-shadow-[0_35px_35px_rgba(37,99,235,0.1)] transition-all animate-float brightness-[1.1] contrast-[1.05]"
-                />
-                
+
+                <div className="relative w-full max-w-[400px] md:max-w-xl mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.1)] hover:drop-shadow-[0_35px_35px_rgba(37,99,235,0.1)] transition-all animate-float">
+                  {sliderData[current].component}
+                </div>
+
                 {/* Floating Meta Tag */}
-                <motion.div 
+                <motion.div
                   initial={{ x: 20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.8 }}
                   className="absolute bottom-10 right-0 md:right-10 bg-white shadow-2xl rounded-3xl p-5 border border-slate-100 backdrop-blur-md flex items-center gap-4 animate-float-slow"
                 >
-                  <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20"><Star fill="white" size={20}/></div>
+                  <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20"><Star fill="white" size={20} /></div>
                   <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency</p><p className="font-black text-slate-900 leading-none">99.9% Up</p></div>
                 </motion.div>
               </motion.div>

@@ -2,13 +2,13 @@ import { useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { Link } from "react-router-dom";
-import { 
-  Code2, 
-  Smartphone, 
-  PenTool, 
-  Globe, 
-  Palette, 
-  Megaphone 
+import {
+  Code2,
+  Smartphone,
+  PenTool,
+  Globe,
+  Palette,
+  Megaphone
 } from "lucide-react";
 
 const Aboutus2 = () => {
@@ -28,22 +28,9 @@ const Aboutus2 = () => {
   return (
     <section className="max-w-7xl mx-auto px-6 py-12 md:py-24">
       <div className="flex flex-col lg:flex-row items-center gap-10 md:gap-16">
-        
-        {/* Left Side: Creative Image Frame */}
-        <div className="lg:w-1/2 relative w-full" data-aos="fade-right">
-          <div className="absolute -inset-4 bg-gradient-to-tr from-blue-100 to-indigo-50 rounded-[3rem] blur-3xl opacity-50"></div>
-          <img
-            src="/choose-2.png"
-            alt="Tech Illustration"
-            className="relative w-full max-w-[300px] md:max-w-lg mx-auto animate-float-slow mix-blend-multiply brightness-[1.1] contrast-[1.1]"
-          />
-          <div className="absolute top-5 right-5 md:top-10 md:right-10 w-14 h-14 md:w-20 md:h-20 bg-white/40 backdrop-blur-md rounded-xl md:rounded-2xl border border-white/40 shadow-xl flex items-center justify-center animate-bounce duration-[4s]">
-             <Code2 className="text-blue-600 text-2xl md:text-3xl" strokeWidth={1.5} />
-          </div>
-        </div>
 
-        {/* Right Side: Content */}
-        <div className="lg:w-1/2" data-aos="fade-left">
+        {/* Left Side: Content */}
+        <div className="lg:w-1/2" data-aos="fade-right">
           <div className="space-y-6">
             <h2 className="text-blue-600 font-bold uppercase tracking-widest text-[10px] md:text-sm">Grow with Expertise</h2>
             <h3 className="text-3xl md:text-5xl font-black text-gray-900 leading-tight">
@@ -70,6 +57,20 @@ const Aboutus2 = () => {
             </div>
           </div>
         </div>
+
+        {/* Right Side: Creative Image Frame */}
+        <div className="lg:w-1/2 relative w-full" data-aos="fade-left">
+          <div className="absolute -inset-4 bg-gradient-to-tr from-blue-100 to-indigo-50 rounded-[3rem] blur-3xl opacity-50"></div>
+          <img
+            src="/choose-2.png"
+            alt="Tech Illustration"
+            className="relative w-full max-w-[300px] md:max-w-lg mx-auto animate-float-slow mix-blend-multiply brightness-[1.1] contrast-[1.1]"
+          />
+          <div className="absolute top-5 right-5 md:top-10 md:right-10 w-14 h-14 md:w-20 md:h-20 bg-white/40 backdrop-blur-md rounded-xl md:rounded-2xl border border-white/40 shadow-xl flex items-center justify-center animate-bounce duration-[4s]">
+            <Code2 className="text-blue-600 text-2xl md:text-3xl" strokeWidth={1.5} />
+          </div>
+        </div>
+
       </div>
 
       <style>{`
