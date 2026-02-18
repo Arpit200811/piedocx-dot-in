@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Zap, BookOpen, CheckCircle, Target, ChevronRight, KeyRound, Megaphone, X } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../../utils/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { io } from 'socket.io-client';
+import { base_url } from '../../utils/info';
+
 
 const TestInterface = () => {
     const navigate = useNavigate();
