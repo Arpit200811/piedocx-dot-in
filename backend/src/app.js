@@ -17,6 +17,7 @@ import registerRoutes from "./routes/register.route.js";
 import studentAuthRoutes from './routes/studentAuth.route.js';
 import testConfigRoutes from './routes/testConfig.route.js';
 import analyticsRoutes from './routes/analytics.route.js';
+import errorHandler from "./middleware/error.middleware.js";
 
 
 const app = express();
@@ -68,15 +69,6 @@ app.use(parser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Global error handler for JSON parsing errors
-app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-    console.error('Bad JSON Request:', err.message);
-    return res.status(400).json({ message: 'Invalid JSON payload. Please check your request syntax.' });
-  }
-  next();
-});
-
 // Routes are mounted below with /api prefix
 
 // Routes
@@ -89,12 +81,21 @@ app.use('/api/student-auth', studentAuthRoutes);
 app.use('/api/admin/test-config', testConfigRoutes); 
 app.use('/api/admin/analytics', analyticsRoutes); 
 
+import whatsappRoutes from './routes/whatsapp.route.js';
+app.use('/api/whatsapp', whatsappRoutes);
+app.use(errorHandler); 
+
 // Test route
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
 httpServer.listen(5002, async () => {
-  await connectDB(); 
+  await connectDB();
+  // Initialize WhatsApp Service
+  import('./utils/whatsappService.js').then(module => {
+      module.initializeWhatsApp();
+  }).catch(err => console.error("Failed to load WhatsApp module", err));
+  
   console.log(`Server running on port 5002`);
 });

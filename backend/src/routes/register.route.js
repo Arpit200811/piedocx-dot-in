@@ -10,9 +10,10 @@ import {
     bulkRegister,
     bulkDelete,
     bulkSendCertificates,
-    updateStudentDetails
+    updateStudentDetails,
+    sendSingleEmailAdmin
 } from '../controllers/registration.controller.js';
-import { adminAuth } from '../middlewares/auth.middleware.js';
+import { adminAuth, studentAuth } from '../middlewares/auth.middleware.js';
 import { registrationRateLimiter } from '../middlewares/rateLimit.middleware.js';
 
 const router = express.Router();
@@ -22,8 +23,9 @@ router.post('/register', registrationRateLimiter, registerStudent);
 router.get('/view/:id', verifyCertificate);
 router.get('/verify-public/:id', verifyCertificatePublic);
 
-// Admin: Email & Management (send-email is now partially public for auto-send)
-router.post('/send-email', sendEmailCertificate);
+// Admin: Email & Management (send-email is now secured with studentAuth)
+router.post('/send-email', studentAuth, sendEmailCertificate);
+router.post('/send-single-email', adminAuth, sendSingleEmailAdmin);
 router.get('/students', adminAuth, getAllStudents);
 router.patch('/students/:id/status', adminAuth, updateStudentStatus);
 router.delete('/students/:id', adminAuth, deleteStudent);

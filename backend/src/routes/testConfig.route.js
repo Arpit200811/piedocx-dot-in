@@ -229,34 +229,86 @@ router.post('/bulk-upload-questions', adminAuth, async (req, res) => {
         if (questions.length === 0) {
             return res.status(400).json({ message: 'No questions provided' });
         }
-
-        // Validate structure of each question
         const validatedQuestions = [];
         for (let i = 0; i < questions.length; i++) {
             const q = questions[i];
-            const questionText = (q.questionText || q.question || '').trim();
-            const rawOptions = q.options;
-            const rawCorrectAnswer = q.correctAnswer || q.answer;
+            
+            // Flexible key mapping
+            const questionText = (q.questionText || q.question || q.Question || q.text || '').trim();
+            const rawCorrectAnswer = q.correctAnswer || q.correct_answer || q.answer || q.Answer;
+
+            // INTELLIGENT Option Detection
+            let options = [];
+            const rawOptions = q.options || q.Options || q.choices || q.Choices;
+
+            if (Array.isArray(rawOptions)) {
+                options = rawOptions.slice(0, 4).map(o => String(o ?? '').trim());
+            } else if (rawOptions && typeof rawOptions === 'object') {
+                // Handle nested object { "A": "...", "B": "..." } or { "1": "...", "2": "..." }
+                const optA = rawOptions.A ?? rawOptions.a ?? rawOptions.option1 ?? rawOptions.opt1 ?? rawOptions[1] ?? rawOptions["1"];
+                const optB = rawOptions.B ?? rawOptions.b ?? rawOptions.option2 ?? rawOptions.opt2 ?? rawOptions[2] ?? rawOptions["2"];
+                const optC = rawOptions.C ?? rawOptions.c ?? rawOptions.option3 ?? rawOptions.opt3 ?? rawOptions[3] ?? rawOptions["3"];
+                const optD = rawOptions.D ?? rawOptions.d ?? rawOptions.option4 ?? rawOptions.opt4 ?? rawOptions[4] ?? rawOptions["4"];
+                
+                if (optA !== undefined && optB !== undefined && optC !== undefined && optD !== undefined) {
+                    options = [optA, optB, optC, optD].map(o => String(o ?? '').trim());
+                } else {
+                    // Final fallback for objects: just take the first 4 values regardless of keys
+                    const values = Object.values(rawOptions).filter(v => v !== null && v !== undefined);
+                    if (values.length >= 4) {
+                        options = values.slice(0, 4).map(v => String(v).trim());
+                    }
+                }
+            }
+
+            // Fallback to top-level keys if object search failed
+            if (options.length !== 4) {
+                const optA = q.option1 ?? q.Option1 ?? q.a ?? q.A ?? q.opt1 ?? q.opt_1;
+                const optB = q.option2 ?? q.Option2 ?? q.b ?? q.B ?? q.opt2 ?? q.opt_2;
+                const optC = q.option3 ?? q.Option3 ?? q.c ?? q.C ?? q.opt3 ?? q.opt_3;
+                const optD = q.option4 ?? q.Option4 ?? q.d ?? q.D ?? q.opt4 ?? q.opt_4;
+                if (optA !== undefined && optB !== undefined && optC !== undefined && optD !== undefined) {
+                    options = [optA, optB, optC, optD].map(o => String(o ?? '').trim());
+                }
+            }
 
             if (!questionText) {
-                return res.status(400).json({ message: `Question ${i + 1}: Question text is missing.` });
-            }
-            if (!Array.isArray(rawOptions) || rawOptions.length !== 4) {
-                return res.status(400).json({ message: `Question ${i + 1}: Must have exactly 4 options.` });
+                return res.status(400).json({ message: `[LOCAL-FIX] Question ${i + 1}: Text is missing.` });
             }
             
-            const options = rawOptions.map(o => String(o || '').trim());
+            if (options.length !== 4) {
+                let debugInfo = `Found ${options.length}`;
+                if (rawOptions && typeof rawOptions === 'object' && !Array.isArray(rawOptions)) {
+                    debugInfo += `. Available keys: [${Object.keys(rawOptions).join(', ')}]`;
+                }
+                return res.status(400).json({ 
+                    message: `[LOCAL-FIX] Question ${i + 1}: Must have exactly 4 options. ${debugInfo}.` 
+                });
+            }
+            
             if (options.some(opt => !opt)) {
-                return res.status(400).json({ message: `Question ${i + 1}: All 4 options must be non-empty.` });
+                return res.status(400).json({ message: `[LOCAL-FIX] Question ${i + 1}: All 4 options must contain text.` });
             }
 
-            const correctAnswer = String(rawCorrectAnswer || '').trim();
+            // HANDLE LETTER ANSWERS (A, B, C, D) OR NUMERIC POSITIONS (1, 2, 3, 4)
+            const letterMap = { 
+                'A': 0, 'B': 1, 'C': 2, 'D': 3, 
+                'a': 0, 'b': 1, 'c': 2, 'd': 3,
+                '1': 0, '2': 1, '3': 2, '4': 3
+            };
+            let finalCorrectAnswer = (q.correctAnswer || q.correct_answer || q.answer || q.Answer);
+            
+            if ((typeof finalCorrectAnswer === 'string' || typeof finalCorrectAnswer === 'number') && letterMap[String(finalCorrectAnswer)] !== undefined) {
+                finalCorrectAnswer = options[letterMap[String(finalCorrectAnswer)]];
+            }
+
+            const correctAnswer = String(finalCorrectAnswer || '').trim();
             if (!correctAnswer) {
-                return res.status(400).json({ message: `Question ${i + 1}: Correct answer is missing.` });
+                return res.status(400).json({ message: `[LOCAL-FIX] Question ${i + 1}: Correct answer is missing.` });
             }
             
             if (!options.includes(correctAnswer)) {
-                return res.status(400).json({ message: `Question ${i + 1}: Correct answer "${correctAnswer}" not found in provided options.` });
+                return res.status(400).json({ message: `[LOCAL-FIX] Question ${i + 1}: Correct answer "${correctAnswer}" not found in options: [${options.join(', ')}]` });
             }
 
             validatedQuestions.push({
@@ -284,13 +336,34 @@ router.post('/bulk-upload-questions', adminAuth, async (req, res) => {
              });
         }
 
-        // Append validated questions
-        validatedQuestions.forEach(q => config.questions.push(q));
+        // SMART APPEND: Only add questions that don't already exist (by text check)
+        const existingTexts = new Set(config.questions.map(q => q.questionText.trim().toLowerCase()));
+        let addedCount = 0;
+        let duplicateInFileCount = 0;
+        const finalUniqueToUpload = [];
+        const seenInFile = new Set();
+
+        for (const q of validatedQuestions) {
+            const text = q.questionText.trim().toLowerCase();
+            if (seenInFile.has(text)) {
+                duplicateInFileCount++;
+                continue;
+            }
+            seenInFile.add(text);
+
+            if (!existingTexts.has(text)) {
+                config.questions.push(q);
+                addedCount++;
+            }
+        }
 
         await config.save();
         
-        console.log(`[Bulk Upload] Successfully uploaded ${validatedQuestions.length} questions to ${yearGroup}/${branchGroup}`);
-        res.json({ message: `${validatedQuestions.length} questions uploaded successfully`, totalQuestions: config.questions.length });
+        console.log(`[Bulk Upload] Processed ${validatedQuestions.length} questions. Added: ${addedCount}, Duplicates ignored: ${validatedQuestions.length - addedCount}`);
+        res.json({ 
+            message: `${addedCount} new questions uploaded. ${validatedQuestions.length - addedCount} duplicates were skipped.`, 
+            totalQuestions: config.questions.length 
+        });
     } catch (error) {
         console.error("[Bulk Upload] Error:", error);
         res.status(500).json({ message: error.message || 'Internal server error during bulk upload' });

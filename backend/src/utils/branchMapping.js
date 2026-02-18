@@ -18,12 +18,23 @@ export const getBranchGroup = (branch) => {
 };
 
 export const getYearGroup = (year) => {
-    const yearNum = parseInt(year);
-    if (yearNum === 1 || yearNum === 2 || year === '1st' || year === '2nd') {
-        return '1-2';
-    }
-    if (yearNum === 3 || year === '3rd' || yearNum === 4 || year === '4th') {
+    if (!year) return '1-2';
+    const y = year.toString().toLowerCase();
+    
+    // Check for 3rd or 4th year patterns first
+    if (
+        y.includes('3') || 
+        y.includes('4') || 
+        y.includes('3rd') || 
+        y.includes('4th') || 
+        y.includes('third') || 
+        y.includes('fourth') || 
+        y.includes('final') || 
+        y.includes('graduated')
+    ) {
         return '3-4';
     }
-    return '1-2'; // Default
+
+    // Default to 1-2 for everything else (1st, 2nd, Freshers, etc.)
+    return '1-2';
 };

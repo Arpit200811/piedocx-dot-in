@@ -8,6 +8,8 @@ import TestResult from "../models/TestResult.js";
 import ExamSession from "../models/ExamSession.js";
 import Bulletin from "../models/Bulletin.js";
 import Resource from "../models/Resource.js";
+import Feedback from "../models/Feedback.js";
+import TestConfig from "../models/TestConfig.js";
 
 import { sendAdminOTP } from "../utils/emailService.js";
 import jwt from "jsonwebtoken";
@@ -133,6 +135,8 @@ export const getAdminStats = async (req, res) => {
     const newsletterCount = await User.countDocuments({ source: "newsletter" });
     const workshopCount = await User.countDocuments({ source: "workshop" });
 
+    const feedbackCount = await Feedback.countDocuments();
+
     res.status(200).json({
       totalStudents: legacyStudentsCount + newStudentsCount,
       appearedCount: await ExamStudent.countDocuments({ testAttempted: true }),
@@ -142,7 +146,8 @@ export const getAdminStats = async (req, res) => {
       totalEmployees,
       contactCount,
       newsletterCount,
-      workshopCount
+      workshopCount,
+      feedbackCount
     });
 
   } catch (error) {
@@ -479,4 +484,27 @@ export const registerAdmin = async (req, res) => {
     console.error("registerAdmin error:", error);
     res.status(500).json({ message: "Internal server error during registration" });
   }
+};
+
+export const getFeedbacks = async (req, res) => {
+    try {
+        const feedbacks = await Feedback.find()
+            .populate('studentId', 'fullName email studentId college branch')
+            .populate('testId', 'title')
+            .sort({ createdAt: -1 });
+        res.json(feedbacks);
+    } catch (error) {
+        console.error("getFeedbacks error:", error);
+        res.status(500).json({ message: "Error fetching feedback" });
+    }
+};
+
+export const deleteFeedback = async (req, res) => {
+    try {
+        await Feedback.findByIdAndDelete(req.params.id);
+        res.json({ message: "Feedback deleted successfully" });
+    } catch (error) {
+        console.error("deleteFeedback error:", error);
+        res.status(500).json({ message: "Error deleting feedback" });
+    }
 };

@@ -134,10 +134,12 @@ export const getTestInfo = async (req, res) => {
 
         let config = await TestConfig.findOne(query).sort({ createdAt: -1 });
 
-        if (!config) {
-            console.log(`[getTestInfo] No active group-specific test. Checking latest active overall.`);
-            config = await TestConfig.findOne({ isActive: true, endDate: { $gt: now } }).sort({ createdAt: -1 });
-        }
+        // REMOVED: Fallback to pick 'any' active test. 
+        // This was causing 1st year students to see 3rd/4th year tests.
+        // if (!config) {
+        //     console.log(`[getTestInfo] No active group-specific test. Checking latest active overall.`);
+        //     config = await TestConfig.findOne({ isActive: true, endDate: { $gt: now } }).sort({ createdAt: -1 });
+        // }
 
         if (!config) {
             return res.status(404).json({ message: "No active tests available." });
@@ -172,38 +174,42 @@ export const getQuestions = async (req, res) => {
         if (student.testAttempted) {
              return res.status(403).json({ message: 'You have already completed this test.', testAttempted: true });
         }
-        const studentYearGroup = getYearGroup(student.year);
-        const studentBranchGroup = getBranchGroup(student.branch);
-        const studentCollege = student.college ? student.college.trim().toLowerCase() : null;
+        const { accessKey, testId } = req.body;
         const now = new Date();
+        let config = null;
 
-        // MATCHING QUERY LOGIC WITH getTestInfo
-        const query = {
-            yearGroup: studentYearGroup,
-            branchGroup: studentBranchGroup,
-            isActive: true,
-            endDate: { $gt: now },
-            $or: [
-                { targetCollege: { $regex: /^all$/i } },
-                { targetCollege: null }
-            ]
-        };
-
-        if (studentCollege) {
-            query.$or.unshift({ targetCollege: { $regex: new RegExp(`^${studentCollege}$`, "i") } });
-        }
-        
-        console.log(`[getQuestions] Searching for student ${student.email}. Query:`, JSON.stringify(query));
-
-        let config = await TestConfig.findOne(query).sort({ createdAt: -1 });
-
-        if (!config) {
-            console.log(`[getQuestions] No group-specific test. Checking latest active overall.`);
-            config = await TestConfig.findOne({ isActive: true, endDate: { $gt: now } }).sort({ createdAt: -1 });
+        // 1. Try fetching the specific test ID if provided (Strict Mode)
+        if (testId) {
+            config = await TestConfig.findOne({ _id: testId, isActive: true });
         }
 
+        // 2. Fallback to category-based matching if no ID or ID not found
         if (!config) {
-            return res.status(404).json({ message: "No active tests found." });
+            const studentYearGroup = getYearGroup(student.year);
+            const studentBranchGroup = getBranchGroup(student.branch);
+            const studentCollege = student.college ? student.college.trim().toLowerCase() : null;
+
+            const query = {
+                yearGroup: studentYearGroup,
+                branchGroup: studentBranchGroup,
+                isActive: true,
+                endDate: { $gt: now },
+                $or: [
+                    { targetCollege: { $regex: /^all$/i } },
+                    { targetCollege: null }
+                ]
+            };
+
+            if (studentCollege) {
+                query.$or.unshift({ targetCollege: { $regex: new RegExp(`^${studentCollege}$`, "i") } });
+            }
+
+            console.log(`[getQuestions] Searching by group for ${student.email}. Query:`, JSON.stringify(query));
+            config = await TestConfig.findOne(query).sort({ createdAt: -1 });
+        }
+
+        if (!config) {
+            return res.status(404).json({ message: "No active tests found for your category." });
         }
 
         // ACCESS KEY CHECK
@@ -238,8 +244,17 @@ export const getQuestions = async (req, res) => {
             }));
         } else {
             const seed = req.student.id;
-            const allQuestions = [...config.questions];
-            const selectedQuestions = allQuestions
+            
+            // DE-DUPLICATION LOGIC: Filter unique questions by trimmed text
+            const seen = new Set();
+            const uniqueQuestions = config.questions.filter(q => {
+                const text = q.questionText.trim().toLowerCase();
+                if (seen.has(text)) return false;
+                seen.add(text);
+                return true;
+            });
+
+            const selectedQuestions = uniqueQuestions
                 .map(q => ({ q, sort: crypto.createHash('md5').update(seed + q._id).digest('hex') }))
                 .sort((a, b) => a.sort.localeCompare(b.sort))
                 .slice(0, 30)
@@ -248,12 +263,21 @@ export const getQuestions = async (req, res) => {
             const questionsToSave = selectedQuestions
                 .map(q => ({ q, sort: crypto.createHash('md5').update(q._id + seed).digest('hex') }))
                 .sort((a, b) => a.sort.localeCompare(b.sort))
-                .map(item => ({
-                    questionId: item.q._id.toString(),
-                    questionText: item.q.questionText,
-                    options: item.q.options,
-                    correctAnswer: item.q.correctAnswer
-                }));
+                .map(item => {
+                    const originalOptions = [...item.q.options];
+                    // Fisher-Yates Shuffle for Options
+                    for (let i = originalOptions.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [originalOptions[i], originalOptions[j]] = [originalOptions[j], originalOptions[i]];
+                    }
+
+                    return {
+                        questionId: item.q._id.toString(),
+                        questionText: item.q.questionText,
+                        options: originalOptions,
+                        correctAnswer: item.q.correctAnswer
+                    };
+                });
 
             const nowTime = new Date();
             // CRITICAL FIX: Ensure testEndTime does not exceed config window end
@@ -315,11 +339,27 @@ export const getQuestions = async (req, res) => {
 
 export const syncProgress = async (req, res) => {
     try {
-        const { attemptedCount, answers } = req.body;
-        await ExamStudent.findByIdAndUpdate(req.student.id, { 
-            attemptedCount,
-            savedAnswers: answers 
-        });
+        const { answers } = req.body;
+        
+        // Safety: Calculate attemptedCount from answers automatically
+        const attemptedCount = Object.keys(answers || {}).length;
+
+        // Security: Use findOneAndUpdate with condition { testAttempted: false } 
+        // to prevent overwriting results if the test is already ended.
+        const updated = await ExamStudent.findOneAndUpdate(
+            { _id: req.student.id, testAttempted: false },
+            { 
+                $set: { 
+                    attemptedCount,
+                    savedAnswers: answers 
+                } 
+            }
+        );
+
+        if (!updated) {
+            return res.status(403).json({ message: 'Sync rejected: Test already submitted.' });
+        }
+
         res.json({ success: true });
     } catch (error) {
         console.error("syncProgress error:", error);
@@ -386,11 +426,25 @@ export const submitTest = async (req, res) => {
             };
         });
 
-        student.testAttempted = true;
-        student.score = score;
-        student.correctCount = correctCount;
-        student.wrongCount = wrongCount;
-        await student.save();
+        // ATOMIC UPDATE for Concurrency & Duplicate Protection
+        // Use findOneAndUpdate with condition { testAttempted: false } to ensure only one submission is processed
+        const updatedStudent = await ExamStudent.findOneAndUpdate(
+            { _id: student._id, testAttempted: false },
+            { 
+                $set: { 
+                    testAttempted: true,
+                    score: score,
+                    correctCount: correctCount,
+                    wrongCount: wrongCount,
+                    savedAnswers: answers // Final snapshot of answers
+                } 
+            },
+            { new: true }
+        );
+
+        if (!updatedStudent) {
+            return res.status(400).json({ message: 'Test already submitted or submission in progress.' });
+        }
 
         // Save to historical TestResult
         try {

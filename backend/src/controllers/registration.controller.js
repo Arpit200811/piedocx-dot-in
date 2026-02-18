@@ -3,6 +3,24 @@ import ExamStudent from '../models/ExamStudent.js';
 import { generateCertificateID, generateCertificateSignature, generateQR } from '../utils/certUtils.js';
 import { sendCertificateEmail } from '../utils/emailService.js';
 
+
+// Helper: Auto-derive technology based on branch and year logic
+const deriveTechnology = (branch, year) => {
+    const b = (branch || '').toUpperCase();
+    const y = (year || '').toLowerCase();
+    const isJunior = y.includes('1') || y.includes('2');
+
+    if (b.includes('CS') || b.includes('IT') || b.includes('COMPUTER') || b.includes('INFORMATION') || b.includes('AI') || b.includes('DATA')) {
+        return isJunior ? "Python With Gen-AI" : "Placement Drive Assessment";
+    }
+
+    if (b.includes('EC') || b.includes('EE') || b.includes('ME') || b.includes('IC') || b.includes('ELECTRONIC') || b.includes('MECHANICAL') || b.includes('ELECTRICAL') || b.includes('CIVIL') || b.includes('AUTO')) {
+        return isJunior ? "Automation controlling Rover" : "Placement Drive Assessment";
+    }
+
+    return branch; // Default fallback
+};
+
 export const registerStudent = async (req, res) => {
     try {
         const { fullName, branch, year, mobile, college, email, profilePicture } = req.body;
@@ -55,6 +73,8 @@ export const registerStudent = async (req, res) => {
         const certId = generateCertificateID(currentYear, countForYear + 1);
 
         // 2. Generate Signature
+        const tech = req.body.technology || deriveTechnology(branch, year); // Auto-derive technology
+
         const signature = generateCertificateSignature({
             studentId,
             course: branch,
@@ -76,6 +96,7 @@ export const registerStudent = async (req, res) => {
             mobile,
             email,
             profilePicture,
+            technology: tech,
             signature,
             qrCode
         });
@@ -104,15 +125,54 @@ export const registerStudent = async (req, res) => {
 
 export const getAllStudents = async (req, res) => {
     try {
-        // Optimization: Select only necessary fields and exclude heavy fields like images/questions for the list view
-        const students = await ExamStudent.find({}, {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const { search, college, startDate, endDate } = req.query;
+
+        const query = {};
+
+        if (search) {
+            const searchRegex = new RegExp(search, 'i');
+            query.$or = [
+                { fullName: searchRegex },
+                { studentId: searchRegex },
+                { email: searchRegex },
+                { mobile: searchRegex }
+            ];
+        }
+
+        if (college) {
+            query.college = college;
+        }
+
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate) query.createdAt.$gte = new Date(startDate);
+            if (endDate) query.createdAt.$lte = new Date(new Date(endDate).setHours(23, 59, 59));
+        }
+
+        // Optimization: Select only necessary fields
+        const students = await ExamStudent.find(query, {
             profilePicture: 0,
             qrCode: 0,
             signature: 0,
             assignedQuestions: 0,
             savedAnswers: 0
-        }).sort({ createdAt: -1 });
-        res.json(students);
+        })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
+
+        const total = await ExamStudent.countDocuments(query);
+        const uniqueColleges = await ExamStudent.distinct('college');
+
+        res.json({
+            students,
+            currentPage: page,
+            totalPages: Math.ceil(total / limit),
+            totalStudents: total,
+            colleges: uniqueColleges
+        });
     } catch (error) {
         console.error("getAllStudents error:", error);
         res.status(500).json({ message: 'Error fetching students' });
@@ -184,22 +244,33 @@ export const verifyCertificatePublic = async (req, res) => {
 };
 
 export const sendEmailCertificate = async (req, res) => {
-    const { email, name, certificateImage } = req.body;
-    if (!email || !certificateImage) {
-      return res.status(400).json({ message: 'Missing email or certificate image' });
+    // We now fetch name directly from DB using authenticated ID
+    // We only take the image from body
+    const { certificateImage } = req.body;
+    
+    if (!certificateImage) {
+      return res.status(400).json({ message: 'Missing certificate image' });
     }
 
     try {
-      // Security: Check if this email exists in our student records to prevent spamming random emails
-      const studentExists = await ExamStudent.findOne({ email });
-      if (!studentExists) {
-          // If not an admin, we only allow sending to registered students
-          if (!req.admin) {
-             return res.status(403).json({ message: 'Unauthorized email target' });
-          }
+      // Security: Fetch student data directly from DB using JWT-authenticated ID
+      // This ensures the certificate name is strictly what's in our records.
+      const student = await ExamStudent.findById(req.student.id);
+      
+      if (!student) {
+          return res.status(404).json({ message: 'Student record not found' });
       }
 
-      const sent = await sendCertificateEmail(email, name, certificateImage);
+      if (student.status === 'revoked') {
+          return res.status(403).json({ message: 'Access revoked' });
+      }
+
+      // Generate a unique identifier for this specific generation event
+      const generationId = `${student._id}_${Date.now()}`;
+      console.log(`[Certificate] Generating for ${student.fullName} (Ref: ${generationId})`);
+
+      const sent = await sendCertificateEmail(student.email, student.fullName, certificateImage);
+      
       if (sent) {
         res.status(200).json({ message: 'Email sent successfully' });
       } else {
@@ -213,7 +284,7 @@ export const sendEmailCertificate = async (req, res) => {
 
 export const updateStudentDetails = async (req, res) => {
     const { id } = req.params;
-    const { fullName, college, score, branch, year, mobile, email } = req.body;
+    const { fullName, college, score, branch, year, mobile, email, technology } = req.body;
 
     try {
         const student = await ExamStudent.findById(id);
@@ -232,6 +303,7 @@ export const updateStudentDetails = async (req, res) => {
         if (year !== undefined) updateData.year = year;
         if (mobile !== undefined) updateData.mobile = mobile;
         if (email !== undefined) updateData.email = email;
+        if (technology !== undefined) updateData.technology = technology;
 
         // If sensitive fields change, we must regenerate the signature to maintain integrity
         const needsResign = updateData.branch !== undefined || updateData.score !== undefined;
@@ -268,8 +340,45 @@ export const bulkRegister = async (req, res) => {
       const currentYear = new Date().getFullYear();
       let totalCount = await ExamStudent.countDocuments();
       const preparedStudents = [];
+      
       for (let i = 0; i < students.length; i++) {
-          const student = { ...students[i] };
+          const raw = students[i];
+          const student = { ...raw };
+          
+          // Field mapping & cleaning
+          student.fullName = (raw.fullName || raw.name || raw.FullName || '').trim();
+          student.email = (raw.email || raw.Email || '').trim().toLowerCase();
+          student.mobile = String(raw.mobile || raw.phone || raw.Mobile || '').trim();
+          student.branch = (raw.branch || raw.Branch || 'Computer Science & Engineering (CSE)').trim();
+          student.year = (raw.year || raw.Year || '3rd Year').trim();
+          student.college = (raw.college || raw.College || '').trim();
+          
+          // Auto-derive technology if not provided in bulk json
+          const rawTech = (raw.technology || raw.Technology || '').trim();
+          student.technology = rawTech || deriveTechnology(student.branch, student.year);
+          
+          // Date mapping (Optional: if provided in JSON, override default createdAt)
+          const providedDate = raw.date || raw.Date || raw.regDate || raw.createdAt;
+          if (providedDate) {
+              const parsedDate = new Date(providedDate);
+              if (!isNaN(parsedDate.getTime())) {
+                  student.createdAt = parsedDate;
+              }
+          }
+
+          // Strict validation for required fields
+          if (!student.fullName) {
+              return res.status(400).json({ message: `Student [Row ${i + 1}]: Full Name is missing.` });
+          }
+          if (!student.email || !student.email.includes('@')) {
+              return res.status(400).json({ message: `Student [Row ${i + 1}]: Valid Email is missing.` });
+          }
+          if (!student.mobile || student.mobile === "undefined" || student.mobile.length < 10) {
+              return res.status(400).json({ message: `Student [Row ${i + 1}]: Valid 10-digit mobile number is required.` });
+          }
+          if (!student.college) {
+              return res.status(400).json({ message: `Student [Row ${i + 1}]: College name is required.` });
+          }
           
           if (!student.studentId) {
               student.studentId = `PDT-WS ${26000 + totalCount + i + 1}`;
@@ -335,10 +444,7 @@ export const bulkSendCertificates = async (req, res) => {
 
         for (const student of students) {
             try {
-                // Here we would ideally generate the image too, but since the frontend handles canvas, 
-                // we'll keep the current simple email trigger or a placeholder for mass dispatch.
-                // For now, let's assume this triggers the actual sendCertificateEmail utility.
-                const sent = await sendCertificateEmail(student.email, student.fullName, null); // passing null as image just sends the link-based email template
+                const sent = await sendCertificateEmail(student.email, student.fullName, null, student.score); 
                 if (sent) successCount++;
                 else failCount++;
             } catch (err) {
@@ -353,5 +459,25 @@ export const bulkSendCertificates = async (req, res) => {
     } catch (error) {
         console.error("bulkSendCertificates error:", error);
         res.status(500).json({ message: 'Bulk email process failed' });
+    }
+};
+
+export const sendSingleEmailAdmin = async (req, res) => {
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ message: 'Student ID required' });
+
+    try {
+        const student = await ExamStudent.findById(id);
+        if (!student) return res.status(404).json({ message: 'Student not found' });
+
+        const sent = await sendCertificateEmail(student.email, student.fullName, null, student.score);
+        if (sent) {
+            res.status(200).json({ message: `Certificate and score (${student.score}) sent to ${student.email}` });
+        } else {
+            res.status(500).json({ message: 'Failed to send email. Check SMTP settings.' });
+        }
+    } catch (error) {
+        console.error("sendSingleEmailAdmin error:", error);
+        res.status(500).json({ message: 'Email process failed' });
     }
 };

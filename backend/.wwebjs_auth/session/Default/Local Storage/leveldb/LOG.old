@@ -1,0 +1,6 @@
+2026/02/18-06:26:32.414 3408 Reusing MANIFEST D:\.in Project\piedocx.in\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/MANIFEST-000001
+2026/02/18-06:26:32.426 3408 Recovering log #4
+2026/02/18-06:26:32.431 3408 Reusing old log D:\.in Project\piedocx.in\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/000004.log 
+2026/02/18-06:27:32.447 3408 Level-0 table #7: started
+2026/02/18-06:27:32.463 3408 Level-0 table #7: 15332 bytes OK
+2026/02/18-06:27:32.467 3408 Delete type=0 #4

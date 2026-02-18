@@ -9,6 +9,7 @@ const schema = new mongoose.Schema({
   mobile: { type: String, required: true },
   email: { type: String, required: true },
   profilePicture: String,
+  technology: String,
   certificateId: { type: String },
   signature: { type: String },
   qrCode: { type: String },

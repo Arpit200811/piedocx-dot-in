@@ -9,6 +9,7 @@ const schema = new mongoose.Schema({
   mobile: { type: String, required: true },
   email: { type: String, required: true },
   profilePicture: String,
+  technology: String,
   status: { type: String, enum: ['active', 'revoked'], default: 'active' },
   createdAt: { type: Date, default: Date.now },
   testAttempted: { type: Boolean, default: false },

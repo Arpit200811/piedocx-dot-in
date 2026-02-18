@@ -18,7 +18,9 @@ import {
   getResources,
   createResource,
   deleteResource,
-  registerAdmin
+  registerAdmin,
+  getFeedbacks,
+  deleteFeedback
 } from "../controllers/admin.controller.js";
 import { adminAuth } from "../middlewares/auth.middleware.js";
 
@@ -44,6 +46,8 @@ router.delete("/admin/bulletins/:id", adminAuth, deleteBulletin);
 router.get("/admin/resources", adminAuth, getResources);
 router.post("/admin/resources", adminAuth, createResource);
 router.delete("/admin/resources/:id", adminAuth, deleteResource);
+router.get("/admin/feedbacks", adminAuth, getFeedbacks);
+router.delete("/admin/feedbacks/:id", adminAuth, deleteFeedback);
 
 export default router;
 

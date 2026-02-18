@@ -3,14 +3,13 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import ExamSession from '../models/ExamSession.js';
 import { calculateRiskScore, RISK_THRESHOLDS } from '../utils/riskEngine.js';
-// import { setCache, getCache } from '../utils/cacheService.js'; // Optional: Use for live dashboard speed
 
 let io;
 
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: "*", // Adjust for production
+      origin: "*",
       methods: ["GET", "POST"]
     }
   });
@@ -34,13 +33,20 @@ export const initSocket = (server) => {
 
     // 1. Join Exam Room
     socket.on('join_exam', async ({ testId, deviceInfo }) => {
-      console.log(`[Socket] join_exam request from ${socket.email} for test ${testId}`);
-      socket.join(testId);
-      socket.testId = testId;
-
-      // Track Session
       try {
-        // 1. Check for Active Session on Other Device
+        const { getYearGroup } = await import('./branchMapping.js');
+        const StudentModel = (await import('../models/ExamStudent.js')).default;
+        
+        const student = await StudentModel.findById(socket.studentId);
+        const yearGroup = student ? getYearGroup(student.year) : 'unknown';
+        const roomName = `${testId}_${yearGroup}`;
+        
+        console.log(`[Socket] join_exam: ${socket.email} joining room ${roomName}`);
+        socket.join(roomName);
+        socket.testId = testId;
+        socket.yearGroup = yearGroup;
+        socket.roomName = roomName;
+      try {
         const existingSession = await ExamSession.findOne({ 
             studentId: socket.studentId, 
             testId, 
@@ -50,16 +56,13 @@ export const initSocket = (server) => {
         if (existingSession && existingSession.socketId !== socket.id) {
             console.log(`⚠️ Multiple login detected for ${socket.email}. Terminating old session.`);
             
-            // Notify Old Socket
             io.to(existingSession.socketId).emit('force_terminate', { 
                 reason: 'New login detected on another device. Your session is closed here.' 
             });
 
-            // Disconnect Old Socket
             const oldSocket = io.sockets.sockets.get(existingSession.socketId);
             if (oldSocket) oldSocket.disconnect(true);
 
-            // Update DB
             await ExamSession.findByIdAndUpdate(existingSession._id, { 
                 status: 'terminated', 
                 endTime: new Date(),
@@ -67,7 +70,6 @@ export const initSocket = (server) => {
             });
         }
 
-        // Create New Session
         const session = await ExamSession.create({
             studentId: socket.studentId,
             testId,
@@ -76,10 +78,7 @@ export const initSocket = (server) => {
             status: 'active',
             lastActive: new Date()
         });
-        
         socket.sessionId = session._id;
-        
-        // Notify Admin Room
         io.to('admin_monitor').emit('student_joined', { 
             studentId: socket.studentId, 
             email: socket.email,
@@ -87,15 +86,14 @@ export const initSocket = (server) => {
         });
 
       } catch (err) {
-        console.error("Session Create Error:", err);
+        console.error("Session Tracking Error:", err);
       }
-    });
-
-    // 2. Real-time Status / Progress
+    } catch (err) {
+      console.error("[Socket] join_exam room logic error:", err);
+    }
+  });
     socket.on('progress_update', async ({ attemptedCount, totalQuestions, currentQuestion }) => {
         if (!socket.sessionId) return;
-        
-        // Notify Admin Room instantly without hitting DB for every tick
         io.to('admin_monitor').emit('student_progress', { 
             studentId: socket.studentId, 
             attemptedCount, 
@@ -110,12 +108,8 @@ export const initSocket = (server) => {
         
         await ExamSession.findByIdAndUpdate(socket.sessionId, { 
             lastActive: new Date() 
-            // We could update progress here too if needed, but risky for DB load. 
-            // Better to keep syncProgress API for data, and socket for status.
         });
     });
-
-    // 3. Risk / Violation Event
     socket.on('violation', async (data) => {
         if (!socket.sessionId) return;
         
@@ -125,8 +119,7 @@ export const initSocket = (server) => {
         if (!session) return;
 
         session.violationLog.push({ type: data.type, timestamp: new Date() });
-        
-        // Recalculate Score
+      
         const riskAnalysis = calculateRiskScore(session.violationLog.map(v => ({ type: v.type })));
         session.riskScore = riskAnalysis.totalScore;
         await session.save();
@@ -138,33 +131,33 @@ export const initSocket = (server) => {
             riskScore: session.riskScore,
             violation: data.type
         });
-
-        // Auto-Terminate if Critical
         if (session.riskScore >= RISK_THRESHOLDS.AUTO_SUBMIT) {
             socket.emit('force_terminate', { reason: 'Risk Threshold Exceeded' });
-            // Also call DB logic to finalize exam
         }
     });
-
-    // 4. Admin Joining Monitor & Control
     socket.on('join_admin_monitor', () => {
         socket.join('admin_monitor');
         console.log("👀 Admin joined monitor");
     });
-
-    // 5. Targeted Broadcast (Only to students in a specific test/security-key group)
-    socket.on('send_broadcast', ({ testId, message, type }) => {
-        // We broadcast to the specific room 'testId' which students joined
-        io.to(testId).emit('broadcast_notice', { 
+    socket.on('send_broadcast', ({ testId, yearGroup, message, type }) => {
+        const payload = { 
             message, 
             type: type || 'info', 
             timestamp: new Date() 
-        });
-        console.log(`📢 Broadcast sent to Room [${testId}]: ${message}`);
+        };
+
+        if (yearGroup) {
+            io.to(`${testId}_${yearGroup}`).emit('broadcast_notice', payload);
+            console.log(`📢 Broadcast [Group ${yearGroup}] to Room [${testId}]: ${message}`);
+        } else {
+            io.to(`${testId}_1-2`).emit('broadcast_notice', payload);
+            io.to(`${testId}_3-4`).emit('broadcast_notice', payload);
+            io.to(`${testId}_unknown`).emit('broadcast_notice', payload);
+            console.log(`📢 Global Broadcast to all groups of Room [${testId}]: ${message}`);
+        }
     });
 
     socket.on('disconnect', async () => {
-      // console.log(`❌ Disconnected: ${socket.email}`);
       if (socket.sessionId) {
           await ExamSession.findByIdAndUpdate(socket.sessionId, { 
               status: 'disconnected',
@@ -178,8 +171,5 @@ export const initSocket = (server) => {
 };
 
 export const getIO = () => {
-    if (!io) {
-        throw new Error("Socket.io not initialized!");
-    }
     return io;
 };
