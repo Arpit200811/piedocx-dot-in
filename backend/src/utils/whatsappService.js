@@ -11,7 +11,7 @@ export const initializeWhatsApp = () => {
 
     client = new Client({
         authStrategy: new LocalAuth({
-            dataPath: './.wwebjs_auth' // session persist
+            dataPath: './.wwebjs_auth'
         }),
         puppeteer: {
             headless: true,
