@@ -33,9 +33,8 @@ const TestInterface = () => {
     const [statusMessage, setStatusMessage] = useState(null);
     const [broadcastMessage, setBroadcastMessage] = useState(null);
     const timerRef = useRef(null);
-    const saveLockRef = useRef(false); // Concurrency Lock for Safari/Rapid Clicks
+    const saveLockRef = useRef(false);
 
-    // 1. Initial Fetch (Profile & Test Info)
     useEffect(() => {
         const fetchInitialData = async () => {
             const token = localStorage.getItem('studentToken');
@@ -45,7 +44,6 @@ const TestInterface = () => {
             }
 
             try {
-                // Fetch Profile & Test Info in Parallel for performance
                 const [profileData, infoData] = await Promise.all([
                     api.get('/api/student-auth/profile'),
                     api.get('/api/student-auth/test-info')
