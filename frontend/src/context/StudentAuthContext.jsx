@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
-import { base_url } from '../utils/info';
+import api from '../utils/api';
 
 const StudentAuthContext = createContext({
     student: null,
-    setStudent: () => {},
-    login: () => {},
-    logout: () => {},
+    setStudent: () => { },
+    login: () => { },
+    logout: () => { },
     loading: true,
     isAuthenticated: false
 });
@@ -25,12 +24,10 @@ export const StudentAuthProvider = ({ children }) => {
                 try {
                     const parsedStudent = JSON.parse(savedStudent);
                     setStudent(parsedStudent);
-                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-                    
+
                     // Verify session with backend
-                    const res = await axios.get(`${base_url}/api/student-auth/profile`);
-                    if (res.data) {
-                        const updatedData = res.data;
+                    const updatedData = await api.get('/api/student-auth/profile');
+                    if (updatedData) {
                         if (!updatedData.firstName && updatedData.fullName) {
                             updatedData.firstName = updatedData.fullName.split(' ')[0];
                         }
@@ -53,14 +50,12 @@ export const StudentAuthProvider = ({ children }) => {
         }
         localStorage.setItem('studentToken', token);
         localStorage.setItem('studentData', JSON.stringify(studentData));
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         setStudent(studentData);
     };
 
     const logout = () => {
         localStorage.removeItem('studentToken');
         localStorage.removeItem('studentData');
-        delete axios.defaults.headers.common['Authorization'];
         setStudent(null);
     };
 

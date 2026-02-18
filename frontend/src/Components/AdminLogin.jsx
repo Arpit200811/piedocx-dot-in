@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { base_url } from '../utils/info';
+import api from '../utils/api';
 import { ShieldCheck, Mail, Lock, KeyRound, ArrowRight, Loader2, Sparkles, RefreshCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -25,12 +24,12 @@ const AdminLogin = () => {
     setLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const res = await axios.post(`${base_url}/api/admins/admin/request-login`, { email: normalizedEmail, password });
-      console.log("Login API Response:", res.data);
+      const data = await api.post('/api/admins/admin/request-login', { email: normalizedEmail, password });
+      console.log("Login API Response:", data);
 
-      if (res.data.token) {
-        localStorage.setItem('adminToken', res.data.token);
-        localStorage.setItem('adminUser', JSON.stringify(res.data.admin));
+      if (data.token) {
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminUser', JSON.stringify(data.admin));
         console.log("Token stored, navigating to dashboard...");
         navigate('/admin-dashboard');
       } else {
@@ -52,7 +51,7 @@ const AdminLogin = () => {
     setLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      await axios.post(`${base_url}/api/admins/admin/forgot-password`, { email: normalizedEmail });
+      await api.post('/api/admins/admin/forgot-password', { email: normalizedEmail });
       setStep(4);
       setSuccess('OTP sent for password reset.');
     } catch (err) {
@@ -68,7 +67,7 @@ const AdminLogin = () => {
     setLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      await axios.post(`${base_url}/api/admins/admin/reset-password`, { email: normalizedEmail, otp, newPassword });
+      await api.post('/api/admins/admin/reset-password', { email: normalizedEmail, otp, newPassword });
       setStep(1);
       setSuccess('Password updated successfully! Login now.');
       setOtp('');

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
-import { base_url } from '../utils/info';
+import api from '../utils/api';
 import Swal from 'sweetalert2';
 import Typewriter from 'typewriter-effect';
 import { ShieldCheck, GraduationCap } from 'lucide-react';
@@ -17,13 +16,13 @@ const StudentLogin = () => {
     const handleSuccess = async (response) => {
         setLoading(true);
         try {
-            const res = await axios.post(`${base_url}/api/student-auth/login`, {
+            const data = await api.post('/api/student-auth/login', {
                 token: response.credential
             });
-            
+
             // Use context login
-            login(res.data.student, res.data.token);
-            
+            login(data.student, data.token);
+
             Swal.fire({
                 icon: 'success',
                 title: 'Access Granted',
@@ -80,8 +79,8 @@ const StudentLogin = () => {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-12 space-y-6">
                         <div className="relative">
-                           <div className="w-16 h-16 border-4 border-slate-100 rounded-full"></div>
-                           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0"></div>
+                            <div className="w-16 h-16 border-4 border-slate-100 rounded-full"></div>
+                            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0"></div>
                         </div>
                         <p className="text-slate-500 font-black uppercase tracking-widest text-[10px] animate-pulse">Synchronizing Node...</p>
                     </div>
@@ -95,24 +94,24 @@ const StudentLogin = () => {
                                 theme="filled_blue"
                                 size="large"
                                 shape="pill"
-                                width="300" 
+                                width="300"
                             />
                         </div>
                         <div className="space-y-4">
-                           <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] px-4 md:px-6 leading-relaxed">
-                               Session Authorization Required
-                           </p>
-                           <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
-                           <p className="text-center text-[9px] text-slate-400 font-medium px-4 md:px-8">
-                               By accessing the portal, you agree to the institution's digital conduct protocols and security policies.
-                           </p>
+                            <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] px-4 md:px-6 leading-relaxed">
+                                Session Authorization Required
+                            </p>
+                            <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                            <p className="text-center text-[9px] text-slate-400 font-medium px-4 md:px-8">
+                                By accessing the portal, you agree to the institution's digital conduct protocols and security policies.
+                            </p>
                         </div>
                     </div>
                 )}
             </div>
-            
+
             <footer className="absolute bottom-4 w-full text-center">
-                 <p className="text-[9px] md:text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">© 2026 Piedocx Core Node</p>
+                <p className="text-[9px] md:text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">© 2026 Piedocx Core Node</p>
             </footer>
         </div>
     );

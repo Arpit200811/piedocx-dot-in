@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { io } from 'socket.io-client';
-import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Zap, BookOpen, CheckCircle, Target, ChevronRight, KeyRound, Megaphone, X } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { base_url } from '../../utils/info';
+import api from '../../utils/api';
 
 const TestInterface = () => {
     const navigate = useNavigate();
@@ -32,6 +29,7 @@ const TestInterface = () => {
     const [statusMessage, setStatusMessage] = useState(null);
     const [broadcastMessage, setBroadcastMessage] = useState(null);
     const timerRef = useRef(null);
+    const saveLockRef = useRef(false); // Concurrency Lock for Safari/Rapid Clicks
 
     // 1. Initial Fetch (Profile & Test Info)
     useEffect(() => {
@@ -43,32 +41,26 @@ const TestInterface = () => {
             }
 
             try {
-                // Fetch Profile
-                const profileRes = await axios.get(`${base_url}/api/student-auth/profile`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setStudentProfile(profileRes.data);
+                // Fetch Profile & Test Info in Parallel for performance
+                const [profileData, infoData] = await Promise.all([
+                    api.get('/api/student-auth/profile'),
+                    api.get('/api/student-auth/test-info')
+                ]);
 
-                // Fetch Test Info
-                const infoRes = await axios.get(`${base_url}/api/student-auth/test-info`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                setStudentProfile(profileData);
 
-                if (!infoRes.data) {
+                if (!infoData) {
                     Swal.fire('Error', 'No active test found.', 'error').then(() => navigate('/student-dashboard'));
                     return;
                 }
-                setTestInfo(infoRes.data);
-
-                // We DO NOT fetch questions here. We wait for user to start.
+                setTestInfo(infoData);
                 setInitialLoading(false);
 
             } catch (err) {
-                console.error(err);
-                if (err.response?.status === 403) {
-                    Swal.fire('Access Denied', err.response.data.message, 'warning').then(() => navigate('/student-dashboard'));
-                } else {
-                    Swal.fire('Error', 'Could not load test info. Please try again.', 'error').then(() => navigate('/student-dashboard'));
+                console.error("Initialization Failed", err);
+                const status = err.response?.status;
+                if (status === 403 || status === 404) {
+                    navigate('/student-dashboard');
                 }
             }
         };
@@ -92,25 +84,20 @@ const TestInterface = () => {
         setStartingTest(true);
 
         try {
-            const token = localStorage.getItem('studentToken');
-
-            // Fetch Questions
-            const qRes = await axios.post(`${base_url}/api/student-auth/questions`, { accessKey: accessKey }, {
-                headers: { Authorization: `Bearer ${token}` }
+            // Fetch Questions - Bind to specific Test ID for security key integrity
+            const qData = await api.post('/api/student-auth/questions', {
+                accessKey: accessKey,
+                testId: testInfo._id
             });
 
-            // Success
-            setQuestions(qRes.data.questions);
-            setAnswers(qRes.data.savedAnswers || {});
+            setQuestions(qData.questions);
+            setAnswers(qData.savedAnswers || {});
 
-            // Timer Calculation
-            // Backend provides 'remainingSeconds' directly based on testEndTime
-            if (typeof qRes.data.remainingSeconds === 'number') {
-                setTimeLeft(qRes.data.remainingSeconds);
+            if (typeof qData.remainingSeconds === 'number') {
+                setTimeLeft(qData.remainingSeconds);
             } else {
-                // Fallback for safety
-                const elapsed = qRes.data.elapsedTime || 0;
-                const totalDuration = qRes.data.duration * 60;
+                const elapsed = qData.elapsedTime || 0;
+                const totalDuration = qData.duration * 60;
                 setTimeLeft(Math.max(0, totalDuration - elapsed));
             }
 
@@ -220,21 +207,45 @@ const TestInterface = () => {
         return () => clearInterval(interval);
     }, [timeLeft]);
 
+    // Focus State for CSS Blur Protection
+    const [isFocused, setIsFocused] = useState(true);
+
     // 3. Anti-Cheat & Security Logic (Active only when started)
     useEffect(() => {
         if (!isStarted || submitting) return;
 
         const handleVisibilityChange = () => {
-            if (document.hidden) handleViolation("Tab Switch / Hidden");
+            if (document.hidden) {
+                handleViolation("Tab Switch / Hidden");
+                setIsFocused(false);
+            } else {
+                setIsFocused(true);
+            }
         };
 
         const handleBlur = () => {
-            handleViolation("Focus Lost / Minimized");
+            setIsFocused(false);
+            handleViolation("Focus Lost / App Switch");
+        };
+
+        const handleFocus = () => {
+            setIsFocused(true);
         };
 
         const handleFullScreenChange = () => {
             if (!document.fullscreenElement) {
                 handleViolation("Exited Full Screen");
+            }
+        };
+
+        const handlePageHide = () => {
+            handleViolation("Page Hidden/Suspended");
+        };
+
+        const handleResize = () => {
+            // Significant resize usually happens during split-screen or keyboard/screenshot editor launch
+            if (window.innerWidth < 300 || window.innerHeight < 300) {
+                handleViolation("Window Minimized / Resize Detected");
             }
         };
 
@@ -299,10 +310,28 @@ const TestInterface = () => {
             });
         };
 
+        const handleTouchStart = (e) => {
+            if (e.touches && e.touches.length > 2) {
+                handleViolation("Multi-touch / Screenshot Gesture Detected");
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Multi-finger gestures blocked',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+        };
+
         const dtInterval = setInterval(checkDevTools, 1000);
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("blur", handleBlur);
+        window.addEventListener("focus", handleFocus);
+        window.addEventListener("pagehide", handlePageHide);
+        window.addEventListener("resize", handleResize);
+        window.addEventListener("touchstart", handleTouchStart, { passive: false });
         window.addEventListener("orientationchange", handleOrientationChange);
         document.addEventListener("fullscreenchange", handleFullScreenChange);
         document.addEventListener("copy", preventCopyPaste);
@@ -315,6 +344,10 @@ const TestInterface = () => {
             clearInterval(dtInterval);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);
+            window.removeEventListener("focus", handleFocus);
+            window.removeEventListener("pagehide", handlePageHide);
+            window.removeEventListener("resize", handleResize);
+            window.removeEventListener("touchstart", handleTouchStart);
             window.removeEventListener("orientationchange", handleOrientationChange);
             document.removeEventListener("fullscreenchange", handleFullScreenChange);
             document.removeEventListener("copy", preventCopyPaste);
@@ -326,16 +359,29 @@ const TestInterface = () => {
     }, [isStarted, submitting, navigate]);
 
 
-    // 4. Timer & Sync Logic
+    // 4. Manual Progress Sync (Triggered only by Button)
     const syncProgress = async (currentAnswers, currentTimer) => {
+        if (saveLockRef.current) return;
+        saveLockRef.current = true;
+
         try {
-            const token = localStorage.getItem('studentToken');
-            await axios.post(`${base_url}/api/student-auth/sync-progress`, {
+            await api.post('/api/student-auth/sync-progress', {
                 answers: currentAnswers,
                 timeLeft: currentTimer
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Progress Saved',
+                showConfirmButton: false,
+                timer: 1500
+            });
         } catch (err) {
             console.error("Sync failed", err);
+        } finally {
+            saveLockRef.current = false;
         }
     };
 
@@ -362,10 +408,10 @@ const TestInterface = () => {
         const newAnswers = { ...answers, [questionId]: option };
         setAnswers(newAnswers);
 
-        // Push to server immediately
-        syncProgress(newAnswers, timeLeft);
+        // REMOVED: Immediate syncProgress call. 
+        // This was causing excessive API calls and "auto-save" behavior.
 
-        // Emit via Socket for Real-time Admin Monitor
+        // Emit via Socket for Real-time Admin Monitor (Low overhead)
         if (socketRef.current) {
             socketRef.current.emit('progress_update', {
                 attemptedCount: Object.keys(newAnswers).length,
@@ -388,10 +434,8 @@ const TestInterface = () => {
 
         const token = localStorage.getItem('studentToken');
         if (token) {
-            axios.post(`${base_url}/api/student-auth/log-violation`, { type }, {
-                headers: { Authorization: `Bearer ${token}` }
-            }).then(res => {
-                if (res.data.shouldTerminate) {
+            api.post('/api/student-auth/log-violation', { type }).then(res => {
+                if (res.shouldTerminate) {
                     Swal.fire({
                         title: 'Test Terminated',
                         text: 'Multiple violations detected. Your test is being auto-submitted.',
@@ -438,12 +482,11 @@ const TestInterface = () => {
             if (!result.isConfirmed) return;
         }
 
+        if (saveLockRef.current) return;
+        saveLockRef.current = true;
         setSubmitting(true);
         try {
-            const token = localStorage.getItem('studentToken');
-            await axios.post(`${base_url}/api/student-auth/submit-test`, { answers }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post('/api/student-auth/submit-test', { answers });
 
             Swal.fire({
                 title: 'Test Submitted!',
@@ -459,6 +502,7 @@ const TestInterface = () => {
             const errorMsg = err.response?.data?.message || 'Submission failed. Please check internet and try again.';
             Swal.fire('Submission Error', errorMsg, 'error');
             setSubmitting(false);
+            saveLockRef.current = false;
         }
     };
 
@@ -543,7 +587,26 @@ const TestInterface = () => {
 
     // 3. Main Test Interface (When Started)
     return (
-        <div className="min-h-screen dark-mesh text-white p-3 md:p-6 lg:p-8 font-sans select-none relative overflow-hidden" onContextMenu={e => e.preventDefault()}>
+        <div
+            className={`min-h-screen dark-mesh text-white p-3 md:p-6 lg:p-8 font-sans select-none relative overflow-hidden transition-all duration-300 ${!isFocused ? 'blur-2xl grayscale brightness-50 pointer-events-none' : ''}`}
+            onContextMenu={e => e.preventDefault()}
+            style={{
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none',
+                userSelect: 'none',
+                msUserSelect: 'none'
+            }}
+        >
+            {/* Security Shield Overlay (Mobile Screenshot/Blur Protection) */}
+            {!isFocused && (
+                <div className="fixed inset-0 z-[99999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in duration-300">
+                    <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6 border border-red-500/50">
+                        <Lock size={40} className="text-red-500" />
+                    </div>
+                    <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Security Shield Active</h2>
+                    <p className="text-slate-400 text-sm max-w-xs font-medium">Test content is hidden because focus was lost. Return to the app immediately to resume.</p>
+                </div>
+            )}
 
             {/* Ambient background glows */}
             <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
@@ -583,6 +646,7 @@ const TestInterface = () => {
                             <br /><span className="text-red-400 font-bold block mt-4 text-xl">Warning {violationCount} / 3</span>
                         </p>
                         <button
+                            type="button"
                             onClick={enterFullScreen}
                             className="bg-blue-600 text-white px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] active:scale-95"
                         >
@@ -611,7 +675,7 @@ const TestInterface = () => {
                                     <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-100 mb-1">Official Test Broadcast</h4>
                                     <p className="text-base font-bold text-white leading-tight">{broadcastMessage.message}</p>
                                 </div>
-                                <button onClick={() => setBroadcastMessage(null)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all">
+                                <button type="button" onClick={() => setBroadcastMessage(null)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all">
                                     <X size={20} className="text-white" />
                                 </button>
                             </div>
@@ -675,6 +739,7 @@ const TestInterface = () => {
                                 const isActive = currentQuestion === i;
                                 return (
                                     <button
+                                        type="button"
                                         key={i}
                                         disabled={submitting || timeLeft <= 0}
                                         onClick={() => setCurrentQuestion(i)}
@@ -729,6 +794,7 @@ const TestInterface = () => {
                                         const isSelected = answers[questions[currentQuestion]._id] === opt;
                                         return (
                                             <button
+                                                type="button"
                                                 key={i}
                                                 disabled={submitting || timeLeft <= 0}
                                                 onClick={() => handleAnswerSelect(questions[currentQuestion]._id, opt)}
@@ -762,13 +828,25 @@ const TestInterface = () => {
 
                         {/* Control Interface */}
                         <div className="flex flex-col sm:flex-row justify-between items-center p-3 bg-white/5 rounded-[2.5rem] border border-white/10 glass-dark backdrop-blur-3xl gap-4 shadow-2xl">
-                            <button
-                                disabled={submitting || timeLeft <= 0 || currentQuestion === 0}
-                                onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
-                                className="w-full sm:w-auto px-10 py-5 rounded-2xl text-slate-500 font-black hover:text-white hover:bg-white/5 transition-all disabled:opacity-5 disabled:cursor-not-allowed text-[10px] uppercase tracking-[0.2em] italic"
-                            >
-                                [ Back Step ]
-                            </button>
+                            <div className="flex gap-4 w-full sm:w-auto">
+                                <button
+                                    type="button"
+                                    disabled={submitting || timeLeft <= 0 || currentQuestion === 0}
+                                    onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
+                                    className="px-6 py-5 rounded-2xl text-slate-500 font-black hover:text-white hover:bg-white/5 transition-all disabled:opacity-5 disabled:cursor-not-allowed text-[10px] uppercase tracking-[0.2em] italic"
+                                >
+                                    [ Back ]
+                                </button>
+
+                                <button
+                                    type="button"
+                                    disabled={submitting || timeLeft <= 0}
+                                    onClick={() => syncProgress(answers, timeLeft)}
+                                    className="px-6 py-5 rounded-2xl text-blue-400 font-black border border-blue-500/30 hover:bg-blue-500/10 transition-all text-[10px] uppercase tracking-[0.2em]"
+                                >
+                                    Save Progress
+                                </button>
+                            </div>
 
                             <div className="hidden sm:flex gap-2">
                                 {Array.from({ length: Math.min(5, questions.length) }).map((_, idx) => (
@@ -778,6 +856,7 @@ const TestInterface = () => {
 
                             {currentQuestion === questions.length - 1 ?
                                 <button
+                                    type="button"
                                     disabled={submitting}
                                     onClick={() => handleSubmitTest(false)}
                                     className="w-full sm:w-auto bg-emerald-600 px-12 py-5 rounded-2xl font-black text-xs uppercase italic tracking-[0.2em] shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center gap-3"
@@ -785,6 +864,7 @@ const TestInterface = () => {
                                     {submitting ? 'Encrypting...' : 'Final Submission'} <ChevronRight size={18} />
                                 </button> :
                                 <button
+                                    type="button"
                                     disabled={submitting || timeLeft <= 0}
                                     onClick={() => setCurrentQuestion(currentQuestion + 1)}
                                     className="w-full sm:w-auto bg-blue-600 px-12 py-5 rounded-2xl font-black text-xs uppercase italic tracking-[0.2em] shadow-[0_0_40px_rgba(37,99,235,0.3)] hover:bg-blue-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center gap-3 text-white"

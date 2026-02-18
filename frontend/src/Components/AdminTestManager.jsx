@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import axios from 'axios';
-import { base_url } from '../utils/info';
+import api from '../utils/api';
 import Swal from 'sweetalert2';
 import { Save, Plus, Trash2, Calendar, Clock, FileUp, XCircle } from 'lucide-react';
 
@@ -33,44 +32,48 @@ const AdminTestManager = () => {
     const fetchConfig = async (yearGroup, branchGroup) => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await axios.get(`${base_url}/api/admin/test-config`, {
-                headers: { Authorization: `Bearer ${token}` },
+            const data = await api.get('/api/admin/test-config', {
                 params: {
                     yearGroup: yearGroup || '1-2',
                     branchGroup: branchGroup || 'CS-IT'
                 }
             });
 
-            // If config exists, populate form. If empty object (backend didn't find specific one), reset to defaults.
-            if (res.data && res.data._id) {
+            if (data && data._id) {
                 const formatDateTime = (dateStr) => {
                     if (!dateStr) return '';
                     const date = new Date(dateStr);
                     return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
                 };
 
-                setValue('title', res.data.title || 'General Assessment');
-
-                setValue('startDate', formatDateTime(res.data.startDate));
-                setValue('endDate', formatDateTime(res.data.endDate));
-                setValue('duration', res.data.duration || 30);
-                setValue('targetCollege', res.data.targetCollege || 'All');
-                setValue('testAccessKey', res.data.testAccessKey || '');
-                replace(res.data.questions || []);
-                setResultsPublished(res.data.resultsPublished || false);
+                reset({
+                    title: data.title || 'General Assessment',
+                    yearGroup: data.yearGroup,
+                    branchGroup: data.branchGroup,
+                    startDate: formatDateTime(data.startDate),
+                    endDate: formatDateTime(data.endDate),
+                    duration: data.duration || 30,
+                    targetCollege: data.targetCollege || 'All',
+                    testAccessKey: data.testAccessKey || '',
+                    questions: data.questions || []
+                });
+                setResultsPublished(data.resultsPublished || false);
             } else {
-                setValue('title', 'General Assessment');
-                setValue('startDate', '');
-                setValue('endDate', '');
-                setValue('duration', 30);
-                setValue('targetCollege', 'All');
-                setValue('testAccessKey', '');
-                replace([]);
+                reset({
+                    title: 'General Assessment',
+                    yearGroup: yearGroup,
+                    branchGroup: branchGroup,
+                    startDate: '',
+                    endDate: '',
+                    duration: 30,
+                    targetCollege: 'All',
+                    testAccessKey: '',
+                    questions: []
+                });
                 setResultsPublished(false);
             }
         } catch (err) {
-            console.error(err);
+            console.error("fetchConfig Error:", err);
         } finally {
             setLoading(false);
         }
@@ -78,20 +81,17 @@ const AdminTestManager = () => {
 
     const toggleResults = async () => {
         try {
-            const token = localStorage.getItem('adminToken');
             const currentYear = watch('yearGroup');
             const currentBranch = watch('branchGroup');
 
-            const res = await axios.patch(`${base_url}/api/admin/test-config/toggle-results`, {
+            const data = await api.patch('/api/admin/test-config/toggle-results', {
                 yearGroup: currentYear,
                 branchGroup: currentBranch
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
-            setResultsPublished(res.data.resultsPublished);
-            Swal.fire('Success', res.data.message, 'success');
+            setResultsPublished(data.resultsPublished);
+            Swal.fire('Success', data.message, 'success');
         } catch (err) {
-            Swal.fire('Error', 'Failed to toggle results. Ensure config exists first.', 'error');
+            // Global handler deals with logic errors
         }
     };
 
@@ -102,33 +102,42 @@ const AdminTestManager = () => {
         const reader = new FileReader();
         reader.onload = async (event) => {
             try {
-                const questions = JSON.parse(event.target.result);
-                if (!Array.isArray(questions)) throw new Error('Invalid JSON format');
+                const rawContent = event.target.result;
+                const cleanJson = rawContent.replace(/^\uFEFF/, "");
+                const questions = JSON.parse(cleanJson);
+
+                if (!Array.isArray(questions)) {
+                    throw new Error('Root element must be an array of questions.');
+                }
 
                 const result = await Swal.fire({
                     title: 'Bulk Upload?',
-                    text: `Confirm addition of ${questions.length} questions to the bank.`,
+                    text: `Confirm addition of ${questions.length} questions.`,
                     icon: 'info',
                     showCancelButton: true,
                     confirmButtonText: 'Yes, Upload'
                 });
 
                 if (result.isConfirmed) {
-                    const token = localStorage.getItem('adminToken');
                     const yg = watch('yearGroup');
                     const bg = watch('branchGroup');
-                    await axios.post(`${base_url}/api/admin/test-config/bulk-upload-questions`, {
+
+                    await api.post('/api/admin/test-config/bulk-upload-questions', {
                         questions,
                         yearGroup: yg,
                         branchGroup: bg
-                    }, {
-                        headers: { Authorization: `Bearer ${token}` }
                     });
-                    fetchConfig(yg, bg); // Refresh questions list for CURRENT groups
+
+                    fetchConfig(yg, bg);
                     Swal.fire('Success', 'Questions uploaded successfully', 'success');
                 }
             } catch (err) {
-                Swal.fire('Error', 'Invalid JSON file or Network Error.', 'error');
+                console.error("Bulk Upload Error:", err);
+                Swal.fire({
+                    title: 'Import Failed',
+                    text: err.message || 'JSON parse error',
+                    icon: 'error'
+                });
             }
         };
         reader.readAsText(file);
@@ -149,38 +158,41 @@ const AdminTestManager = () => {
 
         if (result.isConfirmed) {
             try {
-                const token = localStorage.getItem('adminToken');
-                const res = await axios.post(`${base_url}/api/admins/admin/close-session`, {
+                const data = await api.post('/api/admins/admin/close-session', {
                     yearGroup: yg,
                     branchGroup: bg
-                }, {
-                    headers: { Authorization: `Bearer ${token}` }
                 });
-                Swal.fire('Session Closed', res.data.message, 'success');
+                Swal.fire('Session Closed', data.message, 'success');
             } catch (err) {
-                Swal.fire('Error', err.response?.data?.message || 'Failed to close session', 'error');
+                // Global handler handles it
             }
         }
     };
 
     const onSubmit = async (data) => {
+        setLoading(true);
         try {
-            const token = localStorage.getItem('adminToken');
-
-            // Convert local date-time strings to ISO strings (UTC)
             const preparedData = {
                 ...data,
                 startDate: data.startDate ? new Date(data.startDate).toISOString() : null,
                 endDate: data.endDate ? new Date(data.endDate).toISOString() : null
             };
 
-            await axios.post(`${base_url}/api/admin/test-config`, preparedData, {
-                headers: { Authorization: `Bearer ${token}` }
+            await api.post('/api/admin/test-config', preparedData);
+
+            await fetchConfig(data.yearGroup, data.branchGroup);
+
+            Swal.fire({
+                title: 'Saved Successfully',
+                text: 'Test Configuration has been synchronized with the server.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
             });
-            Swal.fire('Success', 'Test Configuration Updated!', 'success');
         } catch (err) {
             console.error("Submit Error:", err);
-            Swal.fire('Error', 'Failed to save configuration', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -196,7 +208,6 @@ const AdminTestManager = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Settings Panel */}
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-fit">
                     <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                         <Clock className="text-blue-500" />
@@ -214,10 +225,7 @@ const AdminTestManager = () => {
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Year Group</label>
                                 <select
                                     {...register("yearGroup")}
-                                    onChange={async (e) => {
-                                        await register("yearGroup").onChange(e);
-                                        fetchConfig(e.target.value, getValues('branchGroup'));
-                                    }}
+                                    onChange={(e) => fetchConfig(e.target.value, getValues('branchGroup'))}
                                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-blue-500"
                                 >
                                     <option value="1-2">1st & 2nd Year</option>
@@ -228,10 +236,7 @@ const AdminTestManager = () => {
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Branch Group</label>
                                 <select
                                     {...register("branchGroup")}
-                                    onChange={async (e) => {
-                                        await register("branchGroup").onChange(e);
-                                        fetchConfig(getValues('yearGroup'), e.target.value);
-                                    }}
+                                    onChange={(e) => fetchConfig(getValues('yearGroup'), e.target.value)}
                                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-blue-500"
                                 >
                                     <option value="CS-IT">CS-IT</option>
@@ -244,29 +249,24 @@ const AdminTestManager = () => {
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Start Date & Time</label>
                             <input type="datetime-local" {...register("startDate")} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-700 outline-none focus:border-blue-500" />
                         </div>
-
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">End Date & Time</label>
                             <input type="datetime-local" {...register("endDate")} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-700 outline-none focus:border-blue-500" />
                         </div>
-
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Duration (Minutes)</label>
                             <input type="number" {...register("duration")} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-blue-500" />
                         </div>
-
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Target College Restriction</label>
                             <input {...register("targetCollege")} placeholder="e.g. BIT Kanpur (or 'All')" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-blue-600 outline-none focus:border-blue-500 placeholder:text-slate-300" />
                             <p className="text-[9px] text-slate-400 mt-2 italic font-medium">* Only students with this college name can start the test. Use 'All' for everyone.</p>
                         </div>
-
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Private Test Access Key</label>
                             <input {...register("testAccessKey")} placeholder="e.g. 112233" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-amber-600 outline-none focus:border-blue-500 placeholder:text-slate-300" />
                             <p className="text-[9px] text-slate-400 mt-2 italic font-medium">* Share this code with students in the hall to unlock the test.</p>
                         </div>
-
                         <div className="pt-4 border-t border-slate-100">
                             <button
                                 onClick={toggleResults}
@@ -278,7 +278,6 @@ const AdminTestManager = () => {
                                 {resultsPublished ? 'Students can now view their scores and correct answers.' : 'Results are hidden. Students only see completion status.'}
                             </p>
                         </div>
-
                         <div className="pt-6 border-t border-slate-100">
                             <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4">Session Management</h3>
                             <button
@@ -296,7 +295,6 @@ const AdminTestManager = () => {
                                 </p>
                             </div>
                         </div>
-
                         <div className="pt-6 border-t border-slate-100">
                             <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4">Bulk Actions</h3>
                             <div className="relative">
@@ -315,8 +313,6 @@ const AdminTestManager = () => {
                         </div>
                     </div>
                 </div>
-
-                {/* Questions Panel */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -342,7 +338,6 @@ const AdminTestManager = () => {
                                 >
                                     <Trash2 size={20} />
                                 </button>
-
                                 <div className="mb-4 pr-8">
                                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Question {index + 1}</label>
                                     <input
@@ -352,7 +347,6 @@ const AdminTestManager = () => {
                                         className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 outline-none focus:border-blue-500"
                                     />
                                 </div>
-
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     {[0, 1, 2, 3].map((optIndex) => (
                                         <div key={optIndex} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 focus-within:border-blue-500 transition-all">
@@ -435,5 +429,4 @@ const AdminTestManager = () => {
         </div>
     );
 };
-
 export default AdminTestManager;

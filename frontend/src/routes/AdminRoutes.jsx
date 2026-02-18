@@ -15,19 +15,20 @@ const AdminContentManager = lazy(() => import("../Components/AdminContentManager
 const AdminResultArchives = lazy(() => import("../Components/AdminResultArchives"));
 const AdminResultDetails = lazy(() => import("../Components/AdminResultDetails"));
 const RiskFeedPanel = lazy(() => import("../Components/RiskFeedPanel"));
+const AdminFeedback = lazy(() => import("../Components/AdminFeedback"));
 
 const AdminWrapper = ({ children }) => (
-    <ProtectedAdminRoute>
-        <AdminDashboard>
-            {children}
-        </AdminDashboard>
-    </ProtectedAdminRoute>
+  <ProtectedAdminRoute>
+    <AdminDashboard>
+      {children}
+    </AdminDashboard>
+  </ProtectedAdminRoute>
 );
 
 export const AdminRoutes = (
   <>
     <Route path="/admin-login" element={<AdminLogin />} />
-    
+
     {/* Admin Protected Routes */}
     <Route path={ADMIN_PATH} element={<AdminWrapper><AdminPanel /></AdminWrapper>} />
     <Route path="/admin-dashboard" element={<AdminWrapper><AdminHome /></AdminWrapper>} />
@@ -38,6 +39,7 @@ export const AdminRoutes = (
     <Route path="/admin-monitor" element={<AdminWrapper><RiskFeedPanel /></AdminWrapper>} />
     <Route path="/admin-certificates" element={<AdminWrapper><AdminCertificateManager /></AdminWrapper>} />
     <Route path="/admin-results" element={<AdminWrapper><AdminResultArchives /></AdminWrapper>} />
+    <Route path="/admin-feedback" element={<AdminWrapper><AdminFeedback /></AdminWrapper>} />
     <Route path="/admin-result-details/:id" element={<AdminWrapper><AdminResultDetails /></AdminWrapper>} />
   </>
 );

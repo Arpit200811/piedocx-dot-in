@@ -146,7 +146,7 @@ const Slider = () => {
           </div>
 
           {/* Visual Projection Frame */}
-          <div className="flex-1 w-full flex justify-center items-center relative">
+          <div className="flex-1 w-full flex justify-center items-center relative min-h-[350px] md:min-h-[500px] lg:min-h-0">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`image-${current}`}
@@ -154,13 +154,12 @@ const Slider = () => {
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                 exit={{ opacity: 0, scale: 1.1, rotate: 2 }}
                 transition={{ duration: 0.8, ease: "circOut" }}
-                className="relative group p-4 w-full h-full flex justify-center"
+                className="relative group p-4 w-full h-full flex justify-center items-center"
               >
                 {/* Decorative Frame Elements */}
-                <div className="absolute inset-0 bg-blue-100 rounded-[4rem] group-hover:bg-blue-200 blur-3xl opacity-20 transition-colors duration-1000"></div>
-                <div className="absolute -inset-10 border border-blue-100 rounded-[5rem] opacity-50 group-hover:scale-110 transition-transform duration-1000"></div>
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-64 bg-blue-100 rounded-[4rem] group-hover:bg-blue-200 blur-3xl opacity-20 transition-colors duration-1000"></div>
 
-                <div className="relative w-full max-w-[400px] md:max-w-xl mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.1)] hover:drop-shadow-[0_35px_35px_rgba(37,99,235,0.1)] transition-all animate-float">
+                <div className="relative z-10 w-full max-w-[320px] md:max-w-xl mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.1)] hover:drop-shadow-[0_35px_35px_rgba(37,99,235,0.1)] transition-all animate-float will-change-transform">
                   {sliderData[current].component}
                 </div>
 
@@ -169,10 +168,10 @@ const Slider = () => {
                   initial={{ x: 20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.8 }}
-                  className="absolute bottom-10 right-0 md:right-10 bg-white shadow-2xl rounded-3xl p-5 border border-slate-100 backdrop-blur-md flex items-center gap-4 animate-float-slow"
+                  className="absolute bottom-4 right-0 md:right-10 bg-white/90 shadow-2xl rounded-3xl p-4 md:p-5 border border-slate-100 backdrop-blur-md flex items-center gap-4 animate-float-slow z-20"
                 >
-                  <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20"><Star fill="white" size={20} /></div>
-                  <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency</p><p className="font-black text-slate-900 leading-none">99.9% Up</p></div>
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20"><Star fill="white" size={18} /></div>
+                  <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency</p><p className="font-black text-slate-900 leading-none text-sm md:text-base">99.9% Up</p></div>
                 </motion.div>
               </motion.div>
             </AnimatePresence>

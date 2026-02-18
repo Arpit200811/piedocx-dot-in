@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import {
@@ -11,7 +11,6 @@ import {
     QrCode, MapPin, Menu, X, Trophy, TrendingUp, Zap
 } from 'lucide-react';
 import SEO from './SEO';
-import { base_url } from '../utils/info';
 import { getYearGroup, getBranchGroup } from '../utils/branchMapping';
 import Swal from 'sweetalert2';
 import { useStudentAuth } from '../context/StudentAuthContext';
@@ -80,8 +79,8 @@ const StudentDashboard = () => {
 
     const fetchBulletins = async () => {
         try {
-            const res = await axios.get(`${base_url}/api/student-auth/bulletins`);
-            setAnnouncements(res.data);
+            const data = await api.get('/api/student-auth/bulletins');
+            setAnnouncements(data);
         } catch (err) {
             console.log("Bulletins fetch failed");
         }
@@ -89,8 +88,8 @@ const StudentDashboard = () => {
 
     const fetchResources = async () => {
         try {
-            const res = await axios.get(`${base_url}/api/student-auth/resources`);
-            setStudyResources(res.data);
+            const data = await api.get('/api/student-auth/resources');
+            setStudyResources(data);
         } catch (err) {
             console.log("Resources fetch failed");
         }
@@ -103,11 +102,8 @@ const StudentDashboard = () => {
 
     const fetchTestInfo = async () => {
         try {
-            const token = localStorage.getItem('studentToken');
-            const res = await axios.get(`${base_url}/api/student-auth/test-info`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setTestInfo(res.data);
+            const data = await api.get('/api/student-auth/test-info');
+            setTestInfo(data);
         } catch (err) {
             console.log("No test info found");
         }
@@ -126,10 +122,8 @@ const StudentDashboard = () => {
         reader.onloadend = async () => {
             const base64String = reader.result;
             try {
-                const token = localStorage.getItem('studentToken');
-                await axios.post(`${base_url}/api/student-auth/update-profile`,
-                    { profilePicture: base64String },
-                    { headers: { Authorization: `Bearer ${token}` } }
+                await api.post('/api/student-auth/update-profile',
+                    { profilePicture: base64String }
                 );
                 setStudent(prev => ({ ...prev, profilePicture: base64String }));
                 Swal.fire({ icon: 'success', title: 'Profile Updated', text: 'Your photo has been uploaded successfully.' });

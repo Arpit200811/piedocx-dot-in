@@ -43,12 +43,14 @@ const Certificate = ({ student, userEmail, autoSend }) => {
             });
             const base64Image = canvas.toDataURL('image/png');
 
+            const token = localStorage.getItem('studentToken');
             const response = await fetch(`${base_url}/api/certificate/send-email`, {
                method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
+               headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+               },
                body: JSON.stringify({
-                  email: userEmail,
-                  name: student.name,
                   certificateImage: base64Image
                })
             });
@@ -219,18 +221,40 @@ const Certificate = ({ student, userEmail, autoSend }) => {
                         if (y.includes('3') || y.includes('4')) return "Placement Drive";
                         return "Workshop";
                      })()}</span> in {(() => {
+                        if (student.technology && student.technology !== 'Default') return student.technology;
+
                         const b = (student.branch || '').toUpperCase();
-                        if (b.includes('CS') || b.includes('IT') || b.includes('COMPUTER') || b.includes('INFORMATION')) return "Python With Gen-AI";
-                        if (b.includes('EC') || b.includes('EE') || b.includes('ME') || b.includes('IC') || b.includes('ELECTRONIC') || b.includes('MECHANICAL') || b.includes('ELECTRICAL')) return "Automation controlling Rover";
+                        const y = (student.year || '').toLowerCase();
+                        const isJunior = y.includes('1') || y.includes('2');
+
+                        if (b.includes('CS') || b.includes('IT') || b.includes('COMPUTER') || b.includes('INFORMATION') || b.includes('AI') || b.includes('DATA')) {
+                           return isJunior ? "Python With Gen-AI" : "Placement Drive Assessment";
+                        }
+
+                        if (b.includes('EC') || b.includes('EE') || b.includes('ME') || b.includes('IC') || b.includes('ELECTRONIC') || b.includes('MECHANICAL') || b.includes('ELECTRICAL') || b.includes('CIVIL') || b.includes('AUTO')) {
+                           return isJunior ? "Automation controlling Rover" : "Placement Drive Assessment";
+                        }
+
                         return student.branch;
                      })()} ({student.branch}, {student.year}) With “A++” Grade.
                   </div>
 
                   <p style={{ position: 'relative', zIndex: 10, fontSize: '21px', fontWeight: 700, marginTop: '8px', color: '#0c4a6e', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                      {(() => {
+                        if (student.technology && student.technology !== 'Default') return `Technology: ${student.technology}`;
+
                         const b = (student.branch || '').toUpperCase();
-                        if (b.includes('CS') || b.includes('IT') || b.includes('COMPUTER') || b.includes('INFORMATION')) return "Technology: Python With Gen-AI";
-                        if (b.includes('EC') || b.includes('EE') || b.includes('ME') || b.includes('IC') || b.includes('ELECTRONIC') || b.includes('MECHANICAL') || b.includes('ELECTRICAL')) return "Technology: Automation controlling Rover";
+                        const y = (student.year || '').toLowerCase();
+                        const isJunior = y.includes('1') || y.includes('2');
+
+                        if (b.includes('CS') || b.includes('IT') || b.includes('COMPUTER') || b.includes('INFORMATION') || b.includes('AI') || b.includes('DATA')) {
+                           return isJunior ? "Technology: Python With Gen-AI" : "Placement Drive Assessment";
+                        }
+
+                        if (b.includes('EC') || b.includes('EE') || b.includes('ME') || b.includes('IC') || b.includes('ELECTRONIC') || b.includes('MECHANICAL') || b.includes('ELECTRICAL') || b.includes('CIVIL') || b.includes('AUTO')) {
+                           return isJunior ? "Technology: Automation controlling Rover" : "Placement Drive Assessment";
+                        }
+
                         return `Branch: ${student.branch}`;
                      })()}
                   </p>
@@ -240,7 +264,7 @@ const Certificate = ({ student, userEmail, autoSend }) => {
                   </p>
 
                   <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', gap: '20px', marginTop: '12px', marginBottom: '4px', opacity: 0.95, transform: 'scale(0.9)' }}>
-                     <img src="/digital_india.png" crossOrigin="anonymous" alt="Digital India" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+                     <img src="https://upload.wikimedia.org/wikipedia/en/thumb/9/95/Digital_India_logo.svg/1200px-Digital_India_logo.svg.png" crossOrigin="anonymous" alt="Digital India" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
                      <img src="/start.png" crossOrigin="anonymous" alt="Startup India" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
                      <img src="/msme.png" crossOrigin="anonymous" alt="MSME" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
                      <img src="/mca.png" crossOrigin="anonymous" alt="MCA" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
@@ -265,7 +289,7 @@ const Certificate = ({ student, userEmail, autoSend }) => {
                            <QRCode
                               size={85}
                               style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                              value={`${window.location.origin}/#/verify/${student.certificateId || student.studentId}`}
+                              value={`https://piedocx.in/#/verify/${student.certificateId || student.studentId}`}
                               viewBox={`0 0 256 256`}
                               fgColor="#0c4a6e"
                            />

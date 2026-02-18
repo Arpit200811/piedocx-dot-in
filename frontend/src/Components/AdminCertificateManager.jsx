@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
-import { base_url } from '../utils/info';
-import { Search, Trash2, ShieldAlert, ShieldCheck, Download, Eye, X, Filter, Mail, Edit3 } from 'lucide-react';
+import { Search, Trash2, ShieldAlert, ShieldCheck, Download, Eye, X, Filter, Mail, Edit3, MessageCircle, Settings } from 'lucide-react';
 import Certificate from './Certificate';
 import Swal from 'sweetalert2';
-import { motion } from 'framer-motion';
-
+import { motion, AnimatePresence } from 'framer-motion';
+import html2canvas from 'html2canvas';
+import api from '../utils/api';
+import { io } from 'socket.io-client';
 // --- Sub-components ---
 
 const StatCard = ({ label, value, color, icon: Icon }) => (
@@ -75,7 +75,7 @@ const FilterSection = ({ filters, colleges, onExport }) => {
   );
 };
 
-const StudentRow = ({ student: s, isSelected, onSelect, onView, onStatusToggle, onDelete, onEditMarks }) => (
+const StudentRow = ({ student: s, isSelected, onSelect, onView, onSendEmail, onWhatsApp, onStatusToggle, onDelete, onEditMarks, onEditTechnology }) => (
   <tr className={`hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-none ${isSelected ? 'bg-blue-50/50' : ''}`}>
     <td className="px-6 py-4 whitespace-nowrap">
       <div className="flex items-center gap-4">
@@ -128,7 +128,10 @@ const StudentRow = ({ student: s, isSelected, onSelect, onView, onStatusToggle, 
     </td>
     <td className="px-6 py-4 whitespace-nowrap text-right">
       <div className="flex items-center justify-end gap-1.5">
+        <ActionButton onClick={() => onEditTechnology(s)} icon={Settings} color="slate" title="Edit Technology" />
         <ActionButton onClick={() => onEditMarks(s)} icon={Edit3} color="purple" title="Edit Marks" />
+        <ActionButton onClick={() => onSendEmail(s)} icon={Mail} color="indigo" title="Send Email" />
+        <ActionButton onClick={() => onWhatsApp(s)} icon={MessageCircle} color="green" title="Send WhatsApp" />
         <ActionButton onClick={() => onView(s)} icon={Eye} color="blue" title="View Certificate" />
         <ActionButton
           onClick={() => onStatusToggle(s._id, s.status)}
@@ -163,8 +166,58 @@ const AdminCertificateManager = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [sharingStudent, setSharingStudent] = useState(null);
   const [showCertificate, setShowCertificate] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [colleges, setColleges] = useState([]);
+
+  // WhatsApp State
+  const [isWhatsAppReady, setIsWhatsAppReady] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState(null);
+
+  useEffect(() => {
+    // 1. Check initial status
+    api.get('/api/whatsapp/status').then(res => {
+      setIsWhatsAppReady(res.data.connected);
+    }).catch(() => setIsWhatsAppReady(false));
+
+    // 2. Connector for events
+    const socket = io('http://localhost:5002'); // Adjust URL for production
+    // Better: use relative path or env
+    // const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5002'); 
+    // Since we don't have VITE_API_URL handy in context, I'll use window.location.origin if prod?
+    // User is local: localhost:5002.
+
+    socket.on('whatsapp-qr', (qr) => {
+      console.log("QR Received via Socket");
+      setQrCodeData(qr);
+      setIsWhatsAppReady(false);
+    });
+
+    socket.on('whatsapp-ready', () => {
+      setIsWhatsAppReady(true);
+      setQrCodeData(null);
+      Swal.fire({
+        title: 'WhatsApp Connected!',
+        text: 'You can now send bulk messages.',
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        timer: 3000
+      });
+    });
+
+    socket.on('whatsapp-disconnected', () => {
+      setIsWhatsAppReady(false);
+    });
+
+    return () => socket.disconnect();
+  }, []);
 
   const toggleSelect = (id) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -173,55 +226,57 @@ const AdminCertificateManager = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
-      const res = await axios.get(`${base_url}/api/certificate/students`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const query = new URLSearchParams({
+        page: currentPage,
+        limit: 20,
+        search: searchTerm,
+        college: collegeFilter,
+        startDate,
+        endDate
       });
-      setStudents(res.data || []);
+
+      const response = await api.get(`/api/certificate/students?${query.toString()}`);
+
+      // Handle both old array format (fallback) and new paginated object
+      if (Array.isArray(response)) {
+        setStudents(response);
+        // Generate unique colleges client-side if API is old
+        setColleges([...new Set(response.map(s => s.college))]);
+      } else {
+        setStudents(response.students || []);
+        setTotalPages(response.totalPages || 1);
+        setTotalStudents(response.totalStudents || 0);
+        setColleges(response.colleges || []);
+      }
     } catch (err) {
-      console.error('Error fetching students:', err);
+      console.error('Fetch Failed', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchStudents();
+    }, 500); // Debounce search
+    return () => clearTimeout(timer);
+  }, [currentPage, searchTerm, collegeFilter, startDate, endDate]);
 
-  // Pure filtering logic
-  const filteredStudents = useMemo(() => {
-    let results = [...students];
+  // Use the fetched students directly since backend filters now
+  const filteredStudents = students;
 
-    if (searchTerm) {
-      const lowSearch = searchTerm.toLowerCase();
-      results = results.filter(s =>
-        s.fullName?.toLowerCase().includes(lowSearch) ||
-        s.studentId?.toLowerCase().includes(lowSearch) ||
-        s.college?.toLowerCase().includes(lowSearch) ||
-        s.branch?.toLowerCase().includes(lowSearch)
-      );
-    }
-
-    if (collegeFilter) {
-      results = results.filter(s => s.college === collegeFilter);
-    }
-
-    if (startDate) {
-      results = results.filter(s => new Date(s.createdAt) >= new Date(startDate));
-    }
-    if (endDate) {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      results = results.filter(s => new Date(s.createdAt) <= end);
-    }
-
-    return results;
-  }, [students, searchTerm, collegeFilter, startDate, endDate]);
-
-  const colleges = useMemo(() =>
-    [...new Set(students.map(s => s.college))].filter(Boolean),
-    [students]);
+  // Derived stats from backend totals if available, else local
+  const stats = useMemo(() => {
+    // If paginated, these might be partial, but totals come from backend
+    const active = students.filter(s => s.status === 'active').length;
+    const certificates = students.filter(s => s.certificateId).length;
+    // Note: To get TRUE global stats we need a separate stats endpoint or rely on totalStudents
+    return {
+      total: totalStudents || students.length,
+      active,
+      certificates
+    };
+  }, [students, totalStudents]);
 
   const toggleSelectAll = () => {
     if (selectedIds.length === filteredStudents.length && filteredStudents.length > 0) setSelectedIds([]);
@@ -238,15 +293,7 @@ const AdminCertificateManager = () => {
       confirmButtonText: 'Yes, Send All',
       showLoaderOnConfirm: true,
       preConfirm: async () => {
-        try {
-          const token = localStorage.getItem('adminToken');
-          const res = await axios.post(`${base_url}/api/certificate/bulk-send-email`, { ids: selectedIds }, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          return res.data;
-        } catch (error) {
-          Swal.showValidationMessage(`Operation Failed: ${error.message}`);
-        }
+        return await api.post('/api/certificate/bulk-send-email', { ids: selectedIds });
       }
     });
 
@@ -267,17 +314,10 @@ const AdminCertificateManager = () => {
     });
 
     if (result.isConfirmed) {
-      try {
-        const token = localStorage.getItem('adminToken');
-        await axios.post(`${base_url}/api/certificate/bulk-delete`, { ids: selectedIds }, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        Swal.fire('Purge Complete', 'Records have been removed.', 'success');
-        setSelectedIds([]);
-        fetchStudents();
-      } catch (err) {
-        Swal.fire('Error', 'Bulk deletion failed.', 'error');
-      }
+      await api.post('/api/certificate/bulk-delete', { ids: selectedIds });
+      Swal.fire('Purge Complete', 'Records have been removed.', 'success');
+      setSelectedIds([]);
+      await fetchStudents();
     }
   };
 
@@ -306,13 +346,10 @@ const AdminCertificateManager = () => {
     });
     if (!result.isConfirmed) return;
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.patch(`${base_url}/api/certificate/students/${id}/status`, { status: newStatus }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchStudents();
+      await api.put(`/api/certificate/student/status/${id}`, { status: newStatus });
+      await fetchStudents();
     } catch (err) {
-      Swal.fire('Error', 'Update failed', 'error');
+      // Local error handling if needed, otherwise global interceptor handles it
     }
   };
 
@@ -332,17 +369,147 @@ const AdminCertificateManager = () => {
     });
 
     if (newScore !== undefined) {
-      try {
-        const token = localStorage.getItem('adminToken');
-        await axios.patch(`${base_url}/api/certificate/students/${student._id}`,
-          { score: Number(newScore) },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        Swal.fire('Success', 'Marks updated successfully', 'success');
-        fetchStudents();
-      } catch (err) {
-        Swal.fire('Error', err.response?.data?.message || 'Update failed', 'error');
+      await api.put(`/api/certificate/student/details/${student._id}`, { score: Number(newScore) });
+      Swal.fire('Success', 'Marks updated successfully', 'success');
+      await fetchStudents();
+    }
+  };
+
+  const handleEditTechnology = async (student) => {
+    const { value: newTechnology } = await Swal.fire({
+      title: 'Update Technology',
+      text: `Editing technology for ${student.fullName}`,
+      input: 'text',
+      inputLabel: 'Technology / Domain',
+      inputValue: student.technology || '',
+      showCancelButton: true
+    });
+
+    if (newTechnology !== undefined) {
+      await api.put(`/api/certificate/student/details/${student._id}`, { technology: newTechnology });
+      Swal.fire('Success', 'Technology updated successfully', 'success');
+      await fetchStudents();
+    }
+  };
+
+  const handleSingleSend = async (student) => {
+    const result = await Swal.fire({
+      title: 'Send Certificate?',
+      text: `Email and Score will be sent to ${student.email}`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Send Now',
+      showLoaderOnConfirm: true,
+      preConfirm: async () => {
+        try {
+          return await api.post('/api/certificate/send-single-email', { id: student._id });
+        } catch (error) {
+          Swal.showValidationMessage(`Failed: ${error.response?.data?.message || error.message}`);
+        }
       }
+    });
+
+    if (result.isConfirmed) {
+      Swal.fire('Sent!', result.value.message, 'success');
+    }
+  };
+
+  const handleWhatsAppSend = async (student) => {
+    Swal.fire({
+      title: 'Preparing PNG...',
+      text: 'Generating high-res certificate for WhatsApp...',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+      setSharingStudent(student);
+      // Let fonts and QR stabilize
+      await new Promise(r => setTimeout(r, 2500));
+
+      const node = document.getElementById('whatsapp-capture-node');
+      const shareTarget = node.querySelector('.certificate-body');
+
+      if (!shareTarget) throw new Error("Certificate rendering failed.");
+
+      const originalTransform = shareTarget.style.transform;
+      shareTarget.style.transform = 'none';
+
+      const canvas = await html2canvas(shareTarget, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#f8fbff',
+        width: 1123,
+        height: 794
+      });
+
+      shareTarget.style.transform = originalTransform;
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png', 1.0));
+      const file = new File([blob], `${student.fullName.replace(/\s+/g, '_')}_Certificate.png`, { type: 'image/png' });
+
+      setSharingStudent(null);
+      Swal.close();
+
+      // SECOND STEP: Actual User Gesture to bypass browser security
+      const shareData = {
+        files: [file],
+        title: 'Certificate',
+        text: `Congratulations ${student.fullName}! Your Assessment score is ${student.score || 0}.`
+      };
+
+      const canShare = navigator.share && navigator.canShare && navigator.canShare(shareData);
+
+      await Swal.fire({
+        title: 'Ready to Dispatch!',
+        text: 'Certificate PNG generated successfully.',
+        icon: 'success',
+        confirmButtonText: canShare ? '📤 Share on WhatsApp' : '🔗 Send Link (Desktop)',
+        showCancelButton: true,
+        confirmButtonColor: '#22c55e',
+        preConfirm: async () => {
+          if (canShare) {
+            try {
+              await navigator.share(shareData);
+            } catch (shareErr) {
+              if (shareErr.name !== 'AbortError') throw shareErr;
+            }
+          } else {
+            // Fallback for Desktop/Non-supported browsers
+            const message = `*Congratulations ${student.fullName}!* 🏆%0A%0AYour Assessment from *Piedocx Technologies* is complete.%0A%0A📊 *Your Score:* ${student.score || 0}%0A📜 *View Certificate:* https://piedocx.in/%23/view-certificate/${student.email}`;
+            const phone = student.mobile.replace(/\D/g, '');
+            window.open(`https://wa.me/91${phone}?text=${message}`, '_blank');
+          }
+        }
+      });
+
+    } catch (err) {
+      console.error(err);
+      Swal.fire('Export Error', `Failure: ${err.message || 'Processing Error'}`, 'error');
+      setSharingStudent(null);
+    }
+  };
+
+  const handleBulkWhatsApp = async () => {
+    const result = await Swal.fire({
+      title: 'Bulk WhatsApp Blast?',
+      text: `Send official certificate links to ${selectedIds.length} students via Server? (Ensure Backend QR is scanned)`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Blast Messages',
+      confirmButtonColor: '#25D366',
+      showLoaderOnConfirm: true,
+      preConfirm: async () => {
+        try {
+          return await api.post('/api/whatsapp/bulk-send', { ids: selectedIds });
+        } catch (error) {
+          Swal.showValidationMessage(`Failed: ${error.response?.data?.message || 'Server Error'}`);
+        }
+      }
+    });
+
+    if (result.isConfirmed && result.value) {
+      Swal.fire('Sent!', `Summary: ${JSON.stringify(result.value.summary)}`, 'success');
+      setSelectedIds([]);
     }
   };
 
@@ -357,13 +524,11 @@ const AdminCertificateManager = () => {
     });
     if (!result.isConfirmed) return;
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.delete(`${base_url}/api/certificate/students/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchStudents();
+      await api.delete(`/api/certificate/student/${id}`);
+      Swal.fire('Deleted!', 'Record removed.', 'success');
+      await fetchStudents();
     } catch (err) {
-      Swal.fire('Error', 'Deletion failed', 'error');
+      // Handled by global interceptor
     }
   };
 
@@ -384,11 +549,48 @@ const AdminCertificateManager = () => {
             </h1>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">Authorized Personal Only</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Sync</span>
+          <div className="flex items-center gap-4">
+            {/* WhatsApp Status Pill */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${isWhatsAppReady ? 'bg-green-50 border-green-200 text-green-700' : 'bg-orange-50 border-orange-200 text-orange-700'}`}>
+              <div className={`w-2 h-2 rounded-full ${isWhatsAppReady ? 'bg-green-500' : 'bg-orange-500 animate-pulse'}`}></div>
+              <span className="text-[9px] font-black uppercase tracking-widest">
+                WA: {isWhatsAppReady ? 'Online' : 'Scan Required'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Sync</span>
+            </div>
           </div>
         </div>
+
+        {/* Floating QR Scanner (Only if disconnected and QR exists) */}
+        <AnimatePresence>
+          {!isWhatsAppReady && qrCodeData && (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="fixed bottom-8 right-8 bg-white p-4 rounded-3xl shadow-2xl border-4 border-slate-900 z-50 flex flex-col items-center gap-4 w-64"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">WhatsApp Login</span>
+                <button onClick={() => setQrCodeData(null)} className="text-slate-300 hover:text-slate-900"><X size={14} /></button>
+              </div>
+              <div className="p-2 bg-white rounded-xl border border-slate-100">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}`}
+                  alt="Scan QR"
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+              <p className="text-[9px] text-center font-bold text-slate-500 px-2">
+                Open WhatsApp {'>'} Linked Devices {'>'} Scan to enable bulk messaging.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -415,7 +617,13 @@ const AdminCertificateManager = () => {
                 onClick={handleBulkEmail}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2"
               >
-                <Mail size={14} /> Send Certificates
+                <Mail size={14} /> Send Email
+              </button>
+              <button
+                onClick={handleBulkWhatsApp}
+                className="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2"
+              >
+                <MessageCircle size={14} /> WhatsApp
               </button>
               <button
                 onClick={bulkDelete}
@@ -479,15 +687,45 @@ const AdminCertificateManager = () => {
                       isSelected={selectedIds.includes(s._id)}
                       onSelect={toggleSelect}
                       onView={handleView}
+                      onSendEmail={handleSingleSend}
+                      onWhatsApp={handleWhatsAppSend}
                       onStatusToggle={handleStatusToggle}
                       onDelete={handleDelete}
                       onEditMarks={handleEditMarks}
+                      onEditTechnology={handleEditTechnology}
                     />
                   ))
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between p-4 border-t border-slate-100 bg-slate-50/50">
+            <div className="text-xs font-black uppercase text-slate-400 tracking-widest">
+              Showing {students.length} of {totalStudents} Records
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-black uppercase disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-all shadow-sm"
+              >
+                Previous
+              </button>
+              <div className="px-4 py-2 rounded-lg bg-blue-50 text-blue-600 text-xs font-black border border-blue-100">
+                Page {currentPage} of {totalPages}
+              </div>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-black uppercase disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-all shadow-sm"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -524,12 +762,33 @@ const AdminCertificateManager = () => {
           </div>
         </Modal>
       )}
+
+      <div id="whatsapp-capture-node" className="fixed top-0 left-0 -z-[999] pointer-events-none" style={{ width: '1200px', height: '900px', opacity: 0.01 }}>
+        {sharingStudent && (
+          <div className="p-10 bg-white inline-block">
+            <Certificate
+              student={{
+                name: sharingStudent.fullName,
+                college: sharingStudent.college,
+                branch: sharingStudent.branch,
+                year: sharingStudent.year,
+                studentId: sharingStudent.studentId,
+                certificateId: sharingStudent.certificateId,
+                _id: sharingStudent._id,
+                technology: sharingStudent.technology,
+              }}
+              userEmail={sharingStudent.email}
+              autoSend={false}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 const Modal = ({ children, onClose }) => (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => e.target === e.currentTarget && onClose()}>
     <div className="bg-white rounded-[2rem] w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in duration-300">
       {children}
     </div>
