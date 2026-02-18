@@ -7,7 +7,7 @@
     "dev": "npx nodemon src/app.js",
     "build": "npm install",
     "start": "node src/app.js",
-    "postinstall": "npx puppeteer browsers install chrome --platform linux"
+    "postinstall": "npx puppeteer browsers install chrome"
   },
   "keywords": [],
   "author": "",
