@@ -1,7 +1,8 @@
 import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
-import { getIO } from './socketService.js'; // Import socket to emit QR
+import { getIO } from './socketService.js';
+import puppeteer from 'puppeteer'; // Add this line
 
 let client;
 let isReady = false;
@@ -12,6 +13,7 @@ export const initializeWhatsApp = () => {
     client = new Client({
         authStrategy: new LocalAuth(),
         puppeteer: {
+            executablePath: puppeteer.executablePath(), // Add this: Forces Puppeteer to use the installed browser
             headless: true,
             args: [
                 '--no-sandbox',
@@ -20,12 +22,12 @@ export const initializeWhatsApp = () => {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--single-process', // <- This one is often needed on low-RAM environments like Render
+                '--single-process',
                 '--disable-gpu'
             ],
-            // executablePath: process.env.CHROME_PATH || undefined, // Optional: if using system chrome
         }
     });
+
 
 
     client.on('qr', (qr) => {
