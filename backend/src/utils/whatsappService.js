@@ -13,9 +13,20 @@ export const initializeWhatsApp = () => {
         authStrategy: new LocalAuth(),
         puppeteer: {
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process', // <- This one is often needed on low-RAM environments like Render
+                '--disable-gpu'
+            ],
+            // executablePath: process.env.CHROME_PATH || undefined, // Optional: if using system chrome
         }
     });
+
 
     client.on('qr', (qr) => {
         console.log('QR RECEIVED. Scan this with WhatsApp:');
