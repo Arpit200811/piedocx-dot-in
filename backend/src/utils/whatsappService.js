@@ -2,6 +2,7 @@ import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
 import { getIO } from './socketService.js';
+import puppeteer from 'puppeteer';
 
 let client;
 let isReady = false;
@@ -9,12 +10,21 @@ let isReady = false;
 export const initializeWhatsApp = () => {
     console.log('Initializing WhatsApp Client...');
 
+    // Render environment check
+    const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER;
+
     client = new Client({
         authStrategy: new LocalAuth({
             dataPath: './.wwebjs_auth'
         }),
+        webVersionCache: {
+            type: 'remote',
+            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+        },
         puppeteer: {
-            headless: true,
+            // Only use custom path on Render, local will use bundled chromium
+            executablePath: isProd ? puppeteer.executablePath() : undefined,
+            headless: true, 
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -22,11 +32,14 @@ export const initializeWhatsApp = () => {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--single-process',
-                '--disable-gpu'
-            ]
+                '--disable-gpu',
+                '--disable-extensions',
+                '--disable-software-rasterizer' // Adds stability on Windows
+            ],
         }
     });
+
+
 
     // 🔥 QR Event
     client.on('qr', (qr) => {
