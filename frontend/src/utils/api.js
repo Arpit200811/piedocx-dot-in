@@ -17,8 +17,19 @@ const api = axios.create({
 // Request Interceptor: Inject Token
 api.interceptors.request.use(
     (config) => {
-        // Try admin token first, then student token if needed
-        const token = localStorage.getItem('adminToken') || localStorage.getItem('studentToken');
+        const url = config.url || '';
+        let token = null;
+
+        // Strict Token Isolation
+        if (url.includes('/admin/') || url.includes('/analytics/')) {
+            token = localStorage.getItem('adminToken');
+        } else if (url.includes('/student-auth/') || url.includes('/certificate/')) {
+            token = localStorage.getItem('studentToken');
+        } else {
+            // General routes (fallback order)
+            token = localStorage.getItem('studentToken') || localStorage.getItem('adminToken');
+        }
+
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
