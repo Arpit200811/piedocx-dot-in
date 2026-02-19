@@ -1,23 +1,26 @@
 import nodemailer from 'nodemailer';
 import EmailLog from '../models/EmailLog.js';
 
+let cachedTransporter = null;
+
 export const getTransporter = () => {
-  const { EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, EMAIL_SECURE } = process.env;
-  console.log("env bala data",EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, EMAIL_SECURE);
+  if (cachedTransporter) return cachedTransporter;
+
+  const { EMAIL_USER, EMAIL_PASS } = process.env;
 
   if (!EMAIL_USER || !EMAIL_PASS) {
     throw new Error('Email credentials (EMAIL_USER or EMAIL_PASS) are missing in .env file');
   }
 
-  const transporter = nodemailer.createTransport({
+  cachedTransporter = nodemailer.createTransport({
     service: "gmail",  
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: EMAIL_USER,
+      pass: EMAIL_PASS,
     },
   });
 
-  return transporter;
+  return cachedTransporter;
 };
 
 export const sendCertificateEmail = async (studentEmail, studentName, certificateBase64, score = null) => {

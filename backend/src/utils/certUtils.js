@@ -25,8 +25,10 @@ export const generateQR = async (verificationUrl) => {
     }
 };
 
-export const generateCertificateID = (year, index) => {
-    // Format: PDCX-2026-0001
-    const idx = String(index).padStart(4, '0');
-    return `PDCX-${year}-${idx}`;
+export const generateCertificateID = (year) => {
+    // High-entropy unique ID: PDCX-2026-XXXX-XXXX
+    // Format: Year - Timestamp(hex) - Random(hex)
+    const timestamp = Date.now().toString(16).toUpperCase().slice(-4);
+    const random = crypto.randomBytes(2).toString('hex').toUpperCase();
+    return `PDCX-${year}-${timestamp}-${random}`;
 };

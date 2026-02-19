@@ -659,19 +659,19 @@ const StudentDashboard = () => {
                                 </motion.div>
 
                                 <div className="w-full flex flex-col gap-3">
-                                    <button
+                                    {/* <button
                                         onClick={downloadIDCard}
                                         disabled={isDownloadingID}
                                         className={`w-full py-5 rounded-[2rem] font-black text-[10px] sm:text-xs uppercase italic tracking-[0.3em] transition-all shadow-2xl flex items-center justify-center gap-3 border ${isDownloadingID ? 'bg-slate-100 text-slate-400' : 'bg-[#0f172a] text-white hover:bg-blue-600 border-transparent hover:border-blue-600'}`}
                                     >
-                                        {isDownloadingID ? 'Generating Asset...' : <><Download size={18} /> Download Official ID Card</>}
-                                    </button>
+                                        {isDownloadingID ? 'Generating Asset...' : <><Download size={18} /> Verify Identity Portal</>}
+                                    </button> */}
 
                                     <button
                                         onClick={() => navigate(`/verify/${student.certificateId || student.studentId}`)}
                                         className="w-full py-5 bg-white text-slate-900 rounded-[2rem] font-black text-[10px] sm:text-xs uppercase italic tracking-[0.3em] transition-all shadow-2xl hover:bg-slate-50 active:scale-95 flex items-center justify-center gap-3 border border-[#e2e8f0]"
                                     >
-                                        <Award size={20} /> Verify Identity Portal
+                                        <Award size={20} />  Download Official ID Card
                                     </button>
                                 </div>
                             </div>

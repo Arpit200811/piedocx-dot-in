@@ -5,6 +5,7 @@ import { Users, ShieldCheck, ShieldAlert, BadgeCheck, Mail, ArrowRight, RotateCc
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { io } from 'socket.io-client';
+import WhatsAppAdminControl from './WhatsAppAdminControl';
 
 const AdminHome = () => {
   const [stats, setStats] = useState({
@@ -286,42 +287,29 @@ const AdminHome = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-        <div className="bg-slate-900 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 text-white relative overflow-hidden group">
-          <div className="relative z-10 space-y-4 md:space-y-6">
-            <div className="w-14 h-14 md:w-16 md:h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/40">
-              <Mail size={28} className="md:w-8 md:h-8" />
+      {/* Quick Actions & Hubs */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+        {/* Left Column: Logs */}
+        <div className="bg-slate-900 rounded-[2rem] md:rounded-[3rem] p-8 md:p-12 text-white relative overflow-hidden group h-full flex flex-col justify-between min-h-[400px]">
+          <div className="relative z-10 space-y-6 md:space-y-8">
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-blue-600 rounded-2.5xl flex items-center justify-center shadow-2xl shadow-blue-500/40">
+              <Mail size={32} className="md:w-10 md:h-10" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-black tracking-tighter italic">Comms Audit Logs</h2>
-              <p className="text-slate-400 mt-2 font-medium max-w-sm text-sm md:text-base">Monitor all outgoing OTPs and certificate delivery status in real-time.</p>
+              <h2 className="text-3xl md:text-4xl font-black tracking-tighter italic uppercase">Comms & Audit <span className="text-blue-400">Logs</span></h2>
+              <p className="text-slate-400 mt-4 font-medium max-w-sm text-sm md:text-base leading-relaxed">Analyze outgoing traffic, certificate delivery status, and student OTP synchronization across all sectors.</p>
             </div>
-            <Link to="/admin-logs" className="inline-flex items-center gap-2 bg-white text-slate-900 px-5 md:px-6 py-2.5 md:py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">
-              Analyze Reports <ArrowRight size={18} />
+          </div>
+          <div className="relative z-10 pt-10">
+            <Link to="/admin-logs" className="inline-flex items-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-blue-600 hover:text-white transition-all shadow-xl">
+              Launch Analyzer <ArrowRight size={20} />
             </Link>
           </div>
-          <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/20 transition-all"></div>
+          <div className="absolute -right-16 -bottom-16 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] group-hover:bg-blue-600/20 transition-all duration-700"></div>
         </div>
 
-        <div className="bg-white border border-slate-100 rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-10 flex flex-col justify-between shadow-sm">
-          <div className="space-y-4">
-            <h2 className="text-xl md:text-2xl font-black tracking-tighter text-slate-900 italic uppercase">System Sync</h2>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="font-black text-slate-400 uppercase tracking-widest">Active Data Streams</span>
-                <span className="text-blue-600 font-black">Online & Polling</span>
-              </div>
-              <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full animate-pulse" style={{ width: '100%' }}></div>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-6 md:mt-8 text-[10px] font-black uppercase tracking-widest">
-            <span className="text-slate-400">Live monitoring enabled</span>
-            <span className="text-emerald-500">Secure AES-256</span>
-          </div>
-        </div>
+        {/* Right Column: WhatsApp Control */}
+        <WhatsAppAdminControl />
       </div>
 
       {/* Live Monitor Table */}

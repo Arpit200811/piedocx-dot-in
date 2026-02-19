@@ -19,11 +19,25 @@ export const initSocket = (server) => {
     if (!token) return next(new Error("Authentication Error"));
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      socket.studentId = decoded.id;
-      socket.email = decoded.email;
-      next();
+      // Try Student Secret first as it's the primary use case
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.user = decoded;
+        socket.studentId = decoded.id;
+        socket.email = decoded.email;
+        socket.role = 'student';
+        return next();
+      } catch (err) {
+        // If student verify fails, try Admin secret
+        const decoded = jwt.verify(token, process.env.SECRET_KEY);
+        socket.user = decoded;
+        socket.adminId = decoded.id;
+        socket.email = decoded.email;
+        socket.role = decoded.role || 'admin';
+        return next();
+      }
     } catch (err) {
+      console.error("[Socket Auth] Invalid Token Attempt:", err.message);
       next(new Error("Invalid Token"));
     }
   });

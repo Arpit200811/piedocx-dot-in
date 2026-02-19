@@ -92,10 +92,10 @@ app.get("/", (req, res) => {
 
 httpServer.listen(5002, async () => {
   await connectDB();
-  // Initialize WhatsApp Service
-  import('./utils/whatsappService.js').then(module => {
-      module.initializeWhatsApp();
-  }).catch(err => console.error("Failed to load WhatsApp module", err));
   
+  // Attempt to auto-restore active WhatsApp session if it exists
+  const { initializeWhatsApp } = await import('./utils/whatsappService.js');
+  initializeWhatsApp(true); 
+
   console.log(`Server running on port 5002`);
 });

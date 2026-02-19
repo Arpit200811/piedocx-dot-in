@@ -23,8 +23,9 @@ const deriveTechnology = (branch, year) => {
 
 export const registerStudent = async (req, res) => {
     try {
-        const { fullName, branch, year, mobile, college, email, profilePicture } = req.body;
+        const { fullName, branch, year, mobile, email, college, profilePicture } = req.body;
 
+        // 1. Validation (Request Scoped)
         const validBranches = [
             'Computer Science & Engineering (CSE)',
             'Information Technology (IT)',
@@ -36,53 +37,30 @@ export const registerStudent = async (req, res) => {
             'Automobile Engineering',
             'Other'
         ];
-
         const validYears = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Graduated'];
 
-        if (!validBranches.includes(branch)) {
-            return res.status(400).json({ message: 'Invalid field of study selected.' });
+        if (!validBranches.includes(branch) || !validYears.includes(year)) {
+            return res.status(400).json({ message: 'Invalid branch or year selection.' });
         }
 
-        if (!validYears.includes(year)) {
-            return res.status(400).json({ message: 'Invalid academic year selected.' });
-        }
-
-        const existingUser = await ExamStudent.findOne({ 
-            $or: [{ email }, { mobile }] 
-        });
-
-        if (existingUser) {
-            if (existingUser.email === email) {
-                return res.status(409).json({ message: 'This email is already registered. Please login.' });
-            }
-            if (existingUser.mobile === mobile) {
-                return res.status(409).json({ message: 'This mobile number is already registered.' });
-            }
-        }
-
-        // Generate Sequential Student ID (Base: PDT-WS 2600) if not provided
-        let studentId = req.body.studentId;
-        if (!studentId) {
-            const totalStudents = await ExamStudent.countDocuments();
-            studentId = `PDT-WS ${26000 + totalStudents + 1}`;
-        }
-
-        // 1. Generate Unique Certificate ID
+        // 2. Generate Isolated Identification (Atomic)
+        // We use a timestamp + random salt to ensure studentId is unique even in parallel requests
+        const salt = Math.floor(1000 + Math.random() * 9000);
+        const studentId = `PDCX-S${Date.now().toString().slice(-6)}${salt}`;
+        
         const currentYear = new Date().getFullYear();
-        const countForYear = await ExamStudent.countDocuments({ year: year });
-        const certId = generateCertificateID(currentYear, countForYear + 1);
+        const certId = generateCertificateID(currentYear);
 
-        // 2. Generate Signature
-        const tech = req.body.technology || deriveTechnology(branch, year); // Auto-derive technology
+        const tech = req.body.technology || deriveTechnology(branch, year);
 
+        // 3. Prepare State (No global variables)
         const signature = generateCertificateSignature({
             studentId,
             course: branch,
             issueDate: new Date().toISOString().split('T')[0],
-            score: 0 // Initial score
+            score: 0
         });
 
-        // 3. QR Code (Pointing to a verification URL with HashRouter support)
         const verifyUrl = `${process.env.FRONTEND_URL || 'https://piedocx.in'}/#/verify/${certId}`;
         const qrCode = await generateQR(verifyUrl);
 
@@ -93,33 +71,38 @@ export const registerStudent = async (req, res) => {
             college: college.trim().toLowerCase(),
             branch,
             year,
-            mobile,
-            email,
+            mobile: mobile.trim(),
+            email: email.trim().toLowerCase(),
             profilePicture,
             technology: tech,
             signature,
             qrCode
         });
 
+        // 4. Atomic Save
+        // MongoDB unique indexes will prevent cross-user data duplication/overwriting
         await newStudent.save();
         
-        // Send Welcome Email
+        // 5. Background Tasks (Non-blocking)
         try {
             const { sendRegistrationEmail } = await import('../utils/mailer.js');
             sendRegistrationEmail(newStudent);
         } catch (mailErr) {
-            console.error("Delayed mail error:", mailErr);
+            console.error("[Worker] Mail failed:", mailErr.message);
         }
 
-        res.status(201).json({ message: 'Registration Successful', student: newStudent });
+        return res.status(201).json({ message: 'Registration Successful', student: newStudent });
 
     } catch (error) {
+        // Handle MongoDB Duplicate Key Error (Atomic check fallback)
         if (error.code === 11000) {
             const field = Object.keys(error.keyPattern)[0];
-            return res.status(409).json({ message: `${field} already exists` });
+            return res.status(409).json({ 
+                message: `The ${field} is already registered. Please use different details or login.` 
+            });
         }
-        console.error("registerStudent error:", error);
-        res.status(500).json({ message: 'Server error' });
+        console.error("[Registration Critical] Flow Error:", error);
+        res.status(500).json({ message: 'A registration error occurred. Please try again.' });
     }
 };
 
@@ -381,14 +364,14 @@ export const bulkRegister = async (req, res) => {
           }
           
           if (!student.studentId) {
-              student.studentId = `PDT-WS ${26000 + totalCount + i + 1}`;
+              const salt = Math.floor(1000 + Math.random() * 9000);
+              student.studentId = `PDCX-B${Date.now().toString().slice(-6)}${i}${salt}`;
           }
 
           if (!student.certificateId) {
-              const certId = generateCertificateID(currentYear, totalCount + i + 1);
-              student.certificateId = certId;
+              student.certificateId = generateCertificateID(currentYear);
 
-              const verifyUrl = `${process.env.FRONTEND_URL || 'https://piedocx.in'}/#/verify/${certId}`;
+              const verifyUrl = `${process.env.FRONTEND_URL || 'https://piedocx.in'}/#/verify/${student.certificateId}`;
               student.qrCode = await generateQR(verifyUrl);
 
               student.signature = generateCertificateSignature({
@@ -402,7 +385,7 @@ export const bulkRegister = async (req, res) => {
       }
 
       const results = await ExamStudent.insertMany(preparedStudents, { ordered: false });
-      res.status(201).json({ message: `${results.length} students registered successfully`, count: results.length });
+      return res.status(201).json({ message: `${results.length} students registered successfully`, count: results.length });
     } catch (error) {
       if (error.code === 11000 || error.writeErrors) {
           const successCount = (error.result?.nInserted) || (error.insertedDocs?.length) || 0;
@@ -411,8 +394,8 @@ export const bulkRegister = async (req, res) => {
               successCount 
           });
       }
-      console.error("bulkRegister error:", error);
-      res.status(500).json({ message: 'Bulk registration failed' });
+      console.error("[Bulk Crashing] Error:", error);
+      res.status(500).json({ message: 'Bulk registration failed due to data inconsistency.' });
     }
 };
 
@@ -444,15 +427,19 @@ export const bulkSendCertificates = async (req, res) => {
 
         for (const student of students) {
             try {
+                // Rate limiting to avoid SMTP rejection (1 email per second)
+                await new Promise(r => setTimeout(r, 1000));
+                
                 const sent = await sendCertificateEmail(student.email, student.fullName, null, student.score); 
                 if (sent) successCount++;
                 else failCount++;
             } catch (err) {
+                console.error(`[Bulk Mail] Failed for ${student.email}:`, err.message);
                 failCount++;
             }
         }
 
-        res.status(200).json({ 
+        return res.status(200).json({ 
             message: `Bulk processing complete.`, 
             summary: { total: students.length, succeeded: successCount, failed: failCount } 
         });

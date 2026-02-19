@@ -4,7 +4,7 @@
   "main": "src/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx nodemon src/app.js",
+    "dev": "npx nodemon --ignore .wwebjs_auth src/app.js",
     "build": "npm install",
     "start": "node src/app.js",
     "postinstall": "puppeteer install chrome"

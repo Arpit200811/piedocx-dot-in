@@ -1,133 +1,116 @@
 import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
-import qrcode from 'qrcode-terminal';
 import { getIO } from './socketService.js';
-import puppeteer from 'puppeteer';
+import fs from 'fs';
+import path from 'path';
 
-let client;
-let isReady = false;
+let client = null;
+let status = 'DISCONNECTED'; 
+let lastQr = null; 
+let lastQrTime = 0;
 
-export const initializeWhatsApp = () => {
-    console.log('Initializing WhatsApp Client...');
+export const getWhatsAppStatus = () => ({ status, qr: lastQr });
 
-    // Render environment check
-    const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER;
+const updateStatus = (newStatus, qr = null) => {
+    // Only update QR if 30 seconds have passed, or if it's the first one
+    // This stops the rapid refresh flickering
+    const now = Date.now();
+    if (qr && (now - lastQrTime < 30000)) {
+        return; 
+    }
+
+    status = newStatus;
+    if (qr) {
+        lastQr = qr;
+        lastQrTime = now;
+    }
+
+    const io = getIO();
+    if (io) {
+        io.emit('whatsapp-status', { status, qr: lastQr });
+    }
+    console.log(`[WhatsApp] Status Update: ${status}`);
+};
+
+export const initializeWhatsApp = async (isAuto = false) => {
+    if (status === 'CONNECTED' || status === 'INITIALIZING') {
+        return { success: false, message: 'Process already active.' };
+    }
+
+    const sessionExists = fs.existsSync('./.wwebjs_auth/session-admin-auth');
+    if (isAuto && !sessionExists) return { success: false };
+
+    if (client) {
+        try { await client.destroy(); } catch (e) {}
+        client = null;
+    }
+
+    updateStatus('INITIALIZING');
 
     client = new Client({
         authStrategy: new LocalAuth({
+            clientId: 'admin-auth',
             dataPath: './.wwebjs_auth'
         }),
+        puppeteer: {
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+            timeout: 60000
+        },
         webVersionCache: {
             type: 'remote',
             remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
-        },
-        puppeteer: {
-            // Only use custom path on Render, local will use bundled chromium
-            executablePath: isProd ? puppeteer.executablePath() : undefined,
-            headless: true, 
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--no-first-run',
-                '--no-zygote',
-                '--disable-gpu',
-                '--disable-extensions',
-                '--disable-software-rasterizer' // Adds stability on Windows
-            ],
         }
     });
 
-
-
-    // 🔥 QR Event
     client.on('qr', (qr) => {
-        console.log('QR RECEIVED. Scan this with WhatsApp:');
-        qrcode.generate(qr, { small: true });
-
-        const io = getIO();
-        if (io) {
-            io.emit('whatsapp-qr', qr);
-        }
+        updateStatus('QR_READY', qr);
     });
 
-    // ✅ Ready
     client.on('ready', () => {
-        console.log('WhatsApp Client is ready!');
-        isReady = true;
-
-        const io = getIO();
-        if (io) io.emit('whatsapp-ready', true);
+        updateStatus('CONNECTED');
+        lastQr = null; // Clear QR once connected
+        console.log('✅ WhatsApp Hub Synchronized!');
     });
 
-    // ✅ Authenticated
-    client.on('authenticated', () => {
-        console.log('WhatsApp Authenticated');
-
-        const io = getIO();
-        if (io) io.emit('whatsapp-auth', true);
+    client.on('auth_failure', () => {
+        updateStatus('DISCONNECTED');
+        console.error('❌ Auth Failed');
     });
 
-    // ❌ Auth Failure
-    client.on('auth_failure', msg => {
-        console.error('AUTHENTICATION FAILURE:', msg);
-        isReady = false;
+    client.on('disconnected', async () => {
+        updateStatus('DISCONNECTED');
+        client = null;
     });
-
-    // 🔄 Disconnect Handling (Auto Reconnect)
-    client.on('disconnected', (reason) => {
-        console.log('WhatsApp was logged out:', reason);
-        isReady = false;
-
-        const io = getIO();
-        if (io) io.emit('whatsapp-disconnected', reason);
-
-        setTimeout(() => {
-            try {
-                client.destroy();
-                client.initialize();
-            } catch (err) {
-                console.error("Reinitialize Error:", err);
-            }
-        }, 5000);
-    });
-
-    client.initialize();
-};
-
-// 📊 Status
-export const outputWhatsAppStatus = () => isReady;
-
-// 📩 Send Message
-export const sendWhatsAppMessage = async (number, message) => {
-    if (!isReady) {
-        throw new Error('WhatsApp client is not ready. Please scan QR first.');
-    }
 
     try {
-        let formattedNumber = number.replace(/\D/g, '');
-
-        // India default format
-        if (formattedNumber.length === 10) {
-            formattedNumber = '91' + formattedNumber;
-        }
-
-        const chatId = `${formattedNumber}@c.us`;
-
-        const isRegistered = await client.isRegisteredUser(chatId);
-
-        if (!isRegistered) {
-            console.warn(`Number ${number} is not registered on WhatsApp.`);
-            return false;
-        }
-
-        await client.sendMessage(chatId, message);
-        console.log(`Message sent to ${formattedNumber}`);
-        return true;
-
-    } catch (error) {
-        console.error('Error sending WhatsApp message:', error);
-        return false;
+        await client.initialize();
+        return { success: true, message: 'Init started.' };
+    } catch (err) {
+        updateStatus('DISCONNECTED');
+        return { success: false, message: err.message };
     }
+};
+
+export const logoutWhatsApp = async () => {
+    try {
+        if (client) {
+            await client.logout();
+            await client.destroy();
+        }
+    } catch (e) {} finally {
+        client = null;
+        updateStatus('DISCONNECTED');
+        const sessionPath = path.resolve('./.wwebjs_auth/session-admin-auth');
+        if (fs.existsSync(sessionPath)) fs.rmSync(sessionPath, { recursive: true, force: true });
+        return true;
+    }
+};
+
+export const sendWhatsAppMessage = async (number, message) => {
+    if (status !== 'CONNECTED' || !client) throw new Error('Offline');
+    let num = number.replace(/\D/g, '');
+    if (num.length === 10) num = '91' + num;
+    await client.sendMessage(`${num}@c.us`, message);
+    return true;
 };
