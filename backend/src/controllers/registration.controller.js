@@ -227,8 +227,6 @@ export const verifyCertificatePublic = async (req, res) => {
 };
 
 export const sendEmailCertificate = async (req, res) => {
-    // We now fetch name directly from DB using authenticated ID
-    // We only take the image from body
     const { certificateImage } = req.body;
     
     if (!certificateImage) {
@@ -236,8 +234,6 @@ export const sendEmailCertificate = async (req, res) => {
     }
 
     try {
-      // Security: Fetch student data directly from DB using JWT-authenticated ID
-      // This ensures the certificate name is strictly what's in our records.
       const student = await ExamStudent.findById(req.student.id);
       
       if (!student) {
@@ -247,8 +243,6 @@ export const sendEmailCertificate = async (req, res) => {
       if (student.status === 'revoked') {
           return res.status(403).json({ message: 'Access revoked' });
       }
-
-      // Generate a unique identifier for this specific generation event
       const generationId = `${student._id}_${Date.now()}`;
       console.log(`[Certificate] Generating for ${student.fullName} (Ref: ${generationId})`);
 
@@ -273,14 +267,9 @@ export const updateStudentDetails = async (req, res) => {
         const student = await ExamStudent.findById(id);
         if (!student) return res.status(404).json({ message: 'Student not found' });
 
-        // Strictly forbid editing name and college as per requirements
-        if (fullName !== undefined || college !== undefined) {
-            return res.status(400).json({ 
-                message: 'Name and College cannot be edited for integrity. Please delete and re-register the student if these details are incorrect.' 
-            });
-        }
-
         const updateData = {};
+        if (fullName !== undefined) updateData.fullName = fullName;
+        if (college !== undefined) updateData.college = college; // Added College update
         if (score !== undefined) updateData.score = score;
         if (branch !== undefined) updateData.branch = branch;
         if (year !== undefined) updateData.year = year;
@@ -289,7 +278,8 @@ export const updateStudentDetails = async (req, res) => {
         if (technology !== undefined) updateData.technology = technology;
 
         // If sensitive fields change, we must regenerate the signature to maintain integrity
-        const needsResign = updateData.branch !== undefined || updateData.score !== undefined;
+        // Name and College changes definitely warrant a re-sign to ensure the certificate data is consistent
+        const needsResign = updateData.branch !== undefined || updateData.score !== undefined || updateData.fullName !== undefined || updateData.college !== undefined;
 
         if (needsResign) {
             const tempStudent = { ...student.toObject(), ...updateData };

@@ -227,7 +227,7 @@ export const getQuestions = async (req, res) => {
             return res.status(403).json({ message: 'Test has not started yet.' });
         }
         if (now > new Date(config.endDate)) {
-            return res.status(403).json({ message: 'Test time is over.' });
+            return res.status(403).json({ message: 'Test window has closed. The access code is no longer valid.' });
         }
         
         if (config.questions.length === 0) {
@@ -377,20 +377,7 @@ export const submitTest = async (req, res) => {
              return res.status(400).json({ message: 'You have already submitted this test.' });
         }
 
-        if (student.testEndTime) {
-            // Increased buffer to 30 minutes to acccount for network lag or dev testing delays
-            const bufferMs = 30 * 60 * 1000; 
-            if (new Date() > new Date(student.testEndTime.getTime() + bufferMs)) {
-                return res.status(403).json({ message: 'Submission Failed: Time is over.' });
-            }
-        }
-
-        const questionsToGrade = student.assignedQuestions;
-        if (!questionsToGrade || questionsToGrade.length === 0) {
-             return res.status(500).json({ message: 'Grading Error: No questions assigned.' });
-        }
-
-        // Find relevant config for history
+        // Find relevant config for history & validation
         const studentYearGroup = getYearGroup(student.year);
         const studentBranchGroup = getBranchGroup(student.branch);
         const config = await TestConfig.findOne({
@@ -398,6 +385,26 @@ export const submitTest = async (req, res) => {
             branchGroup: studentBranchGroup,
             isActive: true
         }).sort({ createdAt: -1 });
+
+        // 1. GLOBAL WINDOW CHECK (Strict "Code Expiry" Logic)
+        // If the main exam window is closed, reject all submissions immediately
+        if (config && new Date() > new Date(config.endDate)) {
+             return res.status(403).json({ message: 'Submission Rejected: The official exam window has closed.' });
+        }
+
+        // 2. INDIVIDUAL TIMER CHECK
+        if (student.testEndTime) {
+            // Strict Mode: Reduced buffer to 2 minutes (Network latency only)
+            const bufferMs = 2 * 60 * 1000; 
+            if (new Date() > new Date(student.testEndTime.getTime() + bufferMs)) {
+                return res.status(403).json({ message: 'Submission Failed: Time limit exceeded.' });
+            }
+        }
+
+        const questionsToGrade = student.assignedQuestions;
+        if (!questionsToGrade || questionsToGrade.length === 0) {
+             return res.status(500).json({ message: 'Grading Error: No questions assigned.' });
+        }
 
         let score = 0;
         let correctCount = 0;

@@ -3,6 +3,7 @@ import express from 'express';
 import TestConfig from '../models/TestConfig.js';
 import ExamStudent from '../models/ExamStudent.js';
 import { adminAuth } from '../middlewares/auth.middleware.js';
+import { getIO } from '../utils/socketService.js';
 
 const router = express.Router();
 
@@ -172,6 +173,16 @@ router.post('/', adminAuth, async (req, res) => {
             );
         }
         
+        const io = getIO();
+        if (io) {
+            io.emit('test_config_updated', { 
+                yearGroup, 
+                branchGroup, 
+                title: config.title 
+            });
+            console.log(`[Socket] Emitted test_config_updated for ${yearGroup}/${branchGroup}`);
+        }
+
         res.json({ message: `Test configuration for ${yearGroup} / ${branchGroup} saved successfully ${keyChanged ? '(Attempts Reset)' : ''}`, config });
     } catch (error) {
         console.error("saveConfig error:", error);
