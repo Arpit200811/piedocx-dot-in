@@ -16,6 +16,8 @@ import Swal from 'sweetalert2';
 import { useStudentAuth } from '../context/StudentAuthContext';
 import { useLocation } from 'react-router-dom';
 import QRCode from "react-qr-code";
+import { io } from 'socket.io-client';
+import { base_url } from '../utils/info';
 
 // Custom SVG Donut Chart Component
 const SimpleDonut = ({ score, total = 30 }) => {
@@ -70,12 +72,48 @@ const StudentDashboard = () => {
     const [studyResources, setStudyResources] = useState([]);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+
+
     useEffect(() => {
         // fetchProfile(); // No longer needed, handled by AuthContext
         fetchTestInfo();
         fetchBulletins();
         fetchResources();
-    }, []);
+
+        // Socket Connection for Real-time Test Updates
+        if (student) {
+            const socketUrl = base_url.replace('/api', '');
+            const socket = io(socketUrl, {
+                auth: { token: localStorage.getItem('studentToken') }
+            });
+
+            socket.on('connect', () => {
+                console.log("Student Socket Connected");
+            });
+
+            socket.on('test_config_updated', (data) => {
+                console.log("Test Update Received:", data);
+                const myYear = getYearGroup(student.year);
+                const myBranch = getBranchGroup(student.branch);
+
+                // Check if update is relevant to me
+                if (data.yearGroup === myYear && data.branchGroup === myBranch) {
+                    fetchTestInfo();
+                    Swal.fire({
+                        title: 'Assessment Updated',
+                        text: `New configuration: ${data.title}`,
+                        icon: 'info',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                }
+            });
+
+            return () => socket.disconnect();
+        }
+    }, [student]);
 
     const fetchBulletins = async () => {
         try {
@@ -213,7 +251,7 @@ const StudentDashboard = () => {
                             transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
                             className="absolute whitespace-nowrap opacity-90 font-bold"
                         >
-                            {announcements.length > 0 ? announcements.map(a => a.text).join(" • ") : "Welcome to PIEDOCX Terminal. System Status: All Systems Operational • Security Protocols: Active • Latest Assessment Cycle Active"}
+                            {announcements.length > 0 ? announcements.map(a => a.text).join(" • ") : "Welcome to PIEDOCX Student Portal. System Status: Online • Security Protocols: Active • Assessment Cycle: Open"}
                         </motion.div>
                     </div>
                 </div>
@@ -238,7 +276,7 @@ const StudentDashboard = () => {
                                     <div className="flex-1 space-y-4 md:space-y-6 text-center lg:text-left">
                                         <div className="flex items-center justify-center lg:justify-start gap-3">
                                             <span className="w-8 h-1 bg-blue-600 rounded-full"></span>
-                                            <span className="text-[10px] md:text-xs font-black text-blue-400 uppercase tracking-[0.4em]">Student Terminal</span>
+                                            <span className="text-[10px] md:text-xs font-black text-blue-400 uppercase tracking-[0.4em]">Student Dashboard</span>
                                         </div>
                                         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 italic uppercase tracking-tighter leading-tight">
                                             Welcome Back, <span className="text-blue-600 underline decoration-blue-100 underline-offset-4">{student.firstName}</span>.

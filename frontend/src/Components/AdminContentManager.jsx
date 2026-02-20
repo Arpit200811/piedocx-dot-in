@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { base_url } from '../utils/info';
-import { 
-    Bell, FileText, Plus, Trash2, 
-    Link as LinkIcon, FileCheck, Video, 
+import api from '../utils/api';
+import {
+    Bell, FileText, Plus, Trash2,
+    Link as LinkIcon, FileCheck, Video,
     AlertCircle, Info, Star, Save
 } from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -25,21 +24,15 @@ const AdminContentManager = () => {
 
     const fetchBulletins = async () => {
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await axios.get(`${base_url}/api/admins/admin/bulletins`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setBulletins(res.data);
+            const res = await api.get(`/api/admins/admin/bulletins`);
+            setBulletins(res);
         } catch (err) { console.error(err); }
     };
 
     const fetchResources = async () => {
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await axios.get(`${base_url}/api/admins/admin/resources`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setResources(res.data);
+            const res = await api.get(`/api/admins/admin/resources`);
+            setResources(res);
         } catch (err) { console.error(err); }
     };
 
@@ -47,10 +40,7 @@ const AdminContentManager = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const token = localStorage.getItem('adminToken');
-            await axios.post(`${base_url}/api/admins/admin/bulletins`, bulletinForm, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`/api/admins/admin/bulletins`, bulletinForm);
             Swal.fire('Success', 'Bulletin published', 'success');
             setBulletinForm({ text: '', type: 'info' });
             fetchBulletins();
@@ -62,10 +52,7 @@ const AdminContentManager = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const token = localStorage.getItem('adminToken');
-            await axios.post(`${base_url}/api/admins/admin/resources`, resourceForm, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`/api/admins/admin/resources`, resourceForm);
             Swal.fire('Success', 'Resource added', 'success');
             setResourceForm({ title: '', type: 'PDF', link: '', size: '' });
             fetchResources();
@@ -84,10 +71,7 @@ const AdminContentManager = () => {
         if (!confirm.isConfirmed) return;
 
         try {
-            const token = localStorage.getItem('adminToken');
-            await axios.delete(`${base_url}/api/admins/admin/bulletins/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/api/admins/admin/bulletins/${id}`);
             fetchBulletins();
         } catch (err) { Swal.fire('Error', 'Delete failed', 'error'); }
     };
@@ -102,10 +86,7 @@ const AdminContentManager = () => {
         if (!confirm.isConfirmed) return;
 
         try {
-            const token = localStorage.getItem('adminToken');
-            await axios.delete(`${base_url}/api/admins/admin/resources/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/api/admins/admin/resources/${id}`);
             fetchResources();
         } catch (err) { Swal.fire('Error', 'Delete failed', 'error'); }
     };
@@ -120,21 +101,19 @@ const AdminContentManager = () => {
                     </h1>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Manage Bulletins & Study Materials</p>
                 </div>
-                
+
                 <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
-                    <button 
+                    <button
                         onClick={() => setActiveTab('bulletins')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                            activeTab === 'bulletins' ? 'bg-white text-blue-600 shadow-sm border border-slate-100' : 'text-slate-400 font-bold hover:text-slate-600'
-                        }`}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'bulletins' ? 'bg-white text-blue-600 shadow-sm border border-slate-100' : 'text-slate-400 font-bold hover:text-slate-600'
+                            }`}
                     >
                         <Bell size={14} /> Bulletins
                     </button>
-                    <button 
+                    <button
                         onClick={() => setActiveTab('resources')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                            activeTab === 'resources' ? 'bg-white text-blue-600 shadow-sm border border-slate-100' : 'text-slate-400 font-bold hover:text-slate-600'
-                        }`}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'resources' ? 'bg-white text-blue-600 shadow-sm border border-slate-100' : 'text-slate-400 font-bold hover:text-slate-600'
+                            }`}
                     >
                         <FileText size={14} /> Resources
                     </button>
@@ -146,27 +125,27 @@ const AdminContentManager = () => {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm sticky top-8">
                         <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
-                             {activeTab === 'bulletins' ? <Plus size={16} className="text-blue-600"/> : <Plus size={16} className="text-emerald-600"/>}
-                             New {activeTab === 'bulletins' ? 'Announcement' : 'Material'}
+                            {activeTab === 'bulletins' ? <Plus size={16} className="text-blue-600" /> : <Plus size={16} className="text-emerald-600" />}
+                            New {activeTab === 'bulletins' ? 'Announcement' : 'Material'}
                         </h3>
 
                         {activeTab === 'bulletins' ? (
                             <form onSubmit={handleCreateBulletin} className="space-y-4">
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Message Text</label>
-                                    <textarea 
+                                    <textarea
                                         required
                                         value={bulletinForm.text}
-                                        onChange={(e) => setBulletinForm({...bulletinForm, text: e.target.value})}
+                                        onChange={(e) => setBulletinForm({ ...bulletinForm, text: e.target.value })}
                                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/10 outline-none h-32 resize-none"
                                         placeholder="Enter the scrolling bulletin message..."
                                     />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Alert Type</label>
-                                    <select 
+                                    <select
                                         value={bulletinForm.type}
-                                        onChange={(e) => setBulletinForm({...bulletinForm, type: e.target.value})}
+                                        onChange={(e) => setBulletinForm({ ...bulletinForm, type: e.target.value })}
                                         className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/10 outline-none"
                                     >
                                         <option value="info">Information (Blue)</option>
@@ -182,11 +161,11 @@ const AdminContentManager = () => {
                             <form onSubmit={handleCreateResource} className="space-y-4">
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Title</label>
-                                    <input 
+                                    <input
                                         required
                                         type="text"
                                         value={resourceForm.title}
-                                        onChange={(e) => setResourceForm({...resourceForm, title: e.target.value})}
+                                        onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
                                         className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs font-bold text-slate-900 outline-none"
                                         placeholder="e.g. MERN Roadmap"
                                     />
@@ -194,9 +173,9 @@ const AdminContentManager = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Type</label>
-                                        <select 
+                                        <select
                                             value={resourceForm.type}
-                                            onChange={(e) => setResourceForm({...resourceForm, type: e.target.value})}
+                                            onChange={(e) => setResourceForm({ ...resourceForm, type: e.target.value })}
                                             className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs font-bold text-slate-900 outline-none"
                                         >
                                             <option value="PDF">PDF Guide</option>
@@ -206,10 +185,10 @@ const AdminContentManager = () => {
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Size</label>
-                                        <input 
+                                        <input
                                             type="text"
                                             value={resourceForm.size}
-                                            onChange={(e) => setResourceForm({...resourceForm, size: e.target.value})}
+                                            onChange={(e) => setResourceForm({ ...resourceForm, size: e.target.value })}
                                             className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs font-bold text-slate-900 outline-none"
                                             placeholder="e.g. 2.4 MB"
                                         />
@@ -217,11 +196,11 @@ const AdminContentManager = () => {
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Access URL</label>
-                                    <input 
+                                    <input
                                         required
                                         type="text"
                                         value={resourceForm.link}
-                                        onChange={(e) => setResourceForm({...resourceForm, link: e.target.value})}
+                                        onChange={(e) => setResourceForm({ ...resourceForm, link: e.target.value })}
                                         className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs font-bold text-slate-900 outline-none"
                                         placeholder="https://..."
                                     />
@@ -237,14 +216,14 @@ const AdminContentManager = () => {
                 {/* List Section */}
                 <div className="lg:col-span-3 space-y-4">
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2 italic">Active {activeTab} Node</h3>
-                    
+
                     {activeTab === 'bulletins' ? (
                         <div className="space-y-3">
                             {bulletins.length > 0 ? bulletins.map((b) => (
                                 <div key={b._id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-start justify-between group animate-in fade-in slide-in-from-right-4 transition-all hover:border-blue-100">
                                     <div className="flex gap-4">
                                         <div className={`mt-1 p-2 rounded-xl border ${b.type === 'urgent' ? 'bg-red-50 text-red-600 border-red-100' : b.type === 'promo' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
-                                            {b.type === 'urgent' ? <AlertCircle size={14}/> : b.type === 'promo' ? <Star size={14}/> : <Info size={14}/>}
+                                            {b.type === 'urgent' ? <AlertCircle size={14} /> : b.type === 'promo' ? <Star size={14} /> : <Info size={14} />}
                                         </div>
                                         <div>
                                             <p className="text-xs font-bold text-slate-800 leading-relaxed uppercase tracking-tight">{b.text}</p>
@@ -269,7 +248,7 @@ const AdminContentManager = () => {
                                     <div>
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
-                                                {r.type === 'PDF' ? <FileCheck size={16}/> : r.type === 'Video' ? <Video size={16}/> : <LinkIcon size={16}/>}
+                                                {r.type === 'PDF' ? <FileCheck size={16} /> : r.type === 'Video' ? <Video size={16} /> : <LinkIcon size={16} />}
                                             </div>
                                             <button onClick={() => handleDeleteResource(r._id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
                                                 <Trash2 size={16} />

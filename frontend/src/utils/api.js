@@ -21,13 +21,13 @@ api.interceptors.request.use(
         let token = null;
 
         // Strict Token Isolation
-        if (url.includes('/admin/') || url.includes('/analytics/')) {
+        if (url.includes('/admin/') || url.includes('/analytics/') || url.includes('/whatsapp/') || url.includes('/certificate/students')) {
             token = localStorage.getItem('adminToken');
-        } else if (url.includes('/student-auth/') || url.includes('/certificate/')) {
+        } else if (url.includes('/student-auth/') || (url.includes('/certificate/') && !url.includes('/students'))) {
             token = localStorage.getItem('studentToken');
         } else {
             // General routes (fallback order)
-            token = localStorage.getItem('studentToken') || localStorage.getItem('adminToken');
+            token = localStorage.getItem('adminToken') || localStorage.getItem('studentToken');
         }
 
         if (token) {

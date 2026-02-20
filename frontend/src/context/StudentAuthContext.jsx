@@ -33,10 +33,17 @@ export const StudentAuthProvider = ({ children }) => {
                         }
                         setStudent(updatedData);
                         localStorage.setItem('studentData', JSON.stringify(updatedData));
+                        localStorage.setItem('studentToken', token); // Refresh logic implicitly
                     }
                 } catch (err) {
                     console.error("Auth verification failed:", err);
-                    logout(); // Clear invalid session
+                    // Only logout if token is explicitly invalid (401)
+                    if (err.response && err.response.status === 401) {
+                        logout();
+                    } else {
+                        // Network error or server downtime? proper session remains valid locally
+                        console.warn("Keeping local session active due to non-auth error");
+                    }
                 }
             }
             setLoading(false);

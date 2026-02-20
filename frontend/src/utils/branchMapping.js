@@ -21,11 +21,11 @@ export const getBranchGroup = (branch) => {
 export const getYearGroup = (year) => {
     if (!year) return '1-2';
     const yearNum = parseInt(year);
-    if (yearNum === 1 || yearNum === 2 || String(year).includes('1st') || String(year).includes('2nd')) {
-        return '1-2';
-    }
-    if (yearNum === 3 || String(year).includes('3rd')) {
-        return '3';
+    const yearStr = String(year).toLowerCase();
+    
+    // Check for 3rd or 4th year patterns
+    if (yearNum === 3 || yearNum === 4 || yearStr.includes('3rd') || yearStr.includes('4th') || yearStr.includes('final')) {
+        return '3-4';
     }
     return '1-2'; // Default
 };

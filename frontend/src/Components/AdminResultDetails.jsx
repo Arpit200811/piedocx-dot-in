@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import axios from 'axios';
-import { base_url } from '../utils/info';
-import { 
-    User, ChevronLeft, ShieldAlert, Timer, 
-    CheckCircle, XCircle, AlertTriangle, Activity 
+import api from '../utils/api';
+import {
+    User, ChevronLeft, ShieldAlert, Timer,
+    CheckCircle, XCircle, AlertTriangle, Activity
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -18,11 +17,8 @@ const AdminResultDetails = () => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                const token = localStorage.getItem('adminToken');
-                const res = await axios.get(`${base_url}/api/admins/admin/result/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setData(res.data);
+                const res = await api.get(`/api/admins/admin/result/${id}`);
+                setData(res);
             } catch (err) {
                 console.error(err);
                 Swal.fire('Error', 'Failed to load details', 'error');
@@ -47,8 +43,8 @@ const AdminResultDetails = () => {
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 font-sans">
             {/* Nav Back */}
-            <button 
-                onClick={() => navigate(-1)} 
+            <button
+                onClick={() => navigate(-1)}
                 className="flex items-center gap-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest hover:text-blue-600 transition-colors"
             >
                 <ChevronLeft size={16} /> Back to Archives
@@ -57,7 +53,7 @@ const AdminResultDetails = () => {
             {/* Header Card */}
             <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full blur-[80px] opacity-50 pointer-events-none"></div>
-                
+
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
                     <div className="flex items-center gap-3 sm:gap-5">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center font-black text-xl sm:text-2xl text-slate-400">
@@ -72,7 +68,7 @@ const AdminResultDetails = () => {
                     </div>
 
                     <div className="flex items-center gap-4 sm:gap-6 w-full md:w-auto justify-between md:justify-end">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             className="text-left md:text-right"
@@ -84,7 +80,7 @@ const AdminResultDetails = () => {
                             </div>
                         </motion.div>
                         <div className="w-px h-8 sm:h-10 bg-slate-100"></div>
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.5, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ type: "spring", stiffness: 200, damping: 15 }}
@@ -119,9 +115,9 @@ const AdminResultDetails = () => {
                             <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 col-span-2">
                                 <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest mb-1">Accuracy Rate</p>
                                 <div className="flex items-center justify-between">
-                                    <p className="text-2xl font-black text-amber-700">{Math.round((data.score/data.totalQuestions)*100)}%</p>
+                                    <p className="text-2xl font-black text-amber-700">{Math.round((data.score / data.totalQuestions) * 100)}%</p>
                                     <div className="w-24 h-2 bg-amber-200 rounded-full overflow-hidden">
-                                        <div className="h-full bg-amber-500" style={{ width: `${(data.score/data.totalQuestions)*100}%` }}></div>
+                                        <div className="h-full bg-amber-500" style={{ width: `${(data.score / data.totalQuestions) * 100}%` }}></div>
                                     </div>
                                 </div>
                             </div>
@@ -147,7 +143,7 @@ const AdminResultDetails = () => {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-48 opacity-40">
-                                <CheckCircle size={32} className="text-green-500 mb-2"/>
+                                <CheckCircle size={32} className="text-green-500 mb-2" />
                                 <p className="text-[10px] font-black uppercase tracking-widest">Clean Session Record</p>
                             </div>
                         )}
@@ -173,7 +169,7 @@ const AdminResultDetails = () => {
                                 <tbody className="divide-y divide-slate-50">
                                     {answers.map((ans, i) => (
                                         <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-6 py-5 text-xs font-bold text-slate-400">{i+1}</td>
+                                            <td className="px-6 py-5 text-xs font-bold text-slate-400">{i + 1}</td>
                                             <td className="px-6 py-5">
                                                 <p className="text-xs font-bold text-slate-700 line-clamp-2" title={ans.questionText}>
                                                     {ans.questionText || `Question ID: ${ans.questionId}`}
@@ -197,7 +193,7 @@ const AdminResultDetails = () => {
                                                         <CheckCircle size={12} /> Correct
                                                     </div>
                                                 ) : ans.studentAnswer === 'SKIPPED' ? (
-                                                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-500 border border-slate-100 text-[9px] font-black uppercase tracking-widest">
+                                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-500 border border-slate-100 text-[9px] font-black uppercase tracking-widest">
                                                         <AlertTriangle size={12} /> Skipped
                                                     </div>
                                                 ) : (
@@ -213,13 +209,13 @@ const AdminResultDetails = () => {
                         </div>
                     ) : (
                         <div className="h-64 flex flex-col items-center justify-center p-8 text-center opacity-50">
-                            <Activity size={40} className="text-slate-300 mb-4"/>
+                            <Activity size={40} className="text-slate-300 mb-4" />
                             <p className="text-xs font-black uppercase tracking-widest text-slate-400">Detailed answer logs were not captured for this legacy session.</p>
                         </div>
                     )}
                 </div>
             </div>
-            
+
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

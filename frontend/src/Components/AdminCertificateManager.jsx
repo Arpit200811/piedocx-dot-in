@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Trash2, ShieldAlert, ShieldCheck, Download, Eye, X, Filter, Mail, Edit3, MessageCircle, Settings } from 'lucide-react';
+import { Search, Trash2, ShieldAlert, ShieldCheck, Download, Eye, X, Filter, Mail, Edit3, MessageCircle, Settings, UserPen, Building2 } from 'lucide-react';
 import Certificate from './Certificate';
 import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import api from '../utils/api';
 import { io } from 'socket.io-client';
+import { base_url } from '../utils/info';
 // --- Sub-components ---
 
 const StatCard = ({ label, value, color, icon: Icon }) => (
@@ -75,7 +76,7 @@ const FilterSection = ({ filters, colleges, onExport }) => {
   );
 };
 
-const StudentRow = ({ student: s, isSelected, onSelect, onView, onSendEmail, onWhatsApp, onStatusToggle, onDelete, onEditMarks, onEditTechnology }) => (
+const StudentRow = ({ student: s, isSelected, onSelect, onView, onSendEmail, onWhatsApp, onStatusToggle, onDelete, onManageProfile }) => (
   <tr className={`hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-none ${isSelected ? 'bg-blue-50/50' : ''}`}>
     <td className="px-6 py-4 whitespace-nowrap">
       <div className="flex items-center gap-4">
@@ -128,8 +129,7 @@ const StudentRow = ({ student: s, isSelected, onSelect, onView, onSendEmail, onW
     </td>
     <td className="px-6 py-4 whitespace-nowrap text-right">
       <div className="flex items-center justify-end gap-1.5">
-        <ActionButton onClick={() => onEditTechnology(s)} icon={Settings} color="slate" title="Edit Technology" />
-        <ActionButton onClick={() => onEditMarks(s)} icon={Edit3} color="purple" title="Edit Marks" />
+        <ActionButton onClick={() => onManageProfile(s)} icon={Settings} color="slate" title="Manage Profile" />
         <ActionButton onClick={() => onSendEmail(s)} icon={Mail} color="indigo" title="Send Email" />
         <ActionButton onClick={() => onWhatsApp(s)} icon={MessageCircle} color="green" title="Send WhatsApp" />
         <ActionButton onClick={() => onView(s)} icon={Eye} color="blue" title="View Certificate" />
@@ -179,19 +179,45 @@ const AdminCertificateManager = () => {
   // WhatsApp State
   const [isWhatsAppReady, setIsWhatsAppReady] = useState(false);
   const [qrCodeData, setQrCodeData] = useState(null);
+  const [editingStudent, setEditingStudent] = useState(null);
+
+  const handleManageProfile = (student) => {
+    setEditingStudent(student);
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const updates = Object.fromEntries(formData.entries());
+
+    try {
+      await api.put(`/api/certificate/student/details/${editingStudent._id}`, updates);
+      Swal.fire('Success', 'Profile updated successfully', 'success');
+      setEditingStudent(null);
+      await fetchStudents();
+    } catch (err) {
+      Swal.fire('Error', 'Failed to update profile', 'error');
+    }
+  };
 
   useEffect(() => {
     // 1. Check initial status
     api.get('/api/whatsapp/status').then(res => {
-      setIsWhatsAppReady(res.data.connected);
+      setIsWhatsAppReady(res.connected);
     }).catch(() => setIsWhatsAppReady(false));
 
     // 2. Connector for events
-    const socket = io('http://localhost:5002'); // Adjust URL for production
-    // Better: use relative path or env
-    // const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5002'); 
-    // Since we don't have VITE_API_URL handy in context, I'll use window.location.origin if prod?
-    // User is local: localhost:5002.
+    const socketUrl = base_url.replace('/api', '');
+    const socket = io(socketUrl, {
+      auth: {
+        token: localStorage.getItem('adminToken')
+      }
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error("Socket Connection Error:", err.message);
+      setIsWhatsAppReady(false);
+    });
 
     socket.on('whatsapp-qr', (qr) => {
       console.log("QR Received via Socket");
@@ -353,44 +379,7 @@ const AdminCertificateManager = () => {
     }
   };
 
-  const handleEditMarks = async (student) => {
-    const { value: newScore } = await Swal.fire({
-      title: 'Update Performance Score',
-      text: `Editing marks for ${student.fullName}`,
-      input: 'number',
-      inputLabel: 'Assignment/Test Marks',
-      inputValue: student.score || 0,
-      showCancelButton: true,
-      inputValidator: (value) => {
-        if (!value && value !== 0) {
-          return 'You need to write something!'
-        }
-      }
-    });
 
-    if (newScore !== undefined) {
-      await api.put(`/api/certificate/student/details/${student._id}`, { score: Number(newScore) });
-      Swal.fire('Success', 'Marks updated successfully', 'success');
-      await fetchStudents();
-    }
-  };
-
-  const handleEditTechnology = async (student) => {
-    const { value: newTechnology } = await Swal.fire({
-      title: 'Update Technology',
-      text: `Editing technology for ${student.fullName}`,
-      input: 'text',
-      inputLabel: 'Technology / Domain',
-      inputValue: student.technology || '',
-      showCancelButton: true
-    });
-
-    if (newTechnology !== undefined) {
-      await api.put(`/api/certificate/student/details/${student._id}`, { technology: newTechnology });
-      Swal.fire('Success', 'Technology updated successfully', 'success');
-      await fetchStudents();
-    }
-  };
 
   const handleSingleSend = async (student) => {
     const result = await Swal.fire({
@@ -691,8 +680,7 @@ const AdminCertificateManager = () => {
                       onWhatsApp={handleWhatsAppSend}
                       onStatusToggle={handleStatusToggle}
                       onDelete={handleDelete}
-                      onEditMarks={handleEditMarks}
-                      onEditTechnology={handleEditTechnology}
+                      onManageProfile={handleManageProfile}
                     />
                   ))
                 )}
@@ -729,6 +717,82 @@ const AdminCertificateManager = () => {
         </div>
       </div>
 
+      {editingStudent && (
+        <Modal onClose={() => setEditingStudent(null)}>
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Manage <span className="text-blue-600">Profile</span></h2>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">ID: {editingStudent.studentId}</p>
+              </div>
+              <button onClick={() => setEditingStudent(null)} className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateProfile} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Full Name</label>
+                  <input name="fullName" defaultValue={editingStudent.fullName} required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">College</label>
+                  <input name="college" defaultValue={editingStudent.college} required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Email</label>
+                  <input name="email" type="email" defaultValue={editingStudent.email} required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Mobile</label>
+                  <input name="mobile" defaultValue={editingStudent.mobile} required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Branch</label>
+                  <select name="branch" defaultValue={editingStudent.branch} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none">
+                    <option value="Computer Science & Engineering (CSE)">CSE</option>
+                    <option value="Information Technology (IT)">IT</option>
+                    <option value="Electronics & Communication (ECE)">ECE</option>
+                    <option value="Electrical Engineering (EE)">EE</option>
+                    <option value="Mechanical Engineering (ME)">ME</option>
+                    <option value="Civil Engineering">Civil</option>
+                    <option value="Automobile Engineering">Automobile</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Year</label>
+                  <select name="year" defaultValue={editingStudent.year} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none">
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                    <option value="Graduated">Graduated</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Technology / Domain</label>
+                  <input name="technology" defaultValue={editingStudent.technology} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Score</label>
+                  <input name="score" type="number" defaultValue={editingStudent.score} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+              </div>
+
+              <div className="md:col-span-2 pt-4 border-t border-slate-100 flex justify-end gap-3">
+                <button type="button" onClick={() => setEditingStudent(null)} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors text-sm uppercase tracking-wider">Cancel</button>
+                <button type="submit" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </Modal>
+      )}
+
       {showCertificate && selectedStudent && (
         <Modal onClose={() => setShowCertificate(false)}>
           <div className="p-8">
@@ -763,26 +827,101 @@ const AdminCertificateManager = () => {
         </Modal>
       )}
 
-      <div id="whatsapp-capture-node" className="fixed top-0 left-0 -z-[999] pointer-events-none" style={{ width: '1200px', height: '900px', opacity: 0.01 }}>
-        {sharingStudent && (
-          <div className="p-10 bg-white inline-block">
-            <Certificate
-              student={{
-                name: sharingStudent.fullName,
-                college: sharingStudent.college,
-                branch: sharingStudent.branch,
-                year: sharingStudent.year,
-                studentId: sharingStudent.studentId,
-                certificateId: sharingStudent.certificateId,
-                _id: sharingStudent._id,
-                technology: sharingStudent.technology,
-              }}
-              userEmail={sharingStudent.email}
-              autoSend={false}
-            />
+      {editingStudent && (
+        <Modal onClose={() => setEditingStudent(null)}>
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Manage <span className="text-blue-600">Profile</span></h2>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">ID: {editingStudent.studentId}</p>
+              </div>
+              <button onClick={() => setEditingStudent(null)} className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateProfile} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Full Name</label>
+                  <input name="fullName" defaultValue={editingStudent.fullName} required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">College</label>
+                  <input name="college" defaultValue={editingStudent.college} required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Email</label>
+                  <input name="email" type="email" defaultValue={editingStudent.email} required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Mobile</label>
+                  <input name="mobile" defaultValue={editingStudent.mobile} required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Branch</label>
+                  <select name="branch" defaultValue={editingStudent.branch} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none">
+                    <option value="Computer Science & Engineering (CSE)">CSE</option>
+                    <option value="Information Technology (IT)">IT</option>
+                    <option value="Artificial Intelligence & Data Science (AI & DS)">AI & DS</option>
+                    <option value="Electronics & Communication (ECE)">ECE</option>
+                    <option value="Electrical Engineering (EE)">EE</option>
+                    <option value="Mechanical Engineering (ME)">ME</option>
+                    <option value="Artificial Intelligence & Data Science">AI & DS</option>
+                    <option value="Automobile Engineering">Automobile</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Year</label>
+                  <select name="year" defaultValue={editingStudent.year} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none">
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                    <option value="Graduated">Graduated</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Technology / Domain</label>
+                  <input name="technology" defaultValue={editingStudent.technology} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Score</label>
+                  <input name="score" type="number" defaultValue={editingStudent.score} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                </div>
+              </div>
+
+              <div className="md:col-span-2 pt-4 border-t border-slate-100 flex justify-end gap-3">
+                <button type="button" onClick={() => setEditingStudent(null)} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors text-sm uppercase tracking-wider">Cancel</button>
+                <button type="submit" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20">Save Changes</button>
+              </div>
+            </form>
           </div>
-        )}
-      </div>
+        </Modal>
+      )}
+
+      {sharingStudent && (
+        <div id="whatsapp-capture-node" className="p-10 bg-white inline-block">
+          <Certificate
+            student={{
+              name: sharingStudent.fullName,
+              college: sharingStudent.college,
+              branch: sharingStudent.branch,
+              year: sharingStudent.year,
+              studentId: sharingStudent.studentId,
+              certificateId: sharingStudent.certificateId,
+              _id: sharingStudent._id,
+              technology: sharingStudent.technology,
+            }}
+            userEmail={sharingStudent.email}
+            autoSend={false}
+          />
+        </div>
+      )}
     </div>
   );
 };

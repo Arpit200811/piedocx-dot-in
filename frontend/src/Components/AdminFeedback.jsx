@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base_url } from '../utils/info';
 import { MessageSquare, Trash2, Search, Filter, Calendar, User, BookOpen, Star, ChevronDown, ChevronUp } from 'lucide-react';
@@ -17,11 +17,8 @@ const AdminFeedback = () => {
 
     const fetchFeedbacks = async () => {
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await axios.get(`${base_url}/api/admins/admin/feedbacks`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setFeedbacks(res.data);
+            const res = await api.get(`/api/admins/admin/feedbacks`);
+            setFeedbacks(res);
         } catch (error) {
             console.error('Error fetching feedbacks:', error);
             Swal.fire('Error', 'Failed to fetch feedbacks', 'error');
@@ -43,10 +40,7 @@ const AdminFeedback = () => {
 
         if (result.isConfirmed) {
             try {
-                const token = localStorage.getItem('adminToken');
-                await axios.delete(`${base_url}/api/admins/admin/feedbacks/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.delete(`/api/admins/admin/feedbacks/${id}`);
                 setFeedbacks(feedbacks.filter(f => f._id !== id));
                 Swal.fire('Deleted!', 'Feedback has been deleted.', 'success');
             } catch (error) {

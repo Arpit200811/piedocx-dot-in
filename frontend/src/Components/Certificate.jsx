@@ -44,18 +44,13 @@ const Certificate = ({ student, userEmail, autoSend }) => {
             const base64Image = canvas.toDataURL('image/png');
 
             const token = localStorage.getItem('studentToken');
-            const response = await fetch(`${base_url}/api/certificate/send-email`, {
-               method: 'POST',
-               headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-               },
-               body: JSON.stringify({
-                  certificateImage: base64Image
-               })
+            // Use api utility which handles token injection automatically based on route
+            // For /certificate/send-email, the interceptor attaches studentToken
+            const response = await api.post('/api/certificate/send-email', {
+               certificateImage: base64Image
             });
 
-            if (response.ok) {
+            if (response) {
                setMailSent(true);
             }
          } catch (err) {
@@ -264,7 +259,7 @@ const Certificate = ({ student, userEmail, autoSend }) => {
                   </p>
 
                   <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', gap: '20px', marginTop: '12px', marginBottom: '4px', opacity: 0.95, transform: 'scale(0.9)' }}>
-                     <img src="https://upload.wikimedia.org/wikipedia/en/thumb/9/95/Digital_India_logo.svg/1200px-Digital_India_logo.svg.png" crossOrigin="anonymous" alt="Digital India" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+                     <img src="https://placehold.co/200x50/orange/white?text=Digital+India" crossOrigin="anonymous" alt="Digital India" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
                      <img src="/start.png" crossOrigin="anonymous" alt="Startup India" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
                      <img src="/msme.png" crossOrigin="anonymous" alt="MSME" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
                      <img src="/mca.png" crossOrigin="anonymous" alt="MCA" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
@@ -289,7 +284,7 @@ const Certificate = ({ student, userEmail, autoSend }) => {
                            <QRCode
                               size={85}
                               style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                              value={`https://piedocx.in/#/verify/${student.certificateId || student.studentId}`}
+                              value={`${window.location.origin}/#/verify/${student.certificateId || student.studentId}`}
                               viewBox={`0 0 256 256`}
                               fgColor="#0c4a6e"
                            />

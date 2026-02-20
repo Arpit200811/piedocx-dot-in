@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { base_url } from '../utils/info';
 import { Users, ShieldCheck, ShieldAlert, BadgeCheck, Mail, ArrowRight, RotateCcw, AlertTriangle, Megaphone, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -31,10 +31,8 @@ const AdminHome = () => {
 
     const fetchStats = async () => {
       try {
-        const res = await axios.get(`${base_url}/api/admins/admin/stats`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setStats(res.data);
+        const res = await api.get(`/api/admins/admin/stats`);
+        setStats(res);
       } catch (err) {
         console.error("Error fetching stats:", err);
       }
@@ -42,10 +40,8 @@ const AdminHome = () => {
 
     const fetchMonitorData = async () => {
       try {
-        const res = await axios.get(`${base_url}/api/admins/admin/monitor`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setMonitorData(res.data);
+        const res = await api.get(`/api/admins/admin/monitor`);
+        setMonitorData(res);
       } catch (err) {
         console.error("Error fetching monitor:", err);
       } finally {
@@ -106,11 +102,9 @@ const AdminHome = () => {
     if (!socket) return;
 
     // First, let's get the active tests to choose from
-    const activeTests = await axios.get(`${base_url}/api/admin/test-config/active`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
-    });
+    const activeTests = await api.get(`/api/admin/test-config/active`);
 
-    if (!activeTests.data || activeTests.data.length === 0) {
+    if (!activeTests || activeTests.length === 0) {
       Swal.fire('No Active Tests', 'There are no live exams running to broadcast to.', 'info');
       return;
     }
@@ -160,10 +154,7 @@ const AdminHome = () => {
 
     if (result.isConfirmed) {
       try {
-        const token = localStorage.getItem('adminToken');
-        await axios.post(`${base_url}/api/admins/admin/reset-test`, { studentId }, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.post(`/api/admins/admin/reset-test`, { studentId });
         Swal.fire({ title: 'Reset Complete', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
         // Data will refresh on next poll
       } catch (err) {

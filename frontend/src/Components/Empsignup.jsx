@@ -6,7 +6,7 @@
 // const SignIn = () => {
 
 //   const [check, setCheck] = useState(false)
-    
+
 //   const [name, setName]= useState('')
 //   const [email, setEmail]= useState('')
 //   const [empid, setEmpid]= useState('')
@@ -24,7 +24,7 @@
 //           })
 //           console.log(res);
 //           alert("otp was sent successfully ")
-          
+
 //         }
 //       }
 //     async function signup(){
@@ -43,7 +43,7 @@
 
 //       }
 //     }
-  
+
 
 //   //  async function signup(){
 //   //   }
@@ -86,7 +86,7 @@
 //               }}
 //                   type="email"
 //                   name="email"
-                  
+
 //                   id="email"
 //                   placeholder="Email Address"
 //                   className="peer mt-1 w-full border-b-2 border-gray-300 px-0 py-1 placeholder-transparent focus:border-gray-500 focus:outline-none"
@@ -94,7 +94,7 @@
 //                 />
 //                 <label
 //                    htmlFor="email"
-                  
+
 //                   className={` pointer-events-none absolute top-0 left-0 origin-left -translate-y-1/2 transform text-sm text-gray-800 opacity-75 transition-all duration-100 ease-in-out peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500 peer-focus:top-0 peer-focus:pl-0 peer-focus:text-sm peer-focus:text-gray-800`}
 //                 >
 //                   Email Address
@@ -106,7 +106,7 @@
 //                   setEmpid(e.target.value)
 //               }}
 //                   type="text"
-                
+
 //                   id="email"
 //                   placeholder="Employee Id"
 //                   className="peer mt-1 w-full border-b-2 border-gray-300 px-0 py-1 placeholder-transparent focus:border-gray-500 focus:outline-none"
@@ -143,7 +143,7 @@
 //                 otpsend({email});
 //                   setCheck(true)
 //                 }}
-                
+
 //                 >send OTP</button>
 //                  <div className="relative mt-6">
 //                 <input 
@@ -151,7 +151,7 @@
 //                     setOtp(e.target.value)
 //                 }}
 //                   type="text"
-                
+
 //                   id="email"
 //                   placeholder="Enter OTP"
 //                   className={`peer ${check ? '' : 'hidden'} mt-1 w-full border-b-2 border-gray-300 px-0 py-1 placeholder-transparent focus:border-gray-500 focus:outline-none`}
@@ -183,7 +183,7 @@
 //       </div>
 //     );
 //   };
-  
+
 //   export default SignIn;
 
 
@@ -256,27 +256,27 @@ const SignIn = () => {
 
     try {
       await axios.post(`${base_url}/employee/otp`, { mail }, { withCredentials: true });
-      
+
       setCheck(true);
     } catch (error) {
       Swal.fire("Error!", "Failed to send OTP. Try again.", "error");
     }
   }
-  
+
   async function signup(data) {
     console.log(data);
-    
+
     try {
       const res = await axios.post(`${base_url}/employee/signup`, data, { withCredentials: true });
-        if(res.data.code == 201){
-          Swal.fire("Success!", "Registered successfully!", "success");
-          nav("/emp-login");
-          reset();
-        }else{
-          Swal.fire("Error!", res.data.message, "error");
-        }
-      
-     
+      if (res.data.code == 201) {
+        Swal.fire("Success!", "Registered successfully!", "success");
+        nav("/emp-login");
+        reset();
+      } else {
+        Swal.fire("Error!", res.data.message, "error");
+      }
+
+
     } catch (error) {
       Swal.fire("Error!", "Internal Server Error. Try again.", "error");
     }
@@ -377,4 +377,3 @@ const SignIn = () => {
 
 export default SignIn;
 
-  

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { base_url } from '../utils/info';
+import api from '../utils/api';
 import { Calendar, Filter, Download, Trophy, User, Hash, Clock, AlertCircle, Search, RefreshCw, ChevronRight, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -20,15 +19,12 @@ const AdminResultArchives = () => {
     useEffect(() => {
         const fetchMetadata = async () => {
             try {
-                const token = localStorage.getItem('adminToken');
-                const res = await axios.get(`${base_url}/api/admins/admin/result-metadata`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setDates(res.data.dates || []);
-                setColleges(res.data.colleges || []);
-                
-                if (res.data.dates?.length > 0) {
-                    setSelectedDate(res.data.dates[0]);
+                const res = await api.get(`/api/admins/admin/result-metadata`);
+                setDates(res.dates || []);
+                setColleges(res.colleges || []);
+
+                if (res.dates?.length > 0) {
+                    setSelectedDate(res.dates[0]);
                 } else {
                     setSelectedDate(new Date().toISOString().split('T')[0]);
                 }
@@ -48,17 +44,15 @@ const AdminResultArchives = () => {
     const fetchResults = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await axios.get(`${base_url}/api/admins/admin/get-historical-results`, {
-                headers: { Authorization: `Bearer ${token}` },
-                params: { 
+            const res = await api.get(`/api/admins/admin/get-historical-results`, {
+                params: {
                     date: selectedDate,
                     college: selectedCollege,
                     yearGroup,
                     branchGroup
                 }
             });
-            setResults(res.data);
+            setResults(res);
         } catch (err) {
             console.error("Error fetching results:", err);
             Swal.fire('Error', 'Failed to fetch archived results', 'error');
@@ -67,7 +61,7 @@ const AdminResultArchives = () => {
         }
     };
 
-    const filteredResults = results.filter(r => 
+    const filteredResults = results.filter(r =>
         r.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.studentId?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -75,7 +69,7 @@ const AdminResultArchives = () => {
 
     const exportToExcel = () => {
         if (!filteredResults.length) return Swal.fire('Error', 'No data to export', 'error');
-        
+
         const data = filteredResults.map((r, i) => ({
             Rank: i + 1,
             'Full Name': r.fullName,
@@ -115,7 +109,7 @@ const AdminResultArchives = () => {
             r.studentId,
             r.college,
             `${r.score}/${r.totalQuestions}`,
-            `${Math.round((r.score/r.totalQuestions)*100)}%`
+            `${Math.round((r.score / r.totalQuestions) * 100)}%`
         ]);
 
         doc.autoTable({
@@ -131,12 +125,12 @@ const AdminResultArchives = () => {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 font-sans">
-            
+
             {/* Header Area */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-2">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic flex items-center gap-3">
-                        <Trophy className="text-blue-600 w-8 h-8" /> 
+                        <Trophy className="text-blue-600 w-8 h-8" />
                         Performance <span className="text-blue-600">Leaderboards</span>
                     </h1>
                     <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-widest mt-1 italic">Historical Data Archives / Ranked Submissions</p>
@@ -145,8 +139,8 @@ const AdminResultArchives = () => {
                 <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
                     <div className="flex items-center gap-2 bg-slate-50 px-3 py-2.5 sm:py-1.5 rounded-xl border border-slate-100 flex-1 sm:flex-initial min-h-[44px]">
                         <Calendar size={14} className="text-slate-400 flex-shrink-0" />
-                        <select 
-                            value={selectedDate} 
+                        <select
+                            value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
                             className="bg-transparent border-none outline-none text-[11px] font-black uppercase text-slate-700 cursor-pointer w-full"
                         >
@@ -158,8 +152,8 @@ const AdminResultArchives = () => {
 
                     <div className="flex items-center gap-2 bg-slate-50 px-3 py-2.5 sm:py-1.5 rounded-xl border border-slate-100 flex-1 sm:flex-initial min-h-[44px]">
                         <User size={14} className="text-slate-400 flex-shrink-0" />
-                        <select 
-                            value={selectedCollege} 
+                        <select
+                            value={selectedCollege}
                             onChange={(e) => setSelectedCollege(e.target.value)}
                             className="bg-transparent border-none outline-none text-[11px] font-black uppercase text-slate-700 cursor-pointer w-full"
                         >
@@ -172,8 +166,8 @@ const AdminResultArchives = () => {
 
                     <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
                         <Filter size={14} className="text-slate-400" />
-                        <select 
-                            value={yearGroup} 
+                        <select
+                            value={yearGroup}
                             onChange={(e) => setYearGroup(e.target.value)}
                             className="bg-transparent border-none outline-none text-[11px] font-black uppercase text-slate-700 cursor-pointer"
                         >
@@ -183,8 +177,8 @@ const AdminResultArchives = () => {
                     </div>
 
                     <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-                        <select 
-                            value={branchGroup} 
+                        <select
+                            value={branchGroup}
                             onChange={(e) => setBranchGroup(e.target.value)}
                             className="bg-transparent border-none outline-none text-[11px] font-black uppercase text-slate-700 cursor-pointer"
                         >
@@ -194,14 +188,14 @@ const AdminResultArchives = () => {
                     </div>
 
                     <div className="flex items-center gap-2 ml-2">
-                        <button 
+                        <button
                             onClick={exportToExcel}
                             className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
                             title="Export to Excel"
                         >
                             <Download size={14} /> Excel
                         </button>
-                        <button 
+                        <button
                             onClick={exportToPDF}
                             className="p-2 bg-red-50 text-red-600 rounded-xl border border-red-100 hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
                             title="Export to PDF"
@@ -216,8 +210,8 @@ const AdminResultArchives = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                     { label: 'Submissions', value: results.length, icon: User, color: 'blue' },
-                    { label: 'Avg. Score', value: results.length ? (results.reduce((a,b)=>a+b.score,0)/results.length).toFixed(1) : 0, icon: Hash, color: 'indigo' },
-                    { label: 'Top Score', value: results.length ? Math.max(...results.map(r=>r.score)) : 0, icon: Trophy, color: 'amber' },
+                    { label: 'Avg. Score', value: results.length ? (results.reduce((a, b) => a + b.score, 0) / results.length).toFixed(1) : 0, icon: Hash, color: 'indigo' },
+                    { label: 'Top Score', value: results.length ? Math.max(...results.map(r => r.score)) : 0, icon: Trophy, color: 'amber' },
                     { label: 'Pass Rate', value: '92%', icon: Clock, color: 'emerald' }
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
@@ -237,9 +231,9 @@ const AdminResultArchives = () => {
                 <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/30">
                     <div className="relative w-full sm:w-72">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                        <input 
-                            type="text" 
-                            placeholder="Find student..." 
+                        <input
+                            type="text"
+                            placeholder="Find student..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/10 outline-none"
@@ -313,18 +307,18 @@ const AdminResultArchives = () => {
                                         <div className="flex flex-col items-end gap-1.5">
                                             <div className="flex justify-between w-32 items-center text-[9px] font-black uppercase">
                                                 <span className="text-slate-400">Accuracy</span>
-                                                <span className="text-blue-600">{Math.round((row.score/row.totalQuestions)*100)}%</span>
+                                                <span className="text-blue-600">{Math.round((row.score / row.totalQuestions) * 100)}%</span>
                                             </div>
                                             <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                <div 
-                                                    className="h-full bg-blue-600 rounded-full group-hover:bg-blue-500 transition-all duration-1000" 
-                                                    style={{ width: `${(row.score/row.totalQuestions)*100}%` }}
+                                                <div
+                                                    className="h-full bg-blue-600 rounded-full group-hover:bg-blue-500 transition-all duration-1000"
+                                                    style={{ width: `${(row.score / row.totalQuestions) * 100}%` }}
                                                 ></div>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-8 py-5 text-center">
-                                        <button 
+                                        <button
                                             onClick={() => navigate(`/admin-result-details/${row._id}`)}
                                             className="p-2 bg-white text-slate-400 hover:text-blue-600 border border-slate-100 rounded-lg hover:bg-blue-50 transition-all shadow-sm group-hover:border-blue-100"
                                             title="View Detailed Analysis"

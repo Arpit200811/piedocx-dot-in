@@ -30,7 +30,7 @@ const FeedbackForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         // Validate
         const answeredAll = questions.every(q => ratings[q.id]);
         if (!answeredAll) {
@@ -41,7 +41,7 @@ const FeedbackForm = () => {
         setSubmitting(true);
         try {
             const token = localStorage.getItem('studentToken');
-            
+
             // Transform data for backend
             const responses = questions.map(q => ({
                 questionText: q.text,
@@ -49,12 +49,6 @@ const FeedbackForm = () => {
                 comment: comments[q.id] || ""
             }));
 
-            // We need testId, but if we don't have it easily from context, the backend might handle it or we can fetch it.
-            // For now, let's assume the backend finds the active test or we just send responses.
-            // The controller expects { responses, testId }. 
-            // We can try fetching the test info again to get the ID or pass it via navigation state.
-            // A simpler way is to fetch current test info here.
-            
             const infoRes = await axios.get(`${base_url}/api/student-auth/test-info`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -85,13 +79,13 @@ const FeedbackForm = () => {
     return (
         <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
             <div className="max-w-3xl mx-auto">
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 overflow-hidden relative"
                 >
                     <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
-                    
+
                     <div className="p-8 md:p-12 text-center border-b border-slate-100">
                         <div className="w-20 h-20 bg-green-50 text-green-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-100">
                             <CheckCircle size={40} />
@@ -107,7 +101,7 @@ const FeedbackForm = () => {
                                     <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 text-slate-500 font-black flex items-center justify-center text-sm">{index + 1}</span>
                                     <div>
                                         <h3 className="text-lg font-bold text-slate-800 mb-4">{q.text}</h3>
-                                        
+
                                         {/* Star Rating */}
                                         <div className="flex gap-2 mb-4">
                                             {[1, 2, 3, 4, 5].map((star) => (
@@ -115,11 +109,10 @@ const FeedbackForm = () => {
                                                     key={star}
                                                     type="button"
                                                     onClick={() => handleRating(q.id, star)}
-                                                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                                                        ratings[q.id] >= star 
-                                                        ? 'bg-yellow-400 text-white shadow-lg shadow-yellow-200 scale-105' 
-                                                        : 'bg-slate-50 text-slate-300 hover:bg-slate-100'
-                                                    }`}
+                                                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${ratings[q.id] >= star
+                                                            ? 'bg-yellow-400 text-white shadow-lg shadow-yellow-200 scale-105'
+                                                            : 'bg-slate-50 text-slate-300 hover:bg-slate-100'
+                                                        }`}
                                                 >
                                                     <Star fill={ratings[q.id] >= star ? "currentColor" : "none"} size={24} />
                                                 </button>
@@ -129,7 +122,7 @@ const FeedbackForm = () => {
                                         {/* Optional Comment */}
                                         <div className="relative group">
                                             <MessageSquare className="absolute top-4 left-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                                            <textarea 
+                                            <textarea
                                                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 text-sm font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-slate-400"
                                                 placeholder="Additional comments (optional)..."
                                                 rows="2"
@@ -143,8 +136,8 @@ const FeedbackForm = () => {
                         ))}
 
                         <div className="pt-8 border-t border-slate-100">
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 disabled={submitting}
                                 className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
                             >
@@ -157,7 +150,7 @@ const FeedbackForm = () => {
                         </div>
                     </form>
                 </motion.div>
-                
+
                 <p className="text-center text-slate-400 text-xs font-bold uppercase tracking-widest mt-8">
                     © 2026 Piedocx Institutional Node
                 </p>

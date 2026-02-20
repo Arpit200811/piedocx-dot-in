@@ -1,7 +1,6 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { base_url } from '../utils/info';
+import api from '../utils/api';
 import { ShieldCheck, ShieldAlert, Award, Loader2, Calendar, User, Printer, Download, Eye, X, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -18,9 +17,9 @@ const VerifyCertificate = () => {
     useEffect(() => {
         const verify = async () => {
             try {
-                const res = await axios.get(`${base_url}/api/certificate/verify-public/${id}`);
-                if (res.data) {
-                    setData(res.data);
+                const res = await api.get(`/api/certificate/verify-public/${id}`);
+                if (res) {
+                    setData(res);
                     setStatus('valid');
                 } else {
                     setStatus('invalid');

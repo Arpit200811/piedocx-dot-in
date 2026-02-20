@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
-import { base_url } from '../utils/info';
+import api from '../utils/api';
 import {
   Database,
   Mail,
@@ -26,8 +25,8 @@ const TabButton = ({ tab, isActive, onClick }) => (
   <button
     onClick={onClick}
     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all border ${isActive
-        ? 'bg-slate-900 text-white border-slate-900 shadow-lg'
-        : 'bg-white text-slate-400 border-slate-100 hover:border-blue-200 hover:text-slate-600 shadow-sm'
+      ? 'bg-slate-900 text-white border-slate-900 shadow-lg'
+      : 'bg-white text-slate-400 border-slate-100 hover:border-blue-200 hover:text-slate-600 shadow-sm'
       }`}
   >
     <tab.icon size={14} /> {tab.label}
@@ -105,19 +104,21 @@ const AdminDataHub = () => {
   const fetchData = async (source) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('adminToken');
-      let url = `${base_url}/api/users/all-data?source=${source}`;
+      let url = `/api/users/all-data?source=${source}`;
 
       if (source === 'students') {
-        url = `${base_url}/api/certificate/students`;
+        url = `/api/certificate/students`;
       }
 
-      const res = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(url);
+
+      // Handle the different response structures:
+      // /api/certificate/students returns { students: [], ... }
+      // /api/users/all-data returns []
+      const rawData = Array.isArray(res) ? res : (res.students || []);
 
       // Normalize data for Student ID if source is students
-      const normalizedData = res.data.map(item => ({
+      const normalizedData = rawData.map(item => ({
         ...item,
         name: item.fullName || item.name,
         message: item.branch ? `${item.branch} (${item.year})` : item.message,
@@ -166,12 +167,9 @@ const AdminDataHub = () => {
         });
 
         if (result.isConfirmed) {
-          const token = localStorage.getItem('adminToken');
-          const res = await axios.post(`${base_url}/api/certificate/bulk-register`, { students }, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          const res = await api.post(`/api/certificate/bulk-register`, { students });
 
-          Swal.fire('Success', res.data.message, 'success');
+          Swal.fire('Success', res.message, 'success');
           fetchData('students'); // Refresh
         }
       } catch (err) {
@@ -239,15 +237,12 @@ const AdminDataHub = () => {
 
     setDeletingId(id);
     try {
-      const token = localStorage.getItem('adminToken');
-      let url = `${base_url}/api/users/delete/${id}`;
+      let url = `/api/users/delete/${id}`;
       if (activeTab === 'students') {
-        url = `${base_url}/api/certificate/students/${id}`;
+        url = `/api/certificate/students/${id}`;
       }
 
-      await axios.delete(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(url);
       setData(prev => prev.filter(item => item._id !== id));
       if (selectedItem?._id === id) setSelectedItem(null);
       Swal.fire('Purged!', 'Entry has been permanently deleted.', 'success');
