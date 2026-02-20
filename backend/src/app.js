@@ -81,13 +81,14 @@ app.use(
           "https://*.tidiochat.com",
           "*.onrender.com",
           "http://localhost:5002",
+          "https://api.piedocx.in"
         ],
         "img-src": ["'self'", "data:", "https://*.googleusercontent.com"],
       },
     },
   }),
 );
-
+app.options("*", cors());
 app.use(parser());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
