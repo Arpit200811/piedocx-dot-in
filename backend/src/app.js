@@ -26,8 +26,6 @@ import { initRedis } from "./utils/cacheService.js";
 const httpServer = createServer(app);
 initSocket(httpServer);
 initRedis();
-
-// Production Middleware
 app.set("trust proxy", 1);
 
 const allowedOrigins = [
@@ -37,25 +35,37 @@ const allowedOrigins = [
   "https://piedocx.in",
   "https://www.piedocx.in",
   "https://piedocx.netlify.app",
+  "https://api.piedocx.in",
+  "http://api.piedocx.in",
+  "http://piedocx.in",
+  "http://www.piedocx.in",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        return callback(
-          new Error("CORS Policy: This origin is not allowed"),
-          false,
-        );
-      }
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
+    
+    if (allowedOrigins.map(o => o.toLowerCase()).indexOf(normalizedOrigin) !== -1) {
       return callback(null, true);
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  }),
-);
+    } else {
+      console.error(`[CORS REJECTED] Origin: "${origin}" | Normalized: "${normalizedOrigin}"`);
+      // For debugging, we can temporarily allow it if we want, but let's just log for now
+      return callback(new Error("CORS Policy: This origin is not allowed"), false);
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+};
+
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.get('origin') || 'no-origin'}`);
+  next();
+});
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(
   helmet({
@@ -83,19 +93,14 @@ app.use(
           "http://localhost:5002",
           "https://api.piedocx.in"
         ],
-        "img-src": ["'self'", "data:", "https://*.googleusercontent.com"],
+        "img-src": ["'self'", "data:", "https://*.googleusercontent.com", "https://placehold.co"],
       },
     },
   }),
 );
-app.options("*", cors());
 app.use(parser());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-// Routes are mounted below with /api prefix
-
-// Routes
 app.use("/api/users", router);
 app.use("/api/employees", empRoutes);
 app.use("/api/admins", adminRoutes);
@@ -108,18 +113,15 @@ app.use("/api/admin/analytics", analyticsRoutes);
 import whatsappRoutes from "./routes/whatsapp.route.js";
 app.use("/api/whatsapp", whatsappRoutes);
 app.use(errorHandler);
-
-// Test route
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-httpServer.listen(5002, async () => {
+const PORT = process.env.PORT || 5002;
+httpServer.listen(PORT, async () => {
   await connectDB();
-
-  // Attempt to auto-restore active WhatsApp session if it exists
   const { initializeWhatsApp } = await import("./utils/whatsappService.js");
   initializeWhatsApp(true);
 
-  console.log(`Server running on port 5002`);
+  console.log(`Server running on port ${PORT}`);
 });
