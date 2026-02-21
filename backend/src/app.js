@@ -3,6 +3,7 @@ config(); // Load environment variables first!
 import dns from "dns";
 dns.setDefaultResultOrder("ipv4first");
 import express from "express";
+import { createServer } from "http";
 import connectDB from "./config/db.js";
 import cors from "cors";
 import parser from "cookie-parser";
@@ -17,12 +18,13 @@ import registerRoutes from "./routes/register.route.js";
 import studentAuthRoutes from "./routes/studentAuth.route.js";
 import testConfigRoutes from "./routes/testConfig.route.js";
 import analyticsRoutes from "./routes/analytics.route.js";
+import whatsappRoutes from "./routes/whatsapp.route.js";
 import errorHandler from "./middleware/error.middleware.js";
 
-const app = express();
-import { createServer } from "http";
 import { initSocket } from "./utils/socketService.js";
 import { initRedis } from "./utils/cacheService.js";
+
+const app = express();
 const httpServer = createServer(app);
 initSocket(httpServer);
 initRedis();
@@ -50,7 +52,6 @@ const corsOptions = {
       return callback(null, true);
     } else {
       console.error(`[CORS REJECTED] Origin: "${origin}" | Normalized: "${normalizedOrigin}"`);
-      // For debugging, we can temporarily allow it if we want, but let's just log for now
       return callback(new Error("CORS Policy: This origin is not allowed"), false);
     }
   },
@@ -79,6 +80,16 @@ app.use(
           "'unsafe-inline'",
           "https://accounts.google.com",
           "https://widget.tidiochat.com",
+          "https://cdnjs.cloudflare.com"
+        ],
+        "style-src": [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com"
+        ],
+        "font-src": [
+          "'self'",
+          "https://fonts.gstatic.com"
         ],
         "frame-src": [
           "'self'",
@@ -91,7 +102,8 @@ app.use(
           "https://*.tidiochat.com",
           "*.onrender.com",
           "http://localhost:5002",
-          "https://api.piedocx.in"
+          "https://api.piedocx.in",
+          "https://cdnjs.cloudflare.com"
         ],
         "img-src": ["'self'", "data:", "https://*.googleusercontent.com", "https://placehold.co"],
       },
@@ -109,10 +121,10 @@ app.use("/api/certificate", registerRoutes);
 app.use("/api/student-auth", studentAuthRoutes);
 app.use("/api/admin/test-config", testConfigRoutes);
 app.use("/api/admin/analytics", analyticsRoutes);
-
-import whatsappRoutes from "./routes/whatsapp.route.js";
 app.use("/api/whatsapp", whatsappRoutes);
+
 app.use(errorHandler);
+
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
