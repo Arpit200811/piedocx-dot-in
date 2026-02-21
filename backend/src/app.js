@@ -130,10 +130,23 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5002;
-httpServer.listen(PORT, async () => {
-  await connectDB();
-  const { initializeWhatsApp } = await import("./utils/whatsappService.js");
-  initializeWhatsApp(true);
+httpServer.listen(PORT, "0.0.0.0", async () => {
+  console.log(`[STARTUP] Attempting to connect to MongoDB...`);
+  try {
+    await connectDB();
+    console.log(`[STARTUP] MongoDB Connection Established.`);
+  } catch (err) {
+    console.error(`[STARTUP] MongoDB Connection Failed:`, err.message);
+  }
 
-  console.log(`Server running on port ${PORT}`);
+  try {
+    console.log(`[STARTUP] Initializing WhatsApp Service (Auto Mode)...`);
+    const { initializeWhatsApp } = await import("./utils/whatsappService.js");
+    const result = await initializeWhatsApp(true);
+    console.log(`[STARTUP] WhatsApp Service Result:`, result);
+  } catch (err) {
+    console.error(`[STARTUP] WhatsApp Initialization Error:`, err.message);
+  }
+
+  console.log(`🚀 PIEDOCX Backend Active on Port ${PORT}`);
 });
