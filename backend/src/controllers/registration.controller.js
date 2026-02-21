@@ -109,8 +109,9 @@ export const registerStudent = async (req, res) => {
 export const getAllStudents = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const { search, college, startDate, endDate } = req.query;
+        const isExport = req.query.limit === 'all';
+        const limit = isExport ? 1000000 : (parseInt(req.query.limit) || 20);
+        const { search, college, branch, year, startDate, endDate } = req.query;
 
         const query = {};
 
@@ -128,6 +129,14 @@ export const getAllStudents = async (req, res) => {
             query.college = college;
         }
 
+        if (branch) {
+            query.branch = branch;
+        }
+
+        if (year) {
+            query.year = year;
+        }
+
         if (startDate || endDate) {
             query.createdAt = {};
             if (startDate) query.createdAt.$gte = new Date(startDate);
@@ -143,18 +152,22 @@ export const getAllStudents = async (req, res) => {
             savedAnswers: 0
         })
         .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
+        .skip(isExport ? 0 : (page - 1) * limit)
         .limit(limit);
 
         const total = await ExamStudent.countDocuments(query);
         const uniqueColleges = await ExamStudent.distinct('college');
+        const uniqueBranches = await ExamStudent.distinct('branch');
+        const uniqueYears = await ExamStudent.distinct('year');
 
         res.json({
             students,
             currentPage: page,
-            totalPages: Math.ceil(total / limit),
+            totalPages: isExport ? 1 : Math.ceil(total / limit),
             totalStudents: total,
-            colleges: uniqueColleges
+            colleges: uniqueColleges,
+            branches: uniqueBranches,
+            years: uniqueYears
         });
     } catch (error) {
         console.error("getAllStudents error:", error);
@@ -163,23 +176,32 @@ export const getAllStudents = async (req, res) => {
 };
 
 export const updateStudentStatus = async (req, res) => {
+    const { id } = req.params;
     const { status } = req.body;
+
+    if (!['active', 'revoked'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status value. Use "active" or "revoked".' });
+    }
+
     try {
-        const student = await ExamStudent.findByIdAndUpdate(req.params.id, { status }, { new: true });
-        res.json(student);
+        const student = await ExamStudent.findByIdAndUpdate(id, { status }, { new: true });
+        if (!student) return res.status(404).json({ message: 'Student not found' });
+        res.json({ message: `Student status successfully updated to ${status}`, student });
     } catch (error) {
         console.error("updateStudentStatus error:", error);
-        res.status(500).json({ message: 'Error updating status' });
+        res.status(500).json({ message: 'Error updating student status' });
     }
 };
 
 export const deleteStudent = async (req, res) => {
+    const { id } = req.params;
     try {
-        await ExamStudent.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Student registration revoked successfully' });
+        const student = await ExamStudent.findByIdAndDelete(id);
+        if (!student) return res.status(404).json({ message: 'Student not found' });
+        res.json({ message: 'Student record permanently deleted' });
     } catch (error) {
         console.error("deleteStudent error:", error);
-        res.status(500).json({ message: 'Error deleting student' });
+        res.status(500).json({ message: 'Error deleting student record' });
     }
 };
 
@@ -268,17 +290,16 @@ export const updateStudentDetails = async (req, res) => {
         if (!student) return res.status(404).json({ message: 'Student not found' });
 
         const updateData = {};
-        if (fullName !== undefined) updateData.fullName = fullName;
-        if (college !== undefined) updateData.college = college; // Added College update
-        if (score !== undefined) updateData.score = score;
+        if (fullName !== undefined) updateData.fullName = fullName.trim();
+        if (college !== undefined) updateData.college = college.trim();
+        if (score !== undefined) updateData.score = Number(score);
         if (branch !== undefined) updateData.branch = branch;
         if (year !== undefined) updateData.year = year;
-        if (mobile !== undefined) updateData.mobile = mobile;
-        if (email !== undefined) updateData.email = email;
-        if (technology !== undefined) updateData.technology = technology;
+        if (mobile !== undefined) updateData.mobile = mobile.trim();
+        if (email !== undefined) updateData.email = email.trim().toLowerCase();
+        if (technology !== undefined) updateData.technology = technology.trim();
 
         // If sensitive fields change, we must regenerate the signature to maintain integrity
-        // Name and College changes definitely warrant a re-sign to ensure the certificate data is consistent
         const needsResign = updateData.branch !== undefined || updateData.score !== undefined || updateData.fullName !== undefined || updateData.college !== undefined;
 
         if (needsResign) {
@@ -296,10 +317,13 @@ export const updateStudentDetails = async (req, res) => {
         }
 
         const updated = await ExamStudent.findByIdAndUpdate(id, { $set: updateData }, { new: true });
-        res.json({ message: 'Student details updated successfully', student: updated });
+        res.json({ message: 'Student profile updated and synchronized successfully', student: updated });
     } catch (error) {
+        if (error.code === 11000) {
+            return res.status(409).json({ message: 'A student with this email or mobile number already exists.' });
+        }
         console.error("updateStudentDetails error:", error);
-        res.status(500).json({ message: 'Update failed' });
+        res.status(500).json({ message: 'Update failed due to server error' });
     }
 };
 
