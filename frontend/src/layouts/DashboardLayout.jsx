@@ -6,7 +6,7 @@ import {
     LayoutDashboard, BookOpen, User, LogOut, Menu, X,
     Award, FileText, Bell, Search, ChevronRight, Zap
 } from 'lucide-react';
-import SEO from '../Components/SEO';
+import SEO from '../components/SEO';
 
 const DashboardLayout = () => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -70,8 +70,8 @@ const DashboardLayout = () => {
                                     to={item.path}
                                     onClick={() => setSidebarOpen(false)}
                                     className={`flex items-center px-6 py-4 rounded-[1.5rem] transition-all duration-300 group relative ${isActive
-                                            ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/20 translate-x-2'
-                                            : 'text-slate-500 hover:bg-white hover:shadow-xl hover:text-slate-900'
+                                        ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/20 translate-x-2'
+                                        : 'text-slate-500 hover:bg-white hover:shadow-xl hover:text-slate-900'
                                         }`}
                                 >
                                     <span className={`mr-4 transition-transform group-hover:scale-110 ${isActive ? 'text-blue-400' : 'text-slate-400'}`}>
@@ -138,8 +138,8 @@ const DashboardLayout = () => {
                                 <Bell size={20} className="group-hover:animate-swing" />
                                 <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-[0_0_10px_rgba(239,68,68,0.5)]"></span>
                             </button>
-                            <div className="flex items-center gap-4 bg-white/80 backdrop-blur-md p-1.5 pr-5 rounded-2.5xl border border-white/50 shadow-sm hover:shadow-xl transition-all group cursor-pointer">
-                                <div className="h-11 w-11 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg overflow-hidden border-2 border-white ring-4 ring-slate-100 group-hover:ring-blue-100 transition-all">
+                            <div className="flex items-center gap-2 md:gap-4 bg-white/80 backdrop-blur-md p-1 md:p-1.5 pr-2 md:pr-5 rounded-2.5xl border border-white/50 shadow-sm hover:shadow-xl transition-all group cursor-pointer overflow-hidden max-w-[140px] sm:max-w-none">
+                                <div className="h-9 w-9 md:h-11 md:w-11 bg-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg overflow-hidden border-2 border-white ring-2 md:ring-4 ring-slate-100 group-hover:ring-blue-100 transition-all shrink-0">
                                     {student?.profilePicture ? (
                                         <img src={student.profilePicture} alt="Profile" className="w-full h-full object-cover" />
                                     ) : (

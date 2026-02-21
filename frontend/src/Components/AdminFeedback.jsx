@@ -155,7 +155,7 @@ const AdminFeedback = () => {
                                         exit={{ height: 0, opacity: 0 }}
                                         className="border-t border-slate-100 bg-slate-50/30"
                                     >
-                                        <div className="p-6 grid gap-6 md:grid-cols-2">
+                                        <div className="p-4 sm:p-6 grid gap-4 sm:gap-6 md:grid-cols-2">
                                             {feedback.responses.map((resp, idx) => (
                                                 <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-100">
                                                     <div className="flex justify-between items-start gap-4">

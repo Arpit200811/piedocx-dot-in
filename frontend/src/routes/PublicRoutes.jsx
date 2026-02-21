@@ -1,48 +1,48 @@
 import { lazy } from "react";
 import { Route } from "react-router-dom";
 
-const Home = lazy(() => import("../Components/Home"));
-const AboutUscompany = lazy(() => import("../Components/AboutUscompany"));
-const Contact = lazy(() => import("../Components/Contact"));
-const TeamSection = lazy(() => import("../Components/TeamSection"));
-const Project = lazy(() => import("../Components/Project"));
-const Services = lazy(() => import("../Components/Services"));
-const Emplogin = lazy(() => import("../Components/Emplogin"));
-const Empsignup = lazy(() => import("../Components/Empsignup"));
-const StudentRegistration = lazy(() => import("../Components/StudentRegistration"));
-const StudentLogin = lazy(() => import("../Components/StudentLogin"));
-const StudentDashboard = lazy(() => import("../Components/StudentDashboard"));
-const PrivacyPolicy = lazy(() => import("../Components/PrivacyPolicy"));
-const TermsConditions = lazy(() => import("../Components/TermsConditions"));
-const RefundPolicy = lazy(() => import("../Components/RefundPolicy"));
-const Careers = lazy(() => import("../Components/Careers"));
-const FAQ = lazy(() => import("../Components/FAQ"));
-const PageNotfound = lazy(() => import("../Components/PageNotfound"));
+const Home = lazy(() => import("../components/Home"));
+const AboutUscompany = lazy(() => import("../components/AboutUscompany"));
+const Contact = lazy(() => import("../components/Contact"));
+const TeamSection = lazy(() => import("../components/TeamSection"));
+const Project = lazy(() => import("../components/Project"));
+const Services = lazy(() => import("../components/Services"));
+const Emplogin = lazy(() => import("../components/Emplogin"));
+const Empsignup = lazy(() => import("../components/Empsignup"));
+const StudentRegistration = lazy(() => import("../components/StudentRegistration"));
+const StudentLogin = lazy(() => import("../components/StudentLogin"));
+const StudentDashboard = lazy(() => import("../components/StudentDashboard"));
+const PrivacyPolicy = lazy(() => import("../components/PrivacyPolicy"));
+const TermsConditions = lazy(() => import("../components/TermsConditions"));
+const RefundPolicy = lazy(() => import("../components/RefundPolicy"));
+const Careers = lazy(() => import("../components/Careers"));
+const FAQ = lazy(() => import("../components/FAQ"));
+const PageNotfound = lazy(() => import("../components/PageNotfound"));
 
 // Service Detail Pages
-const FullStackdev = lazy(() => import("../Components/FullStackdev"));
-const AndroidDev = lazy(() => import("../Components/AndroidDev"));
-const DigitalMarketing = lazy(() => import("../Components/DigitalMarketing"));
-const GraphicsDev = lazy(() => import("../Components/GraphicsDev"));
-const WebDevelopment = lazy(() => import("../Components/WebDevelopment"));
-const Domain = lazy(() => import("../Components/Domain"));
-const CustomSoftware = lazy(() => import("../Components/CustomSoftware"));
-const ErpSolution = lazy(() => import("../Components/ErpSolution"));
-const CMSSolution = lazy(() => import("../Components/CMSSolution"));
-const IotSmartSystems = lazy(() => import("../Components/IotSmartSystems"));
-const AiMachineLearning = lazy(() => import("../Components/AiMachineLearning"));
-const BlockchainSolutions = lazy(() => import("../Components/BlockchainSolutions"));
-const SecuritySolutions = lazy(() => import("../Components/SecuritySolutions"));
-const DataScience = lazy(() => import("../Components/DataScience"));
-const UiUxDesign = lazy(() => import("../Components/UiUxDesign"));
+const FullStackdev = lazy(() => import("../components/FullStackdev"));
+const AndroidDev = lazy(() => import("../components/AndroidDev"));
+const DigitalMarketing = lazy(() => import("../components/DigitalMarketing"));
+const GraphicsDev = lazy(() => import("../components/GraphicsDev"));
+const WebDevelopment = lazy(() => import("../components/WebDevelopment"));
+const Domain = lazy(() => import("../components/Domain"));
+const CustomSoftware = lazy(() => import("../components/CustomSoftware"));
+const ErpSolution = lazy(() => import("../components/ErpSolution"));
+const CMSSolution = lazy(() => import("../components/CMSSolution"));
+const IotSmartSystems = lazy(() => import("../components/IotSmartSystems"));
+const AiMachineLearning = lazy(() => import("../components/AiMachineLearning"));
+const BlockchainSolutions = lazy(() => import("../components/BlockchainSolutions"));
+const SecuritySolutions = lazy(() => import("../components/SecuritySolutions"));
+const DataScience = lazy(() => import("../components/DataScience"));
+const UiUxDesign = lazy(() => import("../components/UiUxDesign"));
 
 // Technology Sub-routes
-const Mern = lazy(() => import("../Components/Mern"));
-const DotNetCoreServices = lazy(() => import("../Components/DotNet-core"));
-const PhpCoreServices = lazy(() => import("../Components/PHP-core"));
-const PythonServices = lazy(() => import("../Components/Python"));
-const AdvanceJavaServices = lazy(() => import("../Components/Advance-java"));
-const FlutterKotlinServices = lazy(() => import("../Components/Flutter-kotlin"));
+const Mern = lazy(() => import("../components/Mern"));
+const DotNetCoreServices = lazy(() => import("../components/DotNet-core"));
+const PhpCoreServices = lazy(() => import("../components/PHP-core"));
+const PythonServices = lazy(() => import("../components/Python"));
+const AdvanceJavaServices = lazy(() => import("../components/Advance-java"));
+const FlutterKotlinServices = lazy(() => import("../components/Flutter-kotlin"));
 
 export const PublicRoutes = (
   <>

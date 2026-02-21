@@ -86,7 +86,7 @@ const FeedbackForm = () => {
                 >
                     <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
 
-                    <div className="p-8 md:p-12 text-center border-b border-slate-100">
+                    <div className="p-5 sm:p-8 md:p-12 text-center border-b border-slate-100">
                         <div className="w-20 h-20 bg-green-50 text-green-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-100">
                             <CheckCircle size={40} />
                         </div>
@@ -94,7 +94,7 @@ const FeedbackForm = () => {
                         <p className="text-slate-500 max-w-lg mx-auto font-medium">Your answers have been securely encrypted and stored. Before you leave, help us improve the system with your feedback.</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="p-8 md:p-12 space-y-12">
+                    <form onSubmit={handleSubmit} className="p-5 sm:p-8 md:p-12 space-y-12">
                         {questions.map((q, index) => (
                             <div key={q.id} className="space-y-4">
                                 <div className="flex items-start gap-4">
@@ -103,18 +103,18 @@ const FeedbackForm = () => {
                                         <h3 className="text-lg font-bold text-slate-800 mb-4">{q.text}</h3>
 
                                         {/* Star Rating */}
-                                        <div className="flex gap-2 mb-4">
+                                        <div className="flex flex-wrap gap-2 mb-4">
                                             {[1, 2, 3, 4, 5].map((star) => (
                                                 <button
                                                     key={star}
                                                     type="button"
                                                     onClick={() => handleRating(q.id, star)}
-                                                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${ratings[q.id] >= star
-                                                            ? 'bg-yellow-400 text-white shadow-lg shadow-yellow-200 scale-105'
-                                                            : 'bg-slate-50 text-slate-300 hover:bg-slate-100'
+                                                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all ${ratings[q.id] >= star
+                                                        ? 'bg-yellow-400 text-white shadow-lg shadow-yellow-200 scale-105'
+                                                        : 'bg-slate-50 text-slate-300 hover:bg-slate-100'
                                                         }`}
                                                 >
-                                                    <Star fill={ratings[q.id] >= star ? "currentColor" : "none"} size={24} />
+                                                    <Star fill={ratings[q.id] >= star ? "currentColor" : "none"} size={20} className="sm:w-6 sm:h-6" />
                                                 </button>
                                             ))}
                                         </div>

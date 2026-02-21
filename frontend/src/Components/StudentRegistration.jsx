@@ -130,7 +130,7 @@ const StudentRegistration = () => {
          <div className="w-full max-w-6xl flex flex-col lg:flex-row bg-white rounded-[2.5rem] md:rounded-[4rem] overflow-hidden border border-slate-200 shadow-2xl relative z-10">
 
             {/* Left Panel: Brand Mission */}
-            <div className="lg:w-[40%] bg-gradient-to-br from-blue-600 to-indigo-700 p-10 md:p-16 flex flex-col justify-between text-white relative">
+            <div className="lg:w-[40%] bg-gradient-to-br from-blue-600 to-indigo-700 p-6 sm:p-10 md:p-16 flex flex-col justify-between text-white relative">
                <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
 
                <div className="relative z-10 space-y-12">
@@ -169,7 +169,7 @@ const StudentRegistration = () => {
             </div>
 
             {/* Right Panel: Functional Core */}
-            <div className="flex-1 p-10 md:p-16 bg-white relative">
+            <div className="flex-1 p-6 sm:p-10 md:p-16 bg-white relative">
                {!user ? (
                   <div className="h-full flex flex-col items-center justify-center text-center space-y-10 max-w-sm mx-auto">
                      <div className="w-24 h-24 bg-slate-50 rounded-[2rem] border border-slate-200 flex items-center justify-center relative shadow-sm">
@@ -212,7 +212,7 @@ const StudentRegistration = () => {
                   </div>
                ) : (
                   <div className="space-y-10">
-                     <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-b border-slate-100 pb-10">
+                     <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-b border-slate-100 pb-6 md:pb-10">
                         <div className="flex items-center gap-5">
                            <div className="p-1 bg-slate-50 rounded-full border border-slate-200 shadow-sm">
                               <img src={user.picture} alt="Profile" className="w-14 h-14 rounded-full" />

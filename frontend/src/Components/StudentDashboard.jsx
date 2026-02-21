@@ -268,7 +268,7 @@ const StudentDashboard = () => {
                             className="space-y-10"
                         >
                             {/* Hero Dashboard Section */}
-                            <div className="bg-white rounded-3xl md:rounded-[3.5rem] p-6 sm:p-10 md:p-16 relative overflow-hidden group shadow-2xl border border-blue-50">
+                            <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] p-5 sm:p-10 md:p-16 relative overflow-hidden group shadow-2xl border border-blue-50">
                                 <div className="absolute top-0 right-0 w-full sm:w-[40%] h-full bg-gradient-to-l from-blue-100/40 to-transparent"></div>
                                 <div className="absolute -bottom-24 -left-24 sm:-right-24 w-64 h-64 bg-indigo-100/40 rounded-full blur-[80px]"></div>
 
@@ -278,7 +278,7 @@ const StudentDashboard = () => {
                                             <span className="w-8 h-1 bg-blue-600 rounded-full"></span>
                                             <span className="text-[10px] md:text-xs font-black text-blue-400 uppercase tracking-[0.4em]">Student Dashboard</span>
                                         </div>
-                                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 italic uppercase tracking-tighter leading-tight">
+                                        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 italic uppercase tracking-tighter leading-tight">
                                             Welcome Back, <span className="text-blue-600 underline decoration-blue-100 underline-offset-4">{student.firstName}</span>.
                                         </h1>
                                         <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium opacity-80">
@@ -494,7 +494,7 @@ const StudentDashboard = () => {
 
                     {activeTab === 'certificates' && (
                         <motion.div key="certificates" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
-                            <div className="bg-white p-8 sm:p-12 lg:p-16 rounded-3xl md:rounded-[4rem] border border-slate-100 shadow-2xl flex flex-col md:flex-row items-center gap-10 md:gap-16 relative overflow-hidden">
+                            <div className="bg-white p-5 sm:p-12 lg:p-16 rounded-3xl md:rounded-[4rem] border border-slate-100 shadow-2xl flex flex-col md:flex-row items-center gap-10 md:gap-16 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
                                 <div className="flex-1 space-y-6 md:space-y-10 relative z-10 text-center md:text-left">
                                     <div className="inline-flex items-center gap-3 px-6 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 italic">
@@ -538,7 +538,7 @@ const StudentDashboard = () => {
                                     <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
                                     <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent"></div>
                                 </div>
-                                <div className="px-6 md:px-12 pb-12 md:pb-16 relative">
+                                <div className="px-4 sm:px-12 pb-12 md:pb-16 relative">
                                     <div className="flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-10 -translate-y-16 md:-translate-y-20 text-center md:text-left">
                                         <div className="relative group/photo">
                                             <div className="w-32 h-32 md:w-48 md:h-48 bg-white p-2 md:p-3 rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl relative z-10 ring-4 ring-slate-50">
@@ -596,7 +596,7 @@ const StudentDashboard = () => {
                             <div className="lg:col-span-2 space-y-6 md:space-y-8 flex flex-col items-center">
                                 <motion.div
                                     whileHover={{ y: -5 }}
-                                    className="relative group/card w-full max-w-[340px]"
+                                    className="relative group/card w-full max-w-[280px] sm:max-w-[340px]"
                                 >
                                     {/* Subtle Modern Shadow */}
                                     <div className="absolute inset-0 bg-blue-600/5 rounded-[2.5rem] blur-2xl transform translate-y-4"></div>

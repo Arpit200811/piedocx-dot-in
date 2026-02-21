@@ -89,7 +89,7 @@ const AdminPanel = () => {
   };
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-6 font-sans">
+    <div className="p-3 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6 font-sans">
 
       {/* Header - Compact */}
       <div className="flex items-center justify-between px-2">
@@ -102,13 +102,13 @@ const AdminPanel = () => {
       </div>
 
       {/* Tabs - Compact */}
-      <div className="flex flex-wrap items-center bg-slate-100 p-1 rounded-2xl w-fit mx-auto shadow-inner gap-1 border border-slate-200">
+      <div className="flex flex-wrap items-center justify-center bg-slate-100 p-1 rounded-2xl w-full sm:w-fit mx-auto shadow-inner gap-1 border border-slate-200">
         <TabButton active={activeTab === 'legacy'} onClick={() => setActiveTab('legacy')} label="Legacy Students" Icon={GraduationCap} />
         <TabButton active={activeTab === 'certificate'} onClick={() => setActiveTab('certificate')} label="New Certificates" Icon={BadgeCheck} />
         <TabButton active={activeTab === 'bulk'} onClick={() => setActiveTab('bulk')} label="Bulk Load" Icon={UploadCloud} />
         <button
           onClick={() => navigate('/admin-content')}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[9px] uppercase tracking-wider text-slate-400 hover:text-blue-600 transition-all"
+          className="flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-black text-[9px] uppercase tracking-wider text-slate-400 hover:text-blue-600 transition-all"
         >
           <Bell size={14} /> Portal Content
         </button>
@@ -121,7 +121,7 @@ const AdminPanel = () => {
       </div>
 
       {/* Form Container */}
-      <div className="bg-white border border-slate-100 rounded-[2rem] shadow-sm p-8 max-w-4xl mx-auto">
+      <div className="bg-white border border-slate-100 rounded-[2rem] shadow-sm p-4 sm:p-8 max-w-4xl mx-auto">
         {activeTab === 'legacy' ? (
           <form onSubmit={handleOldSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputField label="Student Name" name="name" value={oldStudent.name} onChange={handleOldChange} placeholder="Full Name" icon={UserPlus} />

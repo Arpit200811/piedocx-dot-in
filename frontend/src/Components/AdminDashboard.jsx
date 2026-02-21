@@ -136,7 +136,7 @@ function AdminDashboard({ children }) {
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           </div>
         </div>
-        <div className="flex-grow overflow-y-auto bg-[#fafbfc] p-4 md:p-6 lg:p-10">
+        <div className="flex-grow overflow-y-auto bg-[#fafbfc] p-3 sm:p-6 lg:p-10">
           {children}
         </div>
       </div>

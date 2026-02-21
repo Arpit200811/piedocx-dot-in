@@ -312,7 +312,7 @@ const AdminDataHub = () => {
         ))}
       </div>
 
-      {/* Content Table - High Density */}
+      {/* Content Table/Cards - High Density */}
       <div className="bg-white border border-slate-100 rounded-[1.5rem] shadow-sm overflow-hidden min-h-[400px]">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-[400px] space-y-2">
@@ -325,29 +325,87 @@ const AdminDataHub = () => {
             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 italic">Zero frequency detected.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/70 border-b border-slate-100">
-                  <th className="px-6 py-3 text-[9px] font-black uppercase tracking-widest text-slate-400">Captured</th>
-                  <th className="px-6 py-3 text-[9px] font-black uppercase tracking-widest text-slate-400">Entity</th>
-                  <th className="px-6 py-3 text-[9px] font-black uppercase tracking-widest text-slate-400">Payload</th>
-                  <th className="px-6 py-3 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Control</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredData.map((item) => (
-                  <DataRow
-                    key={item._id}
-                    item={item}
-                    onView={setSelectedItem}
-                    onDelete={handleDelete}
-                    deletingId={deletingId}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Mobile View: High Density Cards */}
+            <div className="block lg:hidden divide-y divide-slate-50">
+              {filteredData.map((item) => (
+                <div key={item._id} className="p-4 space-y-3 hover:bg-slate-50/50 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl shrink-0 ${item.source === 'contact' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'} flex items-center justify-center font-black text-xs uppercase shadow-sm`}>
+                        {item.name ? item.name.charAt(0) : 'U'}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900 tracking-tight leading-none mb-1 uppercase">{item.name || 'Anonymous Submission'}</h4>
+                        <p className="text-[10px] font-medium text-slate-400">{item.email}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-slate-900 block">{new Date(item.createdAt).toLocaleDateString()}</span>
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                        {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50/50 p-3 rounded-2xl">
+                    <p className="text-[11px] text-slate-600 font-medium italic line-clamp-2">
+                      "{item.message || (item.source === 'newsletter' ? 'Newsletter Subscription' : 'No message provided')}"
+                    </p>
+                    {item.address && (
+                      <div className="flex items-center gap-1 mt-2 text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                        <MapPin size={10} /> {item.address}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${item.source === 'contact' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>{item.source}</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setSelectedItem(item)}
+                        className="flex items-center gap-2 px-4 py-1.5 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md active:scale-95"
+                      >
+                        <Eye size={12} /> View Details
+                      </button>
+                      <button
+                        disabled={deletingId === item._id}
+                        onClick={() => handleDelete(item._id)}
+                        className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-600 hover:text-white transition-all disabled:opacity-50"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop View: Table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/70 border-b border-slate-100">
+                    <th className="px-6 py-3 text-[9px] font-black uppercase tracking-widest text-slate-400">Captured</th>
+                    <th className="px-6 py-3 text-[9px] font-black uppercase tracking-widest text-slate-400">Entity</th>
+                    <th className="px-6 py-3 text-[9px] font-black uppercase tracking-widest text-slate-400">Payload</th>
+                    <th className="px-6 py-3 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Control</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.map((item) => (
+                    <DataRow
+                      key={item._id}
+                      item={item}
+                      onView={setSelectedItem}
+                      onDelete={handleDelete}
+                      deletingId={deletingId}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

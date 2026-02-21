@@ -686,7 +686,7 @@ const TestInterface = () => {
                 </AnimatePresence>
 
                 {/* Header */}
-                <header className="flex flex-col md:flex-row justify-between items-stretch bg-white/5 p-4 sm:p-5 md:p-6 lg:p-7 rounded-[2.5rem] border border-white/10 shadow-2xl glass-dark gap-6 relative overflow-hidden premium-border">
+                <header className="flex flex-col md:flex-row justify-between items-stretch bg-white/5 p-3 sm:p-5 md:p-6 lg:p-7 rounded-[2rem] md:rounded-[2.5rem] border border-white/10 shadow-2xl glass-dark gap-4 md:gap-6 relative overflow-hidden premium-border">
                     <div className="flex items-center gap-6 relative z-10">
                         <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-800 rounded-2xl md:rounded-[1.5rem] flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.3)] shrink-0 border border-white/20">
                             <Zap size={28} className="text-white" />
@@ -713,9 +713,9 @@ const TestInterface = () => {
                                 <span className="text-xs font-black text-blue-400">{Math.round((Object.keys(answers).length / questions.length) * 100)}%</span>
                             </div>
                         </div>
-                        <div className={`p-1 flex flex-col items-center justify-center min-w-[120px] md:min-w-[150px]`}>
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Ends In</span>
-                            <div className={`text-2xl md:text-4xl font-black font-mono transition-all tabular-nums text-glow ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+                        <div className={`p-1 flex flex-col items-center justify-center min-w-[100px] md:min-w-[150px]`}>
+                            <span className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Ends In</span>
+                            <div className={`text-xl md:text-4xl font-black font-mono transition-all tabular-nums text-glow ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
                                 {mins}<span className="opacity-30 mx-1">:</span>{String(secs).padStart(2, '0')}
                             </div>
                         </div>
@@ -776,7 +776,7 @@ const TestInterface = () => {
                             key={currentQuestion}
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="bg-white/5 p-8 md:p-12 rounded-[3.5rem] border border-white/10 flex-1 relative overflow-hidden min-h-[480px] glass-dark shadow-2xl"
+                            className="bg-white/5 p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-white/10 flex-1 relative overflow-hidden min-h-[400px] md:min-h-[480px] glass-dark shadow-2xl"
                         >
                             {/* Decorative glow inside card */}
                             <div className="absolute -top-20 -right-20 w-80 h-80 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"></div>
@@ -787,7 +787,7 @@ const TestInterface = () => {
                                     <span className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">Sector {currentQuestion + 1} of {questions.length}</span>
                                 </div>
 
-                                <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black mb-12 lg:mb-16 leading-[1.2] text-white tracking-tight">
+                                <h3 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black mb-8 lg:mb-16 leading-[1.2] text-white tracking-tight">
                                     {questions[currentQuestion]?.questionText}
                                 </h3>
 

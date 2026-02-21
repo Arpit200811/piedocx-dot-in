@@ -226,7 +226,7 @@ const AdminResultArchives = () => {
                 ))}
             </div>
 
-            {/* Results Table */}
+            {/* Results Table/Cards */}
             <div className="bg-white rounded-2xl sm:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[500px]">
                 <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/30">
                     <div className="relative w-full sm:w-72">
@@ -244,90 +244,157 @@ const AdminResultArchives = () => {
                     </button>
                 </div>
 
-                {/* Mobile: Show message about horizontal scroll */}
-                <div className="lg:hidden px-4 py-2 bg-blue-50 border-b border-blue-100">
-                    <p className="text-[10px] text-blue-600 font-bold text-center">← Swipe to view all columns →</p>
+                {/* Mobile: Card View */}
+                <div className="block lg:hidden divide-y divide-slate-50">
+                    {loading ? (
+                        <div className="text-center py-20 font-black text-slate-300 animate-pulse uppercase tracking-[0.2em] text-xs">Accessing Archives...</div>
+                    ) : filteredResults.length === 0 ? (
+                        <div className="text-center py-20">
+                            <div className="flex flex-col items-center gap-3 opacity-30">
+                                <AlertCircle size={40} />
+                                <p className="font-black text-xs uppercase tracking-widest">Zero Frequency Detected</p>
+                            </div>
+                        </div>
+                    ) : (
+                        filteredResults.map((row, index) => (
+                            <div key={row._id} className="p-5 space-y-4 hover:bg-slate-50/50 transition-colors group">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${index === 0 ? 'bg-amber-100 text-amber-600 border border-amber-200' : index === 1 ? 'bg-slate-100 text-slate-500' : index === 2 ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
+                                            {index + 1}
+                                        </div>
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-slate-100 flex items-center justify-center font-black text-xs text-blue-600 uppercase">
+                                            {row.fullName?.[0]}
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase italic tracking-tighter">{row.fullName}</h4>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{row.studentId}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-lg font-black text-slate-900 leading-none">{row.score}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">/ {row.totalQuestions}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 bg-slate-50/50 p-3 rounded-2xl">
+                                    <div>
+                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Batch Matrix</p>
+                                        <p className="text-[10px] font-black text-slate-800 uppercase italic">{row.branch} • {row.year}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Institution</p>
+                                        <p className="text-[10px] font-bold text-slate-700 uppercase italic line-clamp-1">{row.college}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-2">
+                                    <div className="flex flex-col gap-1 w-2/3">
+                                        <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                                            <span className="text-slate-400">Accuracy</span>
+                                            <span className="text-blue-600">{Math.round((row.score / row.totalQuestions) * 100)}%</span>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-blue-600 rounded-full"
+                                                style={{ width: `${(row.score / row.totalQuestions) * 100}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => navigate(`/admin-result-details/${row._id}`)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 text-[10px] font-black uppercase tracking-widest border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                    >
+                                        <Eye size={14} /> Report
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* Desktop: Table View */}
+                <div className="hidden lg:block overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr className="bg-slate-50/50">
-                                <th className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Rank</th>
-                                <th className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Candidate</th>
-                                <th className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Batch</th>
-                                <th className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Score</th>
-                                <th className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Performance</th>
-                                <th className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Action</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Rank</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Candidate</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Batch</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Score</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Performance</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                             {loading ? (
-                                <tr><td colSpan="5" className="text-center py-20 font-black text-slate-300 animate-pulse uppercase tracking-[0.2em] text-xs">Accessing Archives...</td></tr>
+                                <tr><td colSpan="6" className="text-center py-20 font-black text-slate-300 animate-pulse uppercase tracking-[0.2em] text-xs">Accessing Archives...</td></tr>
                             ) : filteredResults.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="text-center py-20">
+                                    <td colSpan="6" className="text-center py-20">
                                         <div className="flex flex-col items-center gap-3 opacity-30">
                                             <AlertCircle size={40} />
                                             <p className="font-black text-xs uppercase tracking-widest">Zero Frequency Detected</p>
                                         </div>
                                     </td>
                                 </tr>
-                            ) : filteredResults.map((row, index) => (
-                                <tr key={row._id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-8 py-5">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${index === 0 ? 'bg-amber-100 text-amber-600 border border-amber-200' : index === 1 ? 'bg-slate-100 text-slate-500' : index === 2 ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
-                                            {index + 1}
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-slate-100 flex items-center justify-center font-black text-[10px] text-blue-600 uppercase">
-                                                {row.fullName?.[0]}
+                            ) : (
+                                filteredResults.map((row, index) => (
+                                    <tr key={row._id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="px-8 py-5">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${index === 0 ? 'bg-amber-100 text-amber-600 border border-amber-200' : index === 1 ? 'bg-slate-100 text-slate-500' : index === 2 ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
+                                                {index + 1}
                                             </div>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-slate-100 flex items-center justify-center font-black text-[10px] text-blue-600 uppercase">
+                                                    {row.fullName?.[0]}
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase italic tracking-tighter">{row.fullName}</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{row.studentId} • {row.college}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5 text-center">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase italic tracking-tighter">{row.fullName}</span>
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{row.studentId} • {row.college}</span>
+                                                <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">{row.branch}</span>
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{row.year}</span>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-5 text-center">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">{row.branch}</span>
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{row.year}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-5 text-center">
-                                        <div className="inline-flex flex-col items-center">
-                                            <span className="text-lg font-black text-slate-900 leading-none">{row.score}</span>
-                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">/ {row.totalQuestions}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-5 text-right">
-                                        <div className="flex flex-col items-end gap-1.5">
-                                            <div className="flex justify-between w-32 items-center text-[9px] font-black uppercase">
-                                                <span className="text-slate-400">Accuracy</span>
-                                                <span className="text-blue-600">{Math.round((row.score / row.totalQuestions) * 100)}%</span>
+                                        </td>
+                                        <td className="px-8 py-5 text-center">
+                                            <div className="inline-flex flex-col items-center">
+                                                <span className="text-lg font-black text-slate-900 leading-none">{row.score}</span>
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">/ {row.totalQuestions}</span>
                                             </div>
-                                            <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-blue-600 rounded-full group-hover:bg-blue-500 transition-all duration-1000"
-                                                    style={{ width: `${(row.score / row.totalQuestions) * 100}%` }}
-                                                ></div>
+                                        </td>
+                                        <td className="px-8 py-5 text-right">
+                                            <div className="flex flex-col items-end gap-1.5">
+                                                <div className="flex justify-between w-32 items-center text-[9px] font-black uppercase">
+                                                    <span className="text-slate-400">Accuracy</span>
+                                                    <span className="text-blue-600">{Math.round((row.score / row.totalQuestions) * 100)}%</span>
+                                                </div>
+                                                <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-blue-600 rounded-full group-hover:bg-blue-500 transition-all duration-1000"
+                                                        style={{ width: `${(row.score / row.totalQuestions) * 100}%` }}
+                                                    ></div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-5 text-center">
-                                        <button
-                                            onClick={() => navigate(`/admin-result-details/${row._id}`)}
-                                            className="p-2 bg-white text-slate-400 hover:text-blue-600 border border-slate-100 rounded-lg hover:bg-blue-50 transition-all shadow-sm group-hover:border-blue-100"
-                                            title="View Detailed Analysis"
-                                        >
-                                            <Eye size={16} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                        <td className="px-8 py-5 text-center">
+                                            <button
+                                                onClick={() => navigate(`/admin-result-details/${row._id}`)}
+                                                className="p-2 bg-white text-slate-400 hover:text-blue-600 border border-slate-100 rounded-lg hover:bg-blue-50 transition-all shadow-sm group-hover:border-blue-100"
+                                                title="View Detailed Analysis"
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>

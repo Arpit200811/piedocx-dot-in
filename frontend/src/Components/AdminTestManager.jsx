@@ -199,7 +199,7 @@ const AdminTestManager = () => {
     if (loading) return <div className="p-10 text-center">Loading Configuration...</div>;
 
     return (
-        <div className="p-4 md:p-8 max-w-5xl mx-auto">
+        <div className="p-3 sm:p-6 md:p-8 max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 md:mb-8">
                 <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Assessment Configuration</h1>
                 <button onClick={handleSubmit(onSubmit)} className="w-full md:w-auto bg-blue-600 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30">
@@ -207,7 +207,7 @@ const AdminTestManager = () => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-fit">
                     <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                         <Clock className="text-blue-500" />
@@ -313,7 +313,7 @@ const AdminTestManager = () => {
                         </div>
                     </div>
                 </div>
-                <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <div className="xl:col-span-2 bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                             <Calendar className="text-blue-500" />
@@ -330,7 +330,7 @@ const AdminTestManager = () => {
 
                     <div className="space-y-6">
                         {fields.map((field, index) => (
-                            <div key={field.id} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative group">
+                            <div key={field.id} className="bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-200 relative group">
                                 <button
                                     type="button"
                                     onClick={() => remove(index)}

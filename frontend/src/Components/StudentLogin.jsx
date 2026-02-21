@@ -57,7 +57,7 @@ const StudentLogin = () => {
                 <div className="absolute inset-0 opacity-[0.02] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
             </div>
 
-            <div className="bg-white p-8 md:p-16 rounded-[2rem] md:rounded-[3rem] shadow-2xl w-full max-w-lg relative z-10 border border-slate-200">
+            <div className="bg-white p-6 sm:p-10 md:p-16 rounded-[2rem] md:rounded-[3rem] shadow-2xl w-full max-w-lg relative z-10 border border-slate-200">
                 <div className="text-center mb-8 md:mb-12">
                     <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-900 rounded-[1.25rem] md:rounded-[1.5rem] mx-auto mb-6 flex items-center justify-center shadow-2xl shadow-slate-900/20 group hover:bg-blue-600 transition-colors duration-500">
                         <GraduationCap className="h-8 w-8 md:h-10 md:w-10 text-white" />
@@ -86,7 +86,7 @@ const StudentLogin = () => {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-6 md:gap-8">
-                        <div className="flex justify-center transform transition-all hover:scale-105 active:scale-95 shadow-xl shadow-blue-500/10 rounded-full overflow-hidden max-w-full">
+                        <div className="flex justify-center transform transition-all hover:scale-105 active:scale-95 shadow-xl shadow-blue-500/10 rounded-full overflow-hidden max-w-[280px] sm:max-w-full mx-auto">
                             <GoogleLogin
                                 onSuccess={handleSuccess}
                                 onError={() => Swal.fire('Error', 'Google Handshake Failed', 'error')}
@@ -94,7 +94,7 @@ const StudentLogin = () => {
                                 theme="filled_blue"
                                 size="large"
                                 shape="pill"
-                                width="300"
+                                width="280"
                             />
                         </div>
                         <div className="space-y-4">

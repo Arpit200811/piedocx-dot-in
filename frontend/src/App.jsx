@@ -7,10 +7,10 @@ import "./App.css";
 // Context
 import { StudentAuthProvider } from "./context/StudentAuthContext";
 
-// Components
-import GlobalSearch from "./Components/GlobalSearch";
-import ErrorBoundary from "./Components/ErrorBoundary";
-import SEO from "./Components/SEO";
+// components
+import GlobalSearch from "./components/GlobalSearch";
+import ErrorBoundary from "./components/ErrorBoundary";
+import SEO from "./components/SEO";
 import MainRouter from "./routes/MainRouter";
 
 // Loading Component
@@ -26,16 +26,16 @@ const LoadingSpinner = () => (
         <div className="absolute top-2 left-2 w-20 h-20 rounded-full border-4 border-indigo-600/10 border-b-indigo-600 animate-spin-reverse transition-all duration-700"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.6)] animate-pulse"></div>
       </div>
-      
+
       <div className="flex flex-col items-center">
         <h2 className="text-2xl font-black tracking-tighter text-slate-900 mb-1">
           PIEDOCX<span className="text-blue-600">.</span>
         </h2>
         <div className="flex items-center gap-2">
-            <span className="h-1 w-1 bg-blue-600 rounded-full animate-bounce"></span>
-            <span className="h-1 w-1 bg-blue-600 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-            <span className="h-1 w-1 bg-blue-600 rounded-full animate-bounce [animation-delay:0.4s]"></span>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 ml-1">Architecting Innovation</p>
+          <span className="h-1 w-1 bg-blue-600 rounded-full animate-bounce"></span>
+          <span className="h-1 w-1 bg-blue-600 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+          <span className="h-1 w-1 bg-blue-600 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 ml-1">Architecting Innovation</p>
         </div>
       </div>
     </div>
@@ -78,7 +78,7 @@ function App() {
   return (
     <StudentAuthProvider>
       <HashRouter>
-        <SEO />  
+        <SEO />
         <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
         <div className="overflow-x-hidden min-h-screen flex flex-col">
           <ErrorBoundary>

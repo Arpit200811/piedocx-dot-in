@@ -221,7 +221,7 @@ const AdminHome = () => {
   }
 
   return (
-    <div className="p-4 md:p-8 lg:p-12 space-y-8 md:space-y-12 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-6 md:p-8 lg:p-12 space-y-8 md:space-y-12 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
@@ -235,12 +235,12 @@ const AdminHome = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
         {statCards.map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all group">
+          <div key={i} className="bg-white p-4 sm:p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all group">
             <div className="flex justify-between items-start mb-4">
-              <div className={`w-14 h-14 rounded-2xl bg-${stat.color}-50 flex items-center justify-center text-${stat.color}-600`}>
-                <stat.icon size={28} />
+              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-${stat.color}-50 flex items-center justify-center text-${stat.color}-600`}>
+                <stat.icon size={24} className="sm:w-7 sm:h-7" />
               </div>
               <Link to={stat.link} className="text-slate-300 hover:text-blue-600 transition-colors">
                 <ArrowRight size={20} />
@@ -263,7 +263,7 @@ const AdminHome = () => {
             Access Full Archives
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           {hubCards.map((hub, i) => (
             <div key={i} className="bg-slate-50/50 border border-slate-100 p-6 rounded-[2rem] flex items-center justify-between">
               <div>
@@ -321,7 +321,83 @@ const AdminHome = () => {
             REAL-TIME: SOCKET
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="block lg:hidden divide-y divide-slate-100">
+          {monitorData.map((student, i) => {
+            const isLive = student.testStartTime && !student.testAttempted;
+            const timeLeft = student.testEndTime ? Math.max(0, Math.floor((new Date(student.testEndTime) - new Date()) / 1000)) : 0;
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            const progress = student.totalQuestions > 0 ? Math.round(((student.attemptedCount || 0) / student.totalQuestions) * 100) : 0;
+
+            return (
+              <div key={i} className="p-6 space-y-4 bg-white hover:bg-slate-50 transition-colors">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-black text-white text-xs">
+                      {student.fullName?.[0]}
+                    </div>
+                    <div>
+                      <h4 className="font-black text-slate-900 text-sm italic uppercase tracking-tight">{student.fullName}</h4>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{student.college}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    {student.testAttempted ? (
+                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-md text-[8px] font-black uppercase border border-emerald-100 italic">Submitted</span>
+                    ) : isLive ? (
+                      <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[8px] font-black uppercase border border-blue-100 animate-pulse italic">Live Exam</span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-slate-50 text-slate-400 rounded-md text-[8px] font-black uppercase border border-slate-100 italic">Waiting</span>
+                    )}
+                    {isLive && (
+                      <div className={`text-xs font-mono font-black ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-slate-600'}`}>
+                        {mins}:{String(secs).padStart(2, '0')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Progress</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className={`h-full ${student.testAttempted ? 'bg-emerald-500' : 'bg-blue-600'}`} style={{ width: `${progress}%` }}></div>
+                      </div>
+                      <span className="text-[10px] font-black text-slate-900">{progress}%</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Score / Safety</p>
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="font-black text-sm text-blue-600">{student.testAttempted ? student.score : '--'}</span>
+                      <div className={`flex items-center gap-1 text-[10px] font-black ${student.violationCount > 0 ? 'text-red-600' : 'text-slate-300'}`}>
+                        <AlertTriangle size={10} /> {student.violationCount || 0}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center pt-2">
+                  <div className="flex gap-2">
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[8px] font-bold uppercase">{student.branch}</span>
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[8px] font-bold uppercase">{student.year}</span>
+                  </div>
+                  {(student.testAttempted || isLive) && (
+                    <button
+                      onClick={() => handleReset(student._id, student.fullName)}
+                      className="flex items-center gap-2 text-[10px] font-black text-red-500 uppercase tracking-widest hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all"
+                    >
+                      <RotateCcw size={14} /> Reset Session
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50">
@@ -420,12 +496,12 @@ const AdminHome = () => {
               })}
             </tbody>
           </table>
-          {monitorData.length === 0 && (
-            <div className="p-20 text-center text-slate-400 font-bold italic uppercase tracking-widest text-[10px]">
-              No students found in surveillance matrix
-            </div>
-          )}
         </div>
+        {monitorData.length === 0 && (
+          <div className="p-20 text-center text-slate-400 font-bold italic uppercase tracking-widest text-[10px]">
+            No students found in surveillance matrix
+          </div>
+        )}
       </div>
     </div>
   );
