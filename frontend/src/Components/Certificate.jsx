@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import html2canvas from 'html2canvas';
 import QRCode from "react-qr-code";
 import { base_url } from '../utils/info';
+import api from '../utils/api';
 import Swal from 'sweetalert2';
 
 const Certificate = ({ student, userEmail, autoSend }) => {
