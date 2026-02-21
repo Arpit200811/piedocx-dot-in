@@ -31,16 +31,16 @@ initRedis();
 app.set("trust proxy", 1);
 
 const allowedOrigins = [
-  "https://piedocx-dot-in-1.onrender.com",
-  "https://piedocx-dot-in.onrender.com",
-  "http://localhost:5173",
+  // "https://piedocx-dot-in-1.onrender.com",
+  // "https://piedocx-dot-in.onrender.com",
+  // "http://localhost:5173",
   "https://piedocx.in",
   "https://www.piedocx.in",
-  "https://piedocx.netlify.app",
+  // "https://piedocx.netlify.app",
   "https://api.piedocx.in",
-  "http://api.piedocx.in",
-  "http://piedocx.in",
-  "http://www.piedocx.in",
+  // "http://api.piedocx.in",
+  // "http://piedocx.in",
+  // "http://www.piedocx.in",
 ];
 
 const corsOptions = {
