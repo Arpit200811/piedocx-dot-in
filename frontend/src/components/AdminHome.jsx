@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { base_url } from '../utils/info';
+import { base_url, getSocketUrl } from '../utils/info';
 import { Users, ShieldCheck, ShieldAlert, BadgeCheck, Mail, ArrowRight, RotateCcw, AlertTriangle, Megaphone, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -25,7 +25,7 @@ const AdminHome = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
-    const socketUrl = base_url.replace('/api', '');
+    const socketUrl = getSocketUrl();
     const newSocket = io(socketUrl, { auth: { token } });
     setSocket(newSocket);
 
@@ -165,6 +165,14 @@ const AdminHome = () => {
 
   const statCards = [
     {
+      label: 'Total Registered',
+      value: stats.totalStudents,
+      icon: Users,
+      color: 'indigo',
+      link: '/admin-certificates',
+      desc: 'Overall student database'
+    },
+    {
       label: 'Exam Appeared',
       value: stats.appearedCount,
       icon: Users,
@@ -239,7 +247,14 @@ const AdminHome = () => {
         {statCards.map((stat, i) => (
           <div key={i} className="bg-white p-4 sm:p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all group">
             <div className="flex justify-between items-start mb-4">
-              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-${stat.color}-50 flex items-center justify-center text-${stat.color}-600`}>
+              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center ${stat.color === 'indigo' ? 'bg-indigo-50 text-indigo-600' :
+                  stat.color === 'amber' ? 'bg-amber-50 text-amber-600' :
+                    stat.color === 'blue' ? 'bg-blue-50 text-blue-600' :
+                      stat.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' :
+                        stat.color === 'red' ? 'bg-red-50 text-red-600' :
+                          stat.color === 'pink' ? 'bg-pink-50 text-pink-600' :
+                            'bg-slate-50 text-slate-600'
+                }`}>
                 <stat.icon size={24} className="sm:w-7 sm:h-7" />
               </div>
               <Link to={stat.link} className="text-slate-300 hover:text-blue-600 transition-colors">

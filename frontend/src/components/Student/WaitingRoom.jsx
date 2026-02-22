@@ -5,7 +5,7 @@ import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Wifi, ShieldCheck, User, Zap, Lock, Cpu } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { base_url } from '../../utils/info';
+import { base_url, getSocketUrl } from '../../utils/info';
 
 const WaitingRoom = () => {
     const location = useLocation();
@@ -79,14 +79,7 @@ const WaitingRoom = () => {
         const token = localStorage.getItem('studentToken');
         if (!token) return;
 
-        // Use URL constructor for safer parsing
-        let socketUrl = base_url;
-        try {
-            const url = new URL(base_url);
-            socketUrl = url.origin;
-        } catch (e) {
-            socketUrl = base_url.replace('/api', '');
-        }
+        const socketUrl = getSocketUrl();
 
         // Only create if not exists
         if (!socketRef.current) {

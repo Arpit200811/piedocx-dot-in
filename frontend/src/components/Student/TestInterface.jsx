@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import api from '../../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
-import { base_url } from '../../utils/info';
+import { base_url, getSocketUrl } from '../../utils/info';
 
 
 const TestInterface = () => {
@@ -30,8 +30,9 @@ const TestInterface = () => {
     const [accessKey, setAccessKey] = useState('');
     const [studentProfile, setStudentProfile] = useState(null);
 
-    const [statusMessage, setStatusMessage] = useState(null);
     const [broadcastMessage, setBroadcastMessage] = useState(null);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isOnline, setIsOnline] = useState(true);
     const timerRef = useRef(null);
     const saveLockRef = useRef(false);
 
@@ -59,7 +60,6 @@ const TestInterface = () => {
                 setInitialLoading(false);
 
             } catch (err) {
-                console.error("Initialization Failed", err);
                 const status = err.response?.status;
                 if (status === 403 || status === 404) {
                     navigate('/student-dashboard');
@@ -108,9 +108,6 @@ const TestInterface = () => {
 
         } catch (err) {
             setStartingTest(false);
-            console.error("❌ START TEST FAILED:", err);
-            console.error("Response:", err.response);
-
             if (err.response?.status === 401 && err.response.data.requiresKey) {
                 Swal.fire('Wrong Key', 'Incorrect key. Please try again.', 'error');
             } else if (err.response?.status === 403) {
@@ -130,14 +127,7 @@ const TestInterface = () => {
     useEffect(() => {
         if (isStarted && !socketRef.current && testInfo) {
             const token = localStorage.getItem('studentToken');
-            // Use URL constructor for safer parsing
-            let socketUrl = base_url;
-            try {
-                const url = new URL(base_url);
-                socketUrl = url.origin;
-            } catch (e) {
-                socketUrl = base_url.replace('/api', '');
-            }
+            const socketUrl = getSocketUrl();
 
             const newSocket = io(socketUrl, {
                 auth: { token },
@@ -147,7 +137,7 @@ const TestInterface = () => {
             });
 
             newSocket.on('connect', () => {
-                console.log("🔌 Socket Connected");
+                setIsOnline(true);
                 newSocket.emit('join_exam', {
                     testId: testInfo._id,
                     deviceInfo: {
@@ -155,6 +145,10 @@ const TestInterface = () => {
                         resolution: `${window.screen.width}x${window.screen.height}`
                     }
                 });
+            });
+
+            newSocket.on('disconnect', () => {
+                setIsOnline(false);
             });
 
             newSocket.on('force_terminate', (data) => {
@@ -365,6 +359,7 @@ const TestInterface = () => {
     const syncProgress = async (currentAnswers, currentTimer) => {
         if (saveLockRef.current) return;
         saveLockRef.current = true;
+        setIsSyncing(true);
 
         try {
             await api.post('/api/student-auth/sync-progress', {
@@ -376,14 +371,24 @@ const TestInterface = () => {
                 toast: true,
                 position: 'top-end',
                 icon: 'success',
-                title: 'Progress Saved',
+                title: 'Cloud Sync Successful',
                 showConfirmButton: false,
-                timer: 1500
+                timer: 1500,
+                background: '#1e293b',
+                color: '#fff'
             });
         } catch (err) {
-            console.error("Sync failed", err);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: 'Sync Failed - Check Internet',
+                showConfirmButton: false,
+                timer: 3000
+            });
         } finally {
             saveLockRef.current = false;
+            setIsSyncing(false);
         }
     };
 
@@ -405,7 +410,18 @@ const TestInterface = () => {
         return () => clearInterval(timerRef.current);
     }, [isStarted, submitting, timeLeft]);
 
-    // 5. Answer Selection with Real-time Sync
+    // 5. Automatic Background Sync (Every 90 Seconds)
+    useEffect(() => {
+        if (!isStarted || submitting || timeLeft <= 0) return;
+
+        const autoSync = setInterval(() => {
+            syncProgress(answers, timeLeft);
+        }, 90000); // 1.5 Minutes
+
+        return () => clearInterval(autoSync);
+    }, [isStarted, submitting, answers, timeLeft]);
+
+    // 6. Answer Selection with Real-time Sync
     const handleAnswerSelect = (questionId, option) => {
         const newAnswers = { ...answers, [questionId]: option };
         setAnswers(newAnswers);
@@ -448,14 +464,13 @@ const TestInterface = () => {
                         handleSubmitTest(true);
                     });
                 }
-            }).catch(err => console.error("Logged violation locally"));
+            }).catch(err => { });
         }
     };
 
     // Auto-submit on load if time is up
     useEffect(() => {
         if (isStarted && !submitting && timeLeft === 0) {
-            console.log("Time expired on load. Auto-submitting...");
             handleSubmitTest(true);
         }
     }, [isStarted, timeLeft]);
@@ -463,7 +478,7 @@ const TestInterface = () => {
     const enterFullScreen = () => {
         const elem = document.documentElement;
         if (elem.requestFullscreen) {
-            elem.requestFullscreen().catch(err => console.log(err));
+            elem.requestFullscreen().catch(err => { });
         }
         setIsOutOfSync(false);
     };
@@ -693,8 +708,12 @@ const TestInterface = () => {
                         </div>
                         <div className="min-w-0">
                             <div className="flex items-center gap-3 mb-1">
-                                <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-500/20">Live Secure</span>
-                                <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 text-[8px] font-black uppercase tracking-widest border border-blue-500/20">Syncing...</span>
+                                <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border transition-all ${isOnline ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' : 'bg-red-500/20 text-red-400 border-red-500/20'}`}>
+                                    {isOnline ? 'Online' : 'Offline'}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 text-[8px] font-black uppercase tracking-widest border border-blue-500/20 transition-opacity ${isSyncing ? 'opacity-100' : 'opacity-0'}`}>
+                                    Syncing...
+                                </span>
                             </div>
                             <h2 className="font-black text-lg md:text-2xl lg:text-3xl tracking-tighter text-white leading-none truncate italic uppercase">{testInfo?.title}</h2>
                         </div>
@@ -842,11 +861,16 @@ const TestInterface = () => {
 
                                 <button
                                     type="button"
-                                    disabled={submitting || timeLeft <= 0}
+                                    disabled={submitting || timeLeft <= 0 || isSyncing}
                                     onClick={() => syncProgress(answers, timeLeft)}
-                                    className="px-6 py-5 rounded-2xl text-blue-400 font-black border border-blue-500/30 hover:bg-blue-500/10 transition-all text-[10px] uppercase tracking-[0.2em]"
+                                    className={`px-6 py-5 rounded-2xl font-black border transition-all text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 ${isSyncing ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'text-blue-400 border-blue-500/30 hover:bg-blue-500/10'}`}
                                 >
-                                    Save Progress
+                                    {isSyncing ? (
+                                        <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <Zap size={14} />
+                                    )}
+                                    {isSyncing ? 'Syncing...' : 'Save Progress'}
                                 </button>
                             </div>
 

@@ -107,7 +107,7 @@ const AdminDataHub = () => {
       let url = `/api/users/all-data?source=${source}`;
 
       if (source === 'students') {
-        url = `/api/certificate/students`;
+        url = `/api/certificate/students?limit=250`;
       }
 
       const res = await api.get(url);
@@ -185,41 +185,64 @@ const AdminDataHub = () => {
     reader.readAsText(file);
   };
 
-  const handleExportCSV = () => {
-    if (filteredData.length === 0) return;
+  const handleExportCSV = async () => {
+    try {
+      Swal.fire({
+        title: 'Preparing Data...',
+        text: 'Fetching all matching records for export...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
 
-    const headers = ["ID", "Name", "Email", "Details/Branch", "College", "Mobile", "Created At"];
-    const rows = filteredData.map(item => [
-      item.studentId || item._id,
-      item.name,
-      item.email,
-      item.message || "",
-      item.college || "N/A",
-      item.mobile || "N/A",
-      new Date(item.createdAt).toLocaleString()
-    ]);
+      let allData = [];
+      if (activeTab === 'students') {
+        const res = await api.get(`/api/certificate/students?limit=all`);
+        allData = res.students || [];
+      } else {
+        const res = await api.get(`/api/users/all-data?source=${activeTab}`);
+        allData = res || [];
+      }
 
-    let csvContent = "data:text/csv;charset=utf-8,"
-      + headers.join(",") + "\n"
-      + rows.map(e => e.join(",")).join("\n");
+      if (allData.length === 0) {
+        Swal.close();
+        return Swal.fire('No Data', 'No records found to export.', 'info');
+      }
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Piedocx_${activeTab}_export_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const headers = ["ID", "Name", "Email", "Details/Branch", "College", "Mobile", "Created At"];
+      const rows = allData.map(item => [
+        item.studentId || item._id,
+        item.fullName || item.name || "N/A",
+        item.email,
+        item.branch ? `${item.branch} (${item.year})` : (item.message || "N/A"),
+        item.college || "N/A",
+        item.mobile || "N/A",
+        new Date(item.createdAt).toLocaleString()
+      ]);
 
-    Swal.fire({
-      title: 'Export Complete',
-      text: `${filteredData.length} records exported successfully.`,
-      icon: 'success',
-      toast: true,
-      position: 'top-end',
-      timer: 3000,
-      showConfirmButton: false
-    });
+      let csvContent = rows.map(e => e.map(cell => `"${(cell || "").toString().replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([headers.join(",") + "\n" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Piedocx_${activeTab}_Full_Export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      Swal.close();
+      Swal.fire({
+        title: 'Export Complete',
+        text: `${allData.length} records exported successfully.`,
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        timer: 3000,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      console.error("Export Error:", err);
+      Swal.fire('Error', 'Failed to generate export file.', 'error');
+    }
   };
 
   const handleDelete = async (id) => {

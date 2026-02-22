@@ -8,7 +8,7 @@ import Swal from 'sweetalert2';
  */
 const api = axios.create({
     baseURL: base_url,
-    timeout: 30000,
+    timeout: 120000,
     headers: {
         'Content-Type': 'application/json'
     }
@@ -45,7 +45,7 @@ api.interceptors.response.use(
         const message = error.response?.data?.message || error.message || 'Network Error';
         
         // Don't show modal for specific errors that components handle locally
-        const silentErrors = ['Sync rejected', 'Time is over'];
+        const silentErrors = ['Sync rejected', 'Time is over', 'No active test', 'Test not found', 'not Active'];
         const isSilent = silentErrors.some(s => message.includes(s));
 
         if (!isSilent) {

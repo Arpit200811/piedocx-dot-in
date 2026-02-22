@@ -67,28 +67,58 @@ const AdminResultArchives = () => {
         r.studentId?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const exportToExcel = () => {
-        if (!filteredResults.length) return Swal.fire('Error', 'No data to export', 'error');
+    const exportToExcel = async () => {
+        try {
+            Swal.fire({
+                title: 'Preparing Data...',
+                text: 'Fetching all matching results for export...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
-        const data = filteredResults.map((r, i) => ({
-            Rank: i + 1,
-            'Full Name': r.fullName,
-            'Student ID': r.studentId,
-            Email: r.email,
-            College: r.college,
-            Branch: r.branch,
-            Year: r.year,
-            Score: r.score,
-            Total: r.totalQuestions,
-            'Correct Count': r.correctCount,
-            'Wrong Count': r.wrongCount,
-            'Date': r.testDate
-        }));
+            const res = await api.get(`/api/admins/admin/get-historical-results`, {
+                params: {
+                    date: selectedDate,
+                    college: selectedCollege,
+                    yearGroup,
+                    branchGroup,
+                    limit: 'all'
+                }
+            });
 
-        const ws = window.XLSX.utils.json_to_sheet(data);
-        const wb = window.XLSX.utils.book_new();
-        window.XLSX.utils.book_append_sheet(wb, ws, "Results");
-        window.XLSX.writeFile(wb, `Results_${selectedCollege || 'All'}_${selectedDate}.xlsx`);
+            const allResults = res || [];
+
+            if (allResults.length === 0) {
+                Swal.close();
+                return Swal.fire('Error', 'No data to export', 'error');
+            }
+
+            const data = allResults.map((r, i) => ({
+                Rank: i + 1,
+                'Full Name': r.fullName,
+                'Student ID': r.studentId,
+                Email: r.email,
+                College: r.college,
+                Branch: r.branch,
+                Year: r.year,
+                Score: r.score,
+                Total: r.totalQuestions,
+                'Correct Count': r.correctCount,
+                'Wrong Count': r.wrongCount,
+                'Date': r.testDate
+            }));
+
+            const ws = window.XLSX.utils.json_to_sheet(data);
+            const wb = window.XLSX.utils.book_new();
+            window.XLSX.utils.book_append_sheet(wb, ws, "Results");
+            window.XLSX.writeFile(wb, `Results_${selectedCollege || 'All'}_${selectedDate}.xlsx`);
+
+            Swal.close();
+            Swal.fire({ title: 'Export Ready!', text: `${allResults.length} records downloaded.`, icon: 'success', timer: 2000, toast: true, position: 'top-end' });
+        } catch (err) {
+            console.error("Export Error:", err);
+            Swal.fire('Export Failed', 'Unable to fetch records for Excel.', 'error');
+        }
     };
 
     const exportToPDF = () => {

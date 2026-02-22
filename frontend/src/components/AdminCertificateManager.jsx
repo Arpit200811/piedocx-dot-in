@@ -6,20 +6,44 @@ import { motion, AnimatePresence } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import api from '../utils/api';
 import { io } from 'socket.io-client';
-import { base_url } from '../utils/info';
+import { base_url, getSocketUrl } from '../utils/info';
 // --- Sub-components ---
 
-const StatCard = ({ label, value, color, icon: Icon }) => (
-  <div className={`bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-${color}-200 transition-all`}>
-    <div>
-      <p className="text-slate-400 text-[9px] font-black uppercase tracking-wider mb-0.5">{label}</p>
-      <p className="text-xl font-black text-slate-900 tracking-tighter">{value}</p>
+const StatCard = ({ label, value, color, icon: Icon }) => {
+  const colorMap = {
+    slate: 'hover:border-slate-200',
+    blue: 'hover:border-blue-200',
+    green: 'hover:border-green-200',
+    red: 'hover:border-red-200',
+    indigo: 'hover:border-indigo-200',
+    amber: 'hover:border-amber-200',
+    emerald: 'hover:border-emerald-200',
+    pink: 'hover:border-pink-200'
+  };
+
+  const bgMap = {
+    slate: 'bg-slate-50 text-slate-600',
+    blue: 'bg-blue-50 text-blue-600',
+    green: 'bg-green-50 text-green-600',
+    red: 'bg-red-50 text-red-600',
+    indigo: 'bg-indigo-50 text-indigo-600',
+    amber: 'bg-amber-50 text-amber-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    pink: 'bg-pink-50 text-pink-600'
+  };
+
+  return (
+    <div className={`bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group ${colorMap[color] || 'hover:border-slate-200'} transition-all`}>
+      <div>
+        <p className="text-slate-400 text-[9px] font-black uppercase tracking-wider mb-0.5">{label}</p>
+        <p className="text-xl font-black text-slate-900 tracking-tighter">{value}</p>
+      </div>
+      <div className={`p-2 rounded-lg ${bgMap[color] || 'bg-slate-50 text-slate-600'}`}>
+        <Icon size={14} />
+      </div>
     </div>
-    <div className={`p-2 rounded-lg bg-${color}-50 text-${color}-600`}>
-      <Icon size={14} />
-    </div>
-  </div>
-);
+  );
+};
 
 const FilterSection = ({ filters, colleges, branches, years, onExport }) => {
   const { searchTerm, setSearchTerm, collegeFilter, setCollegeFilter, branchFilter, setBranchFilter, yearFilter, setYearFilter, startDate, setStartDate, endDate, setEndDate } = filters;
@@ -219,6 +243,7 @@ const AdminCertificateManager = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalStudents, setTotalStudents] = useState(0);
+  const [absoluteTotal, setAbsoluteTotal] = useState(0);
   const [colleges, setColleges] = useState([]);
   const [branches, setBranches] = useState([]);
   const [years, setYears] = useState([]);
@@ -254,7 +279,7 @@ const AdminCertificateManager = () => {
     }).catch(() => setIsWhatsAppReady(false));
 
     // 2. Connector for events
-    const socketUrl = base_url.replace('/api', '');
+    const socketUrl = getSocketUrl();
     const socket = io(socketUrl, {
       auth: {
         token: localStorage.getItem('adminToken')
@@ -323,6 +348,7 @@ const AdminCertificateManager = () => {
         setStudents(response.students || []);
         setTotalPages(response.totalPages || 1);
         setTotalStudents(response.totalStudents || 0);
+        setAbsoluteTotal(response.absoluteTotal || 0);
         setColleges(response.colleges || []);
         setBranches(response.branches || []);
         setYears(response.years || []);
@@ -351,11 +377,12 @@ const AdminCertificateManager = () => {
     const certificates = students.filter(s => s.certificateId).length;
     // Note: To get TRUE global stats we need a separate stats endpoint or rely on totalStudents
     return {
-      total: totalStudents || students.length,
+      total: absoluteTotal || totalStudents || students.length,
+      filtered: totalStudents || students.length,
       active,
       certificates
     };
-  }, [students, totalStudents]);
+  }, [students, totalStudents, absoluteTotal]);
 
   const toggleSelectAll = () => {
     if (selectedIds.length === filteredStudents.length && filteredStudents.length > 0) setSelectedIds([]);
@@ -669,8 +696,8 @@ const AdminCertificateManager = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Database Total" value={students.length} color="slate" icon={Search} />
-          <StatCard label="Filtered Scope" value={filteredStudents.length} color="blue" icon={Filter} />
+          <StatCard label="Database Total" value={stats.total} color="slate" icon={Search} />
+          <StatCard label="Filtered Scope" value={stats.filtered} color="blue" icon={Filter} />
           <StatCard label="Active Links" value={filteredStudents.filter(s => s.status === 'active').length} color="green" icon={ShieldCheck} />
           <StatCard label="Revoked" value={filteredStudents.filter(s => s.status === 'revoked').length} color="red" icon={ShieldAlert} />
         </div>

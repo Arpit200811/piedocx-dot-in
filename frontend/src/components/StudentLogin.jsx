@@ -102,9 +102,18 @@ const StudentLogin = () => {
                                 Session Authorization Required
                             </p>
                             <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
-                            <p className="text-center text-[9px] text-slate-400 font-medium px-4 md:px-8">
+                            <p className="text-center text-[9px] text-slate-400 font-medium px-4 md:px-8 leading-relaxed">
                                 By accessing the portal, you agree to the institution's digital conduct protocols and security policies.
                             </p>
+                            <div className="pt-4 text-center">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">New student?</p>
+                                <button
+                                    onClick={() => navigate('/student-registration')}
+                                    className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline decoration-2 underline-offset-4"
+                                >
+                                    Create Official Profile
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

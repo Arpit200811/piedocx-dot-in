@@ -17,7 +17,7 @@ import { useStudentAuth } from '../context/StudentAuthContext';
 import { useLocation } from 'react-router-dom';
 import QRCode from "react-qr-code";
 import { io } from 'socket.io-client';
-import { base_url } from '../utils/info';
+import { base_url, getSocketUrl } from '../utils/info';
 
 // Custom SVG Donut Chart Component
 const SimpleDonut = ({ score, total = 30 }) => {
@@ -82,17 +82,16 @@ const StudentDashboard = () => {
 
         // Socket Connection for Real-time Test Updates
         if (student) {
-            const socketUrl = base_url.replace('/api', '');
+            const socketUrl = getSocketUrl();
             const socket = io(socketUrl, {
                 auth: { token: localStorage.getItem('studentToken') }
             });
 
             socket.on('connect', () => {
-                console.log("Student Socket Connected");
+                // Connected
             });
 
             socket.on('test_config_updated', (data) => {
-                console.log("Test Update Received:", data);
                 const myYear = getYearGroup(student.year);
                 const myBranch = getBranchGroup(student.branch);
 
@@ -143,7 +142,7 @@ const StudentDashboard = () => {
             const data = await api.get('/api/student-auth/test-info');
             setTestInfo(data);
         } catch (err) {
-            console.log("No test info found");
+            // No test info
         }
     };
 

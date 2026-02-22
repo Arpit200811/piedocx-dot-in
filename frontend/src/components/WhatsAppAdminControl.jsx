@@ -14,9 +14,9 @@ import {
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
-import { base_url } from '../utils/info';
+import { getSocketUrl } from '../utils/info';
 
-const SOCKET_URL = base_url.replace('/api', '');
+const SOCKET_URL = getSocketUrl();
 
 const WhatsAppAdminControl = () => {
     const [status, setStatus] = useState('DISCONNECTED'); // DISCONNECTED, INITIALIZING, QR_READY, CONNECTED

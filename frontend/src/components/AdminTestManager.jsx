@@ -339,12 +339,17 @@ const AdminTestManager = () => {
                                     <Trash2 size={20} />
                                 </button>
                                 <div className="mb-4 pr-8">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Question {index + 1}</label>
+                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
+                                        Question {index + 1}
+                                        {watch(`questions`)?.filter((q, i) => q.questionText?.trim() === watch(`questions.${index}.questionText`)?.trim() && i !== index && q.questionText !== "").length > 0 && (
+                                            <span className="ml-3 text-[10px] text-red-500 font-black animate-pulse">[ DUPLICATE QUESTION DETECTED ]</span>
+                                        )}
+                                    </label>
                                     <input
                                         {...register(`questions.${index}.questionText`, { required: true })}
                                         placeholder="Enter question text..."
                                         value={watch(`questions.${index}.questionText`) || ""}
-                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 outline-none focus:border-blue-500"
+                                        className={`w-full bg-white border rounded-xl px-4 py-3 font-bold text-slate-800 outline-none focus:border-blue-500 ${watch(`questions`)?.filter((q, i) => q.questionText?.trim() === watch(`questions.${index}.questionText`)?.trim() && i !== index && q.questionText !== "").length > 0 ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
                                     />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
