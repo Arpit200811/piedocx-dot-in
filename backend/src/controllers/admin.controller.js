@@ -285,9 +285,11 @@ export const getHistoricalResults = async (req, res) => {
         if (branchGroup) query.branchGroup = branchGroup;
         if (college) query.college = college;
 
+        const limit = req.query.limit === 'all' ? 1000000 : 1000;
+
         const results = await TestResult.find(query)
             .sort({ score: -1, submittedAt: -1 })
-            .limit(1000);
+            .limit(limit);
 
         res.json(results);
     } catch (error) {

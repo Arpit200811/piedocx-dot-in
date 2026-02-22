@@ -19,7 +19,7 @@ const schema = new mongoose.Schema({
   testStartTime: { type: Date },
   testEndTime: { type: Date },
   attemptedCount: { type: Number, default: 0 },
-  score: { type: Number, default: 0 },
+  score: { type: Number, default: 0, index: true },
   correctCount: { type: Number, default: 0 },
   wrongCount: { type: Number, default: 0 },
   feedbackSubmitted: { type: Boolean, default: false },

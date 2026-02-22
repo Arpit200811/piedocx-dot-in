@@ -4,7 +4,6 @@ import { generateCertificateID, generateCertificateSignature, generateQR } from 
 import { sendCertificateEmail } from '../utils/emailService.js';
 
 
-// Helper: Auto-derive technology based on branch and year logic
 const deriveTechnology = (branch, year) => {
     const b = (branch || '').toUpperCase();
     const y = (year || '').toLowerCase();
@@ -18,14 +17,13 @@ const deriveTechnology = (branch, year) => {
         return isJunior ? "Automation controlling Rover" : "Placement Drive Assessment";
     }
 
-    return branch; // Default fallback
+    return branch;
 };
 
 export const registerStudent = async (req, res) => {
     try {
         const { fullName, branch, year, mobile, email, college, profilePicture } = req.body;
 
-        // 1. Validation (Request Scoped)
         const validBranches = [
             'Computer Science & Engineering (CSE)',
             'Information Technology (IT)',
@@ -39,12 +37,10 @@ export const registerStudent = async (req, res) => {
         ];
         const validYears = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Graduated'];
 
-        if (!validBranches.includes(branch) || !validYears.includes(year)) {
-            return res.status(400).json({ message: 'Invalid branch or year selection.' });
+        if (!fullName || !mobile || !email || !college || !branch || !year) {
+            return res.status(400).json({ message: 'All mandatory fields (Full Name, Branch, Year, Mobile, College) are required.' });
         }
 
-        // 2. Generate Isolated Identification (Atomic)
-        // We use a timestamp + random salt to ensure studentId is unique even in parallel requests
         const salt = Math.floor(1000 + Math.random() * 9000);
         const studentId = `PDCX-S${Date.now().toString().slice(-6)}${salt}`;
         
@@ -53,7 +49,6 @@ export const registerStudent = async (req, res) => {
 
         const tech = req.body.technology || deriveTechnology(branch, year);
 
-        // 3. Prepare State (No global variables)
         const signature = generateCertificateSignature({
             studentId,
             course: branch,
@@ -79,11 +74,8 @@ export const registerStudent = async (req, res) => {
             qrCode
         });
 
-        // 4. Atomic Save
-        // MongoDB unique indexes will prevent cross-user data duplication/overwriting
         await newStudent.save();
         
-        // 5. Background Tasks (Non-blocking)
         try {
             const { sendRegistrationEmail } = await import('../utils/mailer.js');
             sendRegistrationEmail(newStudent);
@@ -94,11 +86,11 @@ export const registerStudent = async (req, res) => {
         return res.status(201).json({ message: 'Registration Successful', student: newStudent });
 
     } catch (error) {
-        // Handle MongoDB Duplicate Key Error (Atomic check fallback)
         if (error.code === 11000) {
             const field = Object.keys(error.keyPattern)[0];
+            const displayField = field === 'mobile' ? 'Mobile Number' : field === 'email' ? 'Email Address' : field;
             return res.status(409).json({ 
-                message: `The ${field} is already registered. Please use different details or login.` 
+                message: `Duplicate Entry: The ${displayField} is already registered. If you have already registered, please LOGIN.` 
             });
         }
         console.error("[Registration Critical] Flow Error:", error);
@@ -110,7 +102,7 @@ export const getAllStudents = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const isExport = req.query.limit === 'all';
-        const limit = isExport ? 1000000 : (parseInt(req.query.limit) || 20);
+        const limit = isExport ? 10000000 : (parseInt(req.query.limit) || 20);
         const { search, college, branch, year, startDate, endDate } = req.query;
 
         const query = {};
@@ -142,8 +134,6 @@ export const getAllStudents = async (req, res) => {
             if (startDate) query.createdAt.$gte = new Date(startDate);
             if (endDate) query.createdAt.$lte = new Date(new Date(endDate).setHours(23, 59, 59));
         }
-
-        // Optimization: Select only necessary fields
         const students = await ExamStudent.find(query, {
             profilePicture: 0,
             qrCode: 0,
@@ -156,6 +146,7 @@ export const getAllStudents = async (req, res) => {
         .limit(limit);
 
         const total = await ExamStudent.countDocuments(query);
+        const absoluteTotal = await ExamStudent.countDocuments();
         const uniqueColleges = await ExamStudent.distinct('college');
         const uniqueBranches = await ExamStudent.distinct('branch');
         const uniqueYears = await ExamStudent.distinct('year');
@@ -164,7 +155,8 @@ export const getAllStudents = async (req, res) => {
             students,
             currentPage: page,
             totalPages: isExport ? 1 : Math.ceil(total / limit),
-            totalStudents: total,
+            totalStudents: total, // Matches the current filtered scope
+            absoluteTotal: absoluteTotal, // The overall database size
             colleges: uniqueColleges,
             branches: uniqueBranches,
             years: uniqueYears
@@ -342,7 +334,6 @@ export const bulkRegister = async (req, res) => {
           const raw = students[i];
           const student = { ...raw };
           
-          // Field mapping & cleaning
           student.fullName = (raw.fullName || raw.name || raw.FullName || '').trim();
           student.email = (raw.email || raw.Email || '').trim().toLowerCase();
           student.mobile = String(raw.mobile || raw.phone || raw.Mobile || '').trim();
@@ -350,11 +341,9 @@ export const bulkRegister = async (req, res) => {
           student.year = (raw.year || raw.Year || '3rd Year').trim();
           student.college = (raw.college || raw.College || '').trim();
           
-          // Auto-derive technology if not provided in bulk json
           const rawTech = (raw.technology || raw.Technology || '').trim();
           student.technology = rawTech || deriveTechnology(student.branch, student.year);
           
-          // Date mapping (Optional: if provided in JSON, override default createdAt)
           const providedDate = raw.date || raw.Date || raw.regDate || raw.createdAt;
           if (providedDate) {
               const parsedDate = new Date(providedDate);
@@ -363,7 +352,6 @@ export const bulkRegister = async (req, res) => {
               }
           }
 
-          // Strict validation for required fields
           if (!student.fullName) {
               return res.status(400).json({ message: `Student [Row ${i + 1}]: Full Name is missing.` });
           }
@@ -441,7 +429,6 @@ export const bulkSendCertificates = async (req, res) => {
 
         for (const student of students) {
             try {
-                // Rate limiting to avoid SMTP rejection (1 email per second)
                 await new Promise(r => setTimeout(r, 1000));
                 
                 const sent = await sendCertificateEmail(student.email, student.fullName, null, student.score); 

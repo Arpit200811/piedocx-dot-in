@@ -4,6 +4,7 @@ import Feedback from '../models/Feedback.js';
 import TestResult from "../models/TestResult.js";
 import Bulletin from "../models/Bulletin.js";
 import Resource from "../models/Resource.js";
+import { getCache, setCache } from '../utils/cacheService.js';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -130,26 +131,22 @@ export const getTestInfo = async (req, res) => {
             query.$or.unshift({ targetCollege: { $regex: new RegExp(`^${studentCollege}$`, "i") } });
         }
 
-        console.log(`[getTestInfo] Searching for student ${student?.email} (${studentYearGroup}/${studentBranchGroup}). Query:`, JSON.stringify(query));
+        const cacheKey = `test_info_${studentYearGroup}_${studentBranchGroup}_${studentCollege || 'all'}`;
+        const cachedConfig = await getCache(cacheKey);
+        
+        if (cachedConfig) {
+            return res.json(cachedConfig);
+        }
 
         let config = await TestConfig.findOne(query).sort({ createdAt: -1 });
-
-        // REMOVED: Fallback to pick 'any' active test. 
-        // This was causing 1st year students to see 3rd/4th year tests.
-        // if (!config) {
-        //     console.log(`[getTestInfo] No active group-specific test. Checking latest active overall.`);
-        //     config = await TestConfig.findOne({ isActive: true, endDate: { $gt: now } }).sort({ createdAt: -1 });
-        // }
 
         if (!config) {
             return res.status(404).json({ message: "No active tests available." });
         }
         
-        console.log(`[getTestInfo] Selected Config: ${config.title} (ID: ${config._id}) Dates: ${config.startDate} to ${config.endDate}`);
-        
         const hasKey = !!(config.testAccessKey && config.testAccessKey.trim().length > 0);
         
-        res.json({
+        const responseData = {
             id: config._id,
             title: config.title,
             yearGroup: config.yearGroup,
@@ -160,7 +157,12 @@ export const getTestInfo = async (req, res) => {
             totalQuestions: config.questions.length,
             resultsPublished: config.resultsPublished,
             hasAccessKey: hasKey
-        });
+        };
+
+        // Cache for 2 minutes to keep it fresh but reduce load
+        await setCache(cacheKey, responseData, 120);
+
+        res.json(responseData);
     } catch (error) {
         console.error("getTestInfo error:", error);
         res.status(500).json({ message: 'Error fetching test info' });
@@ -204,7 +206,6 @@ export const getQuestions = async (req, res) => {
                 query.$or.unshift({ targetCollege: { $regex: new RegExp(`^${studentCollege}$`, "i") } });
             }
 
-            console.log(`[getQuestions] Searching by group for ${student.email}. Query:`, JSON.stringify(query));
             config = await TestConfig.findOne(query).sort({ createdAt: -1 });
         }
 

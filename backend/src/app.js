@@ -19,7 +19,7 @@ import studentAuthRoutes from "./routes/studentAuth.route.js";
 import testConfigRoutes from "./routes/testConfig.route.js";
 import analyticsRoutes from "./routes/analytics.route.js";
 import whatsappRoutes from "./routes/whatsapp.route.js";
-import errorHandler from "./middleware/error.middleware.js";
+import errorHandler from "./middlewares/error.middleware.js";
 
 import { initSocket } from "./utils/socketService.js";
 import { initRedis } from "./utils/cacheService.js";

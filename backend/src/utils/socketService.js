@@ -117,12 +117,19 @@ export const initSocket = (server) => {
         });
     });
 
-    socket.on('heartbeat', async ({ timeLeft, answersHash }) => {
+    socket.on('heartbeat', async ({ timeLeft }) => {
         if (!socket.sessionId) return;
         
-        await ExamSession.findByIdAndUpdate(socket.sessionId, { 
-            lastActive: new Date() 
-        });
+        const now = new Date();
+        const lastUpdate = socket.lastHeartbeatUpdate || 0;
+
+        // Throttle DB updates to once every 30 seconds per student
+        if (now - lastUpdate > 30000) {
+            await ExamSession.findByIdAndUpdate(socket.sessionId, { 
+                lastActive: now 
+            });
+            socket.lastHeartbeatUpdate = now;
+        }
     });
     socket.on('violation', async (data) => {
         if (!socket.sessionId) return;
