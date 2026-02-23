@@ -247,6 +247,7 @@ export const closeGroupSession = async (req, res) => {
             year: s.year,
             studentId: s.studentId,
             college: s.college,
+            mobile: s.mobile,
             yearGroup,
             branchGroup,
             score: 0,
@@ -271,7 +272,7 @@ export const closeGroupSession = async (req, res) => {
 
 export const getHistoricalResults = async (req, res) => {
     try {
-        const { date, yearGroup, branchGroup, college } = req.query;
+        const { date, yearGroup, branchGroup, college, search } = req.query;
         let query = {};
         
         // If no date provided, default to today
@@ -285,7 +286,18 @@ export const getHistoricalResults = async (req, res) => {
         if (branchGroup) query.branchGroup = branchGroup;
         if (college) query.college = college;
 
-        const limit = req.query.limit === 'all' ? 1000000 : 1000;
+        const isExport = req.query.limit === 'all';
+        const limit = isExport ? 2000000 : (parseInt(req.query.limit) || 1000);
+
+        if (search) {
+            const searchRegex = new RegExp(search, 'i');
+            query.$or = [
+                { fullName: searchRegex },
+                { email: searchRegex },
+                { studentId: searchRegex },
+                { mobile: searchRegex }
+            ];
+        }
 
         const results = await TestResult.find(query)
             .sort({ score: -1, submittedAt: -1 })

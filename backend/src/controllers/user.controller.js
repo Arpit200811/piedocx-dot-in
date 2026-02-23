@@ -15,8 +15,19 @@ const userInfo = async(req, res) =>{
 
 export const getAllSubmissions = async (req, res) => {
     try {
-        const { source } = req.query;
-        const filter = source ? { source } : {};
+        const { source, search } = req.query;
+        let filter = source ? { source } : {};
+        
+        if (search) {
+            const searchRegex = new RegExp(search, 'i');
+            filter.$or = [
+                { name: searchRegex },
+                { email: searchRegex },
+                { message: searchRegex },
+                { address: searchRegex }
+            ];
+        }
+
         const submissions = await User.find(filter).sort({ createdAt: -1 });
         res.status(200).json(submissions);
     } catch (error) {

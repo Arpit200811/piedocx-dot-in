@@ -11,6 +11,7 @@ const testResultSchema = new mongoose.Schema({
     year: String,
     studentId: String,
     college: String,
+    mobile: String,
     
     // Grouping info
     yearGroup: String,

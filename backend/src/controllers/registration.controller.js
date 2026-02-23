@@ -100,11 +100,12 @@ export const registerStudent = async (req, res) => {
 
 export const getAllStudents = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
         const isExport = req.query.limit === 'all';
-        const limit = isExport ? 10000000 : (parseInt(req.query.limit) || 20);
-        const { search, college, branch, year, startDate, endDate } = req.query;
+        const page = isExport ? 1 : (parseInt(req.query.page) || 1);
+        const limit = isExport ? 2000000 : (parseInt(req.query.limit) || 20);
+        const skipCount = isExport ? 0 : (page - 1) * limit;
 
+        const { search, college, branch, year, startDate, endDate } = req.query;
         const query = {};
 
         if (search) {
@@ -117,23 +118,16 @@ export const getAllStudents = async (req, res) => {
             ];
         }
 
-        if (college) {
-            query.college = college;
-        }
-
-        if (branch) {
-            query.branch = branch;
-        }
-
-        if (year) {
-            query.year = year;
-        }
+        if (college) query.college = { $regex: new RegExp(`^${college}$`, 'i') };
+        if (branch) query.branch = branch;
+        if (year) query.year = year;
 
         if (startDate || endDate) {
             query.createdAt = {};
             if (startDate) query.createdAt.$gte = new Date(startDate);
             if (endDate) query.createdAt.$lte = new Date(new Date(endDate).setHours(23, 59, 59));
         }
+
         const students = await ExamStudent.find(query, {
             profilePicture: 0,
             qrCode: 0,
@@ -142,7 +136,7 @@ export const getAllStudents = async (req, res) => {
             savedAnswers: 0
         })
         .sort({ createdAt: -1 })
-        .skip(isExport ? 0 : (page - 1) * limit)
+        .skip(skipCount)
         .limit(limit);
 
         const total = await ExamStudent.countDocuments(query);

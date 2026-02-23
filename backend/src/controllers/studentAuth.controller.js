@@ -466,6 +466,7 @@ export const submitTest = async (req, res) => {
                 year: student.year,
                 studentId: student.studentId,
                 college: student.college,
+                mobile: student.mobile,
                 yearGroup: studentYearGroup,
                 branchGroup: studentBranchGroup,
                 score: score,
