@@ -36,10 +36,13 @@ const AdminResultArchives = () => {
     }, []);
 
     useEffect(() => {
-        if (selectedDate) {
-            fetchResults();
-        }
-    }, [selectedDate, selectedCollege, yearGroup, branchGroup]);
+        const timer = setTimeout(() => {
+            if (selectedDate) {
+                fetchResults();
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [selectedDate, selectedCollege, yearGroup, branchGroup, searchTerm]);
 
     const fetchResults = async () => {
         setLoading(true);
@@ -49,7 +52,8 @@ const AdminResultArchives = () => {
                     date: selectedDate,
                     college: selectedCollege,
                     yearGroup,
-                    branchGroup
+                    branchGroup,
+                    search: searchTerm
                 }
             });
             setResults(res);
@@ -82,6 +86,7 @@ const AdminResultArchives = () => {
                     college: selectedCollege,
                     yearGroup,
                     branchGroup,
+                    search: searchTerm,
                     limit: 'all'
                 }
             });
@@ -98,6 +103,7 @@ const AdminResultArchives = () => {
                 'Full Name': r.fullName,
                 'Student ID': r.studentId,
                 Email: r.email,
+                Mobile: r.mobile || 'N/A',
                 College: r.college,
                 Branch: r.branch,
                 Year: r.year,
@@ -132,11 +138,12 @@ const AdminResultArchives = () => {
         doc.setFontSize(10);
         doc.text(`College: ${selectedCollege || 'All'} | Group: ${yearGroup}/${branchGroup} | Date: ${selectedDate}`, 14, 30);
 
-        const tableColumn = ["Rank", "Name", "ID", "College", "Score", "Accuracy"];
+        const tableColumn = ["Rank", "Name", "ID", "Mobile", "College", "Score", "Accuracy"];
         const tableRows = filteredResults.map((r, i) => [
             i + 1,
             r.fullName,
             r.studentId,
+            r.mobile || 'N/A',
             r.college,
             `${r.score}/${r.totalQuestions}`,
             `${Math.round((r.score / r.totalQuestions) * 100)}%`

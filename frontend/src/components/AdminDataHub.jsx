@@ -104,10 +104,10 @@ const AdminDataHub = () => {
   const fetchData = async (source) => {
     setLoading(true);
     try {
-      let url = `/api/users/all-data?source=${source}`;
+      let url = `/api/users/all-data?source=${source}&search=${searchTerm}`;
 
       if (source === 'students') {
-        url = `/api/certificate/students?limit=250`;
+        url = `/api/certificate/students?limit=250&search=${searchTerm}`;
       }
 
       const res = await api.get(url);
@@ -196,10 +196,10 @@ const AdminDataHub = () => {
 
       let allData = [];
       if (activeTab === 'students') {
-        const res = await api.get(`/api/certificate/students?limit=all`);
+        const res = await api.get(`/api/certificate/students?limit=all&search=${searchTerm}`);
         allData = res.students || [];
       } else {
-        const res = await api.get(`/api/users/all-data?source=${activeTab}`);
+        const res = await api.get(`/api/users/all-data?source=${activeTab}&search=${searchTerm}`);
         allData = res || [];
       }
 
