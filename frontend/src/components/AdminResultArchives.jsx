@@ -15,6 +15,9 @@ const AdminResultArchives = () => {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalResultsCount, setTotalResultsCount] = useState(0);
 
     useEffect(() => {
         const fetchMetadata = async () => {
@@ -36,13 +39,17 @@ const AdminResultArchives = () => {
     }, []);
 
     useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedDate, selectedCollege, yearGroup, branchGroup, searchTerm]);
+
+    useEffect(() => {
         const timer = setTimeout(() => {
             if (selectedDate) {
                 fetchResults();
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [selectedDate, selectedCollege, yearGroup, branchGroup, searchTerm]);
+    }, [selectedDate, selectedCollege, yearGroup, branchGroup, searchTerm, currentPage]);
 
     const fetchResults = async () => {
         setLoading(true);
@@ -53,10 +60,14 @@ const AdminResultArchives = () => {
                     college: selectedCollege,
                     yearGroup,
                     branchGroup,
-                    search: searchTerm
+                    search: searchTerm,
+                    page: currentPage,
+                    limit: 20
                 }
             });
-            setResults(res);
+            setResults(res.results || []);
+            setTotalPages(res.totalPages || 1);
+            setTotalResultsCount(res.totalResults || 0);
         } catch (err) {
             console.error("Error fetching results:", err);
             Swal.fire('Error', 'Failed to fetch archived results', 'error');
@@ -65,11 +76,7 @@ const AdminResultArchives = () => {
         }
     };
 
-    const filteredResults = results.filter(r =>
-        r.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.studentId?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredResults = results; // Server-side search already applied
 
     const exportToExcel = async () => {
         try {
@@ -127,37 +134,66 @@ const AdminResultArchives = () => {
         }
     };
 
-    const exportToPDF = () => {
-        if (!filteredResults.length) return Swal.fire('Error', 'No data to export', 'error');
+    const exportToPDF = async () => {
+        try {
+            Swal.fire({
+                title: 'Building Report...',
+                text: 'Calculating performance metrics for all students...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+            const res = await api.get(`/api/admins/admin/get-historical-results`, {
+                params: {
+                    date: selectedDate,
+                    college: selectedCollege,
+                    yearGroup,
+                    branchGroup,
+                    search: searchTerm,
+                    limit: 'all'
+                }
+            });
 
-        doc.setFontSize(18);
-        doc.text("Piedocx Assessment Report", 14, 20);
-        doc.setFontSize(10);
-        doc.text(`College: ${selectedCollege || 'All'} | Group: ${yearGroup}/${branchGroup} | Date: ${selectedDate}`, 14, 30);
+            const allResults = res || [];
 
-        const tableColumn = ["Rank", "Name", "ID", "Mobile", "College", "Score", "Accuracy"];
-        const tableRows = filteredResults.map((r, i) => [
-            i + 1,
-            r.fullName,
-            r.studentId,
-            r.mobile || 'N/A',
-            r.college,
-            `${r.score}/${r.totalQuestions}`,
-            `${Math.round((r.score / r.totalQuestions) * 100)}%`
-        ]);
+            if (allResults.length === 0) {
+                Swal.close();
+                return Swal.fire('Error', 'No data to export', 'error');
+            }
 
-        doc.autoTable({
-            head: [tableColumn],
-            body: tableRows,
-            startY: 40,
-            theme: 'grid',
-            headStyles: { fillColor: [37, 99, 235] }
-        });
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
 
-        doc.save(`Results_${selectedCollege || 'All'}_${selectedDate}.pdf`);
+            doc.setFontSize(18);
+            doc.text("Piedocx Assessment Report", 14, 20);
+            doc.setFontSize(10);
+            doc.text(`College: ${selectedCollege || 'All'} | Group: ${yearGroup}/${branchGroup} | Date: ${selectedDate}`, 14, 30);
+
+            const tableColumn = ["Rank", "Name", "ID", "Mobile", "College", "Score", "Accuracy"];
+            const tableRows = allResults.map((r, i) => [
+                i + 1,
+                r.fullName,
+                r.studentId,
+                r.mobile || 'N/A',
+                r.college,
+                `${r.score}/${r.totalQuestions}`,
+                `${Math.round((r.score / r.totalQuestions) * 100)}%`
+            ]);
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 40,
+                theme: 'grid',
+                headStyles: { fillColor: [37, 99, 235] }
+            });
+
+            doc.save(`Results_${selectedCollege || 'All'}_${selectedDate}.pdf`);
+            Swal.close();
+        } catch (err) {
+            console.error("PDF Export Error:", err);
+            Swal.fire('Export Failed', 'Unable to generate report.', 'error');
+        }
     };
 
     return (
@@ -246,7 +282,7 @@ const AdminResultArchives = () => {
             {/* Stats Summary Strip */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Submissions', value: results.length, icon: User, color: 'blue' },
+                    { label: 'Submissions', value: totalResultsCount, icon: User, color: 'blue' },
                     { label: 'Avg. Score', value: results.length ? (results.reduce((a, b) => a + b.score, 0) / results.length).toFixed(1) : 0, icon: Hash, color: 'indigo' },
                     { label: 'Top Score', value: results.length ? Math.max(...results.map(r => r.score)) : 0, icon: Trophy, color: 'amber' },
                     { label: 'Pass Rate', value: '92%', icon: Clock, color: 'emerald' }
@@ -435,6 +471,47 @@ const AdminResultArchives = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="p-6 border-t border-slate-50 flex items-center justify-between bg-slate-50/10">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Page Matrix</span>
+                            <span className="text-[11px] font-black text-slate-700 uppercase italic">Sector {currentPage} of {totalPages}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase text-slate-500 hover:text-blue-600 disabled:opacity-30 transition-all flex items-center gap-2"
+                            >
+                                Previous
+                            </button>
+                            <div className="flex items-center gap-1 mx-2">
+                                {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                                    const pageNum = i + 1; // Simplification: just first few pages
+                                    return (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => setCurrentPage(pageNum)}
+                                            className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === pageNum ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    );
+                                })}
+                                {totalPages > 5 && <span className="text-slate-300">...</span>}
+                            </div>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase text-slate-500 hover:text-blue-600 disabled:opacity-30 transition-all flex items-center gap-2"
+                            >
+                                Next <ChevronRight size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

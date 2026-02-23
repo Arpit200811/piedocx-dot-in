@@ -361,6 +361,10 @@ const AdminCertificateManager = () => {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, collegeFilter, branchFilter, yearFilter, startDate, endDate]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       fetchStudents();
     }, 500); // Debounce search

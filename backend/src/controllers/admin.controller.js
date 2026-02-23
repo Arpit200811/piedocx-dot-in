@@ -270,12 +270,17 @@ export const closeGroupSession = async (req, res) => {
     }
 };
 
+
 export const getHistoricalResults = async (req, res) => {
     try {
+        const isExport = String(req.query.limit).toLowerCase() === 'all';
+        const page = isExport ? 1 : (parseInt(req.query.page) || 1);
+        const limit = isExport ? 2000000 : (parseInt(req.query.limit) || 20);
+        const skipCount = (page - 1) * limit;
+
         const { date, yearGroup, branchGroup, college, search } = req.query;
         let query = {};
         
-        // If no date provided, default to today
         if (date) {
             query.testDate = date;
         } else {
@@ -285,9 +290,6 @@ export const getHistoricalResults = async (req, res) => {
         if (yearGroup) query.yearGroup = yearGroup;
         if (branchGroup) query.branchGroup = branchGroup;
         if (college) query.college = college;
-
-        const isExport = req.query.limit === 'all';
-        const limit = isExport ? 2000000 : (parseInt(req.query.limit) || 1000);
 
         if (search) {
             const searchRegex = new RegExp(search, 'i');
@@ -299,11 +301,22 @@ export const getHistoricalResults = async (req, res) => {
             ];
         }
 
+        const totalResults = await TestResult.countDocuments(query);
         const results = await TestResult.find(query)
             .sort({ score: -1, submittedAt: -1 })
+            .skip(skipCount)
             .limit(limit);
 
-        res.json(results);
+        if (isExport) {
+            return res.json(results);
+        }
+
+        res.json({
+            results,
+            totalPages: Math.ceil(totalResults / limit),
+            currentPage: page,
+            totalResults
+        });
     } catch (error) {
         console.error("getHistoricalResults error:", error);
         res.status(500).json({ message: "Error fetching historical results" });

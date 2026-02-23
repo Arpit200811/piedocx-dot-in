@@ -100,9 +100,9 @@ export const registerStudent = async (req, res) => {
 
 export const getAllStudents = async (req, res) => {
     try {
-        const isExport = req.query.limit === 'all';
+        const isExport = String(req.query.limit).toLowerCase() === 'all' || req.query.export === 'true';
         const page = isExport ? 1 : (parseInt(req.query.page) || 1);
-        const limit = isExport ? 2000000 : (parseInt(req.query.limit) || 20);
+        const limit = isExport ? 1000000 : (parseInt(req.query.limit) || 20);
         const skipCount = isExport ? 0 : (page - 1) * limit;
 
         const { search, college, branch, year, startDate, endDate } = req.query;
