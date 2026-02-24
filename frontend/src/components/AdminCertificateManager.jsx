@@ -72,12 +72,22 @@ const FilterSection = ({ filters, colleges, branches, years, onExport }) => {
               Clear Filters
             </button>
           )}
-          <button
-            onClick={onExport}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-lg"
-          >
-            <Download size={14} /> Export All Filtered CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onExport('all')}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-lg"
+              title="Export all matching records across all pages"
+            >
+              <Download size={14} /> Export All
+            </button>
+            <button
+              onClick={() => onExport('current')}
+              className="flex items-center gap-2 px-4 py-2 bg-white text-slate-900 border border-slate-200 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+              title="Export only records visible on current page"
+            >
+              <Download size={14} /> Page
+            </button>
+          </div>
         </div>
       </div>
 
@@ -431,31 +441,45 @@ const AdminCertificateManager = () => {
     }
   };
 
-  const exportToExcel = async () => {
+  const exportToExcel = async (exportMode = 'all') => {
     try {
       Swal.fire({
         title: 'Preparing Export...',
-        text: 'Fetching all filtered records...',
+        text: exportMode === 'selected' ? `Preparing ${selectedIds.length} records...` : 'Fetching filtered records...',
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
       });
 
-      const query = new URLSearchParams({
-        limit: 'all',
-        search: searchTerm,
-        college: collegeFilter,
-        branch: branchFilter,
-        year: yearFilter,
-        startDate,
-        endDate
-      });
+      let allStudents = [];
 
-      const response = await api.get(`/api/certificate/students?${query.toString()}`);
-      const allStudents = Array.isArray(response) ? response : (response.students || []);
+      if (exportMode === 'current') {
+        allStudents = students;
+      } else if (exportMode === 'selected') {
+        // Fetch specific IDs if many, or use currently loaded if all are in state
+        // For simplicity and to avoid large payloads, we fetch them with a query if needed, 
+        // but here we can just reuse selected students if they are in the current page
+        // However, a robust way is to fetch by IDs
+        const res = await api.get(`/api/certificate/students?limit=all&export=true`);
+        allStudents = res.filter(s => selectedIds.includes(s._id));
+      } else {
+        // Export All matching filters
+        const query = new URLSearchParams({
+          limit: 'all',
+          export: 'true',
+          search: searchTerm,
+          college: collegeFilter,
+          branch: branchFilter,
+          year: yearFilter,
+          startDate,
+          endDate
+        });
+        const response = await api.get(`/api/certificate/students?${query.toString()}`);
+        allStudents = Array.isArray(response) ? response : (response.students || []);
+      }
 
       if (allStudents.length === 0) {
         Swal.close();
-        return Swal.fire('No Data', 'No data found for current filters', 'info');
+        return Swal.fire('No Data', 'No data found for the specified export range', 'info');
       }
 
       const headers = ["Full Name", "Student ID", "College", "Branch", "Year", "Email", "Mobile", "Status", "Score", "Created At"];
@@ -468,7 +492,7 @@ const AdminCertificateManager = () => {
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `Students_Export_${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `Students_${exportMode}_${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
 
       Swal.close();
@@ -719,6 +743,12 @@ const AdminCertificateManager = () => {
             </div>
             <div className="h-8 w-[1px] bg-slate-700"></div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => exportToExcel('selected')}
+                className="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2"
+              >
+                <Download size={14} /> Export CSV
+              </button>
               <button
                 onClick={handleBulkEmail}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2"

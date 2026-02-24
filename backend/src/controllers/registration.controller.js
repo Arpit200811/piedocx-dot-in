@@ -139,6 +139,10 @@ export const getAllStudents = async (req, res) => {
         .skip(skipCount)
         .limit(limit);
 
+        if (isExport) {
+            return res.json(students);
+        }
+
         const total = await ExamStudent.countDocuments(query);
         const absoluteTotal = await ExamStudent.countDocuments();
         const uniqueColleges = await ExamStudent.distinct('college');
@@ -148,7 +152,7 @@ export const getAllStudents = async (req, res) => {
         res.json({
             students,
             currentPage: page,
-            totalPages: isExport ? 1 : Math.ceil(total / limit),
+            totalPages: Math.ceil(total / limit),
             totalStudents: total, // Matches the current filtered scope
             absoluteTotal: absoluteTotal, // The overall database size
             colleges: uniqueColleges,
