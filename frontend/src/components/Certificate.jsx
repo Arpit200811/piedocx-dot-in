@@ -260,7 +260,7 @@ const Certificate = ({ student, userEmail, autoSend }) => {
                   </p>
 
                   <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', gap: '20px', marginTop: '12px', marginBottom: '4px', opacity: 0.95, transform: 'scale(0.9)' }}>
-                     <img src="https://placehold.co/200x50/orange/white?text=Digital+India" crossOrigin="anonymous" alt="Digital India" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+                     <img src="/digital_india.png" crossOrigin="anonymous" alt="Digital India" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
                      <img src="/start.png" crossOrigin="anonymous" alt="Startup India" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
                      <img src="/msme.png" crossOrigin="anonymous" alt="MSME" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
                      <img src="/mca.png" crossOrigin="anonymous" alt="MCA" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
