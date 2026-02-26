@@ -54,7 +54,13 @@ export const initializeWhatsApp = async (isAuto = false) => {
         }),
         puppeteer: {
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox', 
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--no-zygote'
+            ],
             timeout: 60000
         },
         webVersionCache: {

@@ -1,78 +1,128 @@
-
+import 'dotenv/config';
 import Redis from 'ioredis';
 
-// Use environment variables for Redis connection
-const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+// --- In-Memory Fallback Implementation ---
+const memoryStorage = new Map();
+const memoryExpirations = new Map();
+
+const memoryCache = {
+    status: 'ready',
+    get: async (key) => {
+        if (memoryExpirations.has(key) && memoryExpirations.get(key) < Date.now()) {
+            memoryStorage.delete(key);
+            memoryExpirations.delete(key);
+            return null;
+        }
+        return memoryStorage.get(key) || null;
+    },
+    set: async (key, value, mode, ttl) => {
+        memoryStorage.set(key, value);
+        if (mode === 'EX' && ttl) {
+            memoryExpirations.set(key, Date.now() + (ttl * 1000));
+        }
+        return 'OK';
+    },
+    del: async (key) => {
+        memoryStorage.delete(key);
+        memoryExpirations.delete(key);
+        return 1;
+    },
+    incr: async (key) => {
+        let val = parseInt(memoryStorage.get(key) || 0) + 1;
+        memoryStorage.set(key, val.toString());
+        return val;
+    },
+    expire: async (key, seconds) => {
+        if (memoryStorage.has(key)) {
+            memoryExpirations.set(key, Date.now() + (seconds * 1000));
+            return 1;
+        }
+        return 0;
+    }
+};
+// ---------------------------------------
 
 let redisClient = null;
 let isRedisAvailable = false;
-let hasLoggedError = false;
+let hasLoggedStatus = false;
 
 export const initRedis = () => {
+    const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+
     if (!redisClient) {
+        if (!hasLoggedStatus) {
+            const host = REDIS_URL.split('@')[1] || REDIS_URL;
+            const cleanHost = host.split(':')[0].replace('//', '');
+            console.log(`[Redis] Connecting to Cloud: ${cleanHost}...`);
+        }
         redisClient = new Redis(REDIS_URL, {
+            keyPrefix: 'piedocx:', 
             retryStrategy: (times) => {
-                // Exponential backoff up to 10 seconds, then constant
-                // This keeps the connection alive for potential reconnections but doesn't spam
-                const delay = Math.min(times * 2000, 10000); 
-                return delay;
+                return Math.min(times * 5000, 30000);
             },
-            maxRetriesPerRequest: 0, // Fail immediately if not connected, don't queue
-            enableOfflineQueue: false // Prevent memory leaks for queued commands when offline
+            maxRetriesPerRequest: 0,
+            enableOfflineQueue: false,
+            connectTimeout: 10000
         });
 
         redisClient.on('connect', () => {
-            console.log('✅ Redis Connected');
-            isRedisAvailable = true;
-            hasLoggedError = false;
+            if (!hasLoggedStatus || !isRedisAvailable) {
+                console.log('✅ Redis Connected Successfully');
+                isRedisAvailable = true;
+                hasLoggedStatus = true;
+            }
         });
 
         redisClient.on('error', (err) => {
             isRedisAvailable = false;
-            // Only log the error ONCE to prevent console spam
-            if (!hasLoggedError) {
-                if (err.code === 'ECONNREFUSED') {
-                    console.log('⚠️ Redis disconnected. Caching disabled (running in fallback mode).');
-                } else {
-                    console.error('❌ Redis Error:', err.message);
-                }
-                hasLoggedError = true;
+            if (!hasLoggedStatus) {
+                console.log('ℹ️  Redis not found. Switching to high-performance In-Memory Cache.');
+                hasLoggedStatus = true;
             }
         });
     }
-    return redisClient;
+    
+    // Always return a client-like object
+    // Proxy logic: if Redis is available, use it. Otherwise, use memoryCache.
+    return new Proxy(redisClient, {
+        get: (target, prop) => {
+            if (isRedisAvailable && typeof target[prop] === 'function') {
+                return target[prop].bind(target);
+            }
+            if (memoryCache[prop]) {
+                return memoryCache[prop];
+            }
+            return target[prop];
+        }
+    });
 };
 
-// Helper to check if we can use Redis
-const isReady = () => redisClient && isRedisAvailable && redisClient.status === 'ready';
+// Helper functions using the initialized client
+const getClient = () => initRedis();
 
 export const getCache = async (key) => {
-    if (!isReady()) return null;
     try {
-        const data = await redisClient.get(key);
+        const data = await getClient().get(key);
         return data ? JSON.parse(data) : null;
     } catch (err) {
-        // Silently fail on cache errors to keep app running
         return null;
     }
 };
 
 export const setCache = async (key, value, ttlSeconds = 3600) => {
-    if (!isReady()) return;
     try {
-        await redisClient.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+        await getClient().set(key, JSON.stringify(value), 'EX', ttlSeconds);
     } catch (err) {
-        // Silently fail
+        // Fail silently
     }
 };
 
 export const delCache = async (key) => {
-    if (!isReady()) return;
     try {
-        await redisClient.del(key);
+        await getClient().del(key);
     } catch (err) {
-        // Silently fail
+        // Fail silently
     }
 };
 
-export default redisClient;
+export default initRedis();

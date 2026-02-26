@@ -246,16 +246,24 @@ export const getQuestions = async (req, res) => {
         } else {
             const seed = req.student.id;
             
-            // DE-DUPLICATION LOGIC: Filter unique questions by trimmed text
-            const seen = new Set();
-            const uniqueQuestions = config.questions.filter(q => {
-                const text = q.questionText.trim().toLowerCase();
-                if (seen.has(text)) return false;
-                seen.add(text);
-                return true;
-            });
+            // CACHE OPTIMIZATION: Cache the master question list for this config
+            const configCacheKey = `config_q_${config._id}`;
+            let masterQuestions = await getCache(configCacheKey);
+            
+            if (!masterQuestions) {
+                // Filter unique questions by trimmed text
+                const seen = new Set();
+                masterQuestions = config.questions.filter(q => {
+                    const text = q.questionText.trim().toLowerCase();
+                    if (seen.has(text)) return false;
+                    seen.add(text);
+                    return true;
+                });
+                // Cache questions for 10 minutes
+                await setCache(configCacheKey, masterQuestions, 600);
+            }
 
-            const selectedQuestions = uniqueQuestions
+            const selectedQuestions = masterQuestions
                 .map(q => ({ q, sort: crypto.createHash('md5').update(seed + q._id).digest('hex') }))
                 .sort((a, b) => a.sort.localeCompare(b.sort))
                 .slice(0, 30)
@@ -266,7 +274,6 @@ export const getQuestions = async (req, res) => {
                 .sort((a, b) => a.sort.localeCompare(b.sort))
                 .map(item => {
                     const originalOptions = [...item.q.options];
-                    // Fisher-Yates Shuffle for Options
                     for (let i = originalOptions.length - 1; i > 0; i--) {
                         const j = Math.floor(Math.random() * (i + 1));
                         [originalOptions[i], originalOptions[j]] = [originalOptions[j], originalOptions[i]];
@@ -281,12 +288,10 @@ export const getQuestions = async (req, res) => {
                 });
 
             const nowTime = new Date();
-            // CRITICAL FIX: Ensure testEndTime does not exceed config window end
             const sessionDurationEnd = new Date(nowTime.getTime() + (config.duration * 60 * 1000));
             const configWindowEnd = new Date(config.endDate);
             const testEndTime = sessionDurationEnd < configWindowEnd ? sessionDurationEnd : configWindowEnd;
 
-            // Atomic update to avoid VersionError race conditions
             const updatedStudent = await ExamStudent.findOneAndUpdate(
                 { _id: student._id, assignedQuestions: { $size: 0 } },
                 { 
@@ -300,7 +305,7 @@ export const getQuestions = async (req, res) => {
             );
 
             if (updatedStudent) {
-                student.testEndTime = updatedStudent.testEndTime; // Update local reference for remainingSeconds calc
+                student.testEndTime = updatedStudent.testEndTime;
                 finalQuestions = questionsToSave.map(q => ({
                     _id: q.questionId,
                     questionText: q.questionText,
@@ -321,8 +326,6 @@ export const getQuestions = async (req, res) => {
         if (student.testEndTime) {
              const diff = Math.floor((new Date(student.testEndTime) - now) / 1000);
              remainingSeconds = Math.max(0, diff);
-             if (remainingSeconds <= 0) {
-             }
         }
 
         res.json({ 
@@ -341,12 +344,8 @@ export const getQuestions = async (req, res) => {
 export const syncProgress = async (req, res) => {
     try {
         const { answers } = req.body;
-        
-        // Safety: Calculate attemptedCount from answers automatically
         const attemptedCount = Object.keys(answers || {}).length;
 
-        // Security: Use findOneAndUpdate with condition { testAttempted: false } 
-        // to prevent overwriting results if the test is already ended.
         const updated = await ExamStudent.findOneAndUpdate(
             { _id: req.student.id, testAttempted: false },
             { 
@@ -378,7 +377,6 @@ export const submitTest = async (req, res) => {
              return res.status(400).json({ message: 'You have already submitted this test.' });
         }
 
-        // Find relevant config for history & validation
         const studentYearGroup = getYearGroup(student.year);
         const studentBranchGroup = getBranchGroup(student.branch);
         const config = await TestConfig.findOne({
@@ -387,15 +385,11 @@ export const submitTest = async (req, res) => {
             isActive: true
         }).sort({ createdAt: -1 });
 
-        // 1. GLOBAL WINDOW CHECK (Strict "Code Expiry" Logic)
-        // If the main exam window is closed, reject all submissions immediately
         if (config && new Date() > new Date(config.endDate)) {
              return res.status(403).json({ message: 'Submission Rejected: The official exam window has closed.' });
         }
 
-        // 2. INDIVIDUAL TIMER CHECK
         if (student.testEndTime) {
-            // Strict Mode: Reduced buffer to 2 minutes (Network latency only)
             const bufferMs = 2 * 60 * 1000; 
             if (new Date() > new Date(student.testEndTime.getTime() + bufferMs)) {
                 return res.status(403).json({ message: 'Submission Failed: Time limit exceeded.' });
@@ -434,8 +428,6 @@ export const submitTest = async (req, res) => {
             };
         });
 
-        // ATOMIC UPDATE for Concurrency & Duplicate Protection
-        // Use findOneAndUpdate with condition { testAttempted: false } to ensure only one submission is processed
         const updatedStudent = await ExamStudent.findOneAndUpdate(
             { _id: student._id, testAttempted: false },
             { 
@@ -444,7 +436,7 @@ export const submitTest = async (req, res) => {
                     score: score,
                     correctCount: correctCount,
                     wrongCount: wrongCount,
-                    savedAnswers: answers // Final snapshot of answers
+                    savedAnswers: answers
                 } 
             },
             { new: true }
@@ -454,41 +446,44 @@ export const submitTest = async (req, res) => {
             return res.status(400).json({ message: 'Test already submitted or submission in progress.' });
         }
 
-        // Save to historical TestResult
-        try {
-            const todayStr = new Date().toISOString().split('T')[0];
-            await TestResult.create({
-                student: student._id,
-                testConfig: config?._id, 
-                fullName: student.fullName,
-                email: student.email,
-                branch: student.branch,
-                year: student.year,
-                studentId: student.studentId,
-                college: student.college,
-                mobile: student.mobile,
-                yearGroup: studentYearGroup,
-                branchGroup: studentBranchGroup,
-                score: score,
-                correctCount: correctCount,
-                wrongCount: wrongCount,
-                totalQuestions: questionsToGrade.length,
-                answers: detailedAnswers, // Save breakdown
-                testDate: todayStr
-            });
-        } catch (historyErr) {
-            console.error("Failed to save historical result:", historyErr);
-        }
-
         res.json({ 
             message: 'Test submitted successfully.', 
             total: questionsToGrade.length
+        });
+
+        // Background historical record creation
+        setImmediate(async () => {
+            try {
+                const todayStr = new Date().toISOString().split('T')[0];
+                await TestResult.create({
+                    student: student._id,
+                    testConfig: config?._id, 
+                    fullName: student.fullName,
+                    email: student.email,
+                    branch: student.branch,
+                    year: student.year,
+                    studentId: student.studentId,
+                    college: student.college,
+                    mobile: student.mobile,
+                    yearGroup: studentYearGroup,
+                    branchGroup: studentBranchGroup,
+                    score: score,
+                    correctCount: correctCount,
+                    wrongCount: wrongCount,
+                    totalQuestions: questionsToGrade.length,
+                    answers: detailedAnswers,
+                    testDate: todayStr
+                });
+            } catch (historyErr) {
+                console.error("Failed to save historical result in background:", historyErr);
+            }
         });
     } catch (error) {
         console.error("submitTest error:", error);
         res.status(500).json({ message: 'Submission failed' });
     }
 };
+
 
 export const getResults = async (req, res) => {
     try {

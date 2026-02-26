@@ -5,9 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx nodemon --ignore .wwebjs_auth src/app.js",
-    "build": "npm install",
-    "start": "node src/app.js",
-    "postinstall": "puppeteer install chrome"
+    "build": "npm install && npx puppeteer install chrome",
+    "postinstall": "npx puppeteer install chrome"
   },
   "keywords": [],
   "author": "",

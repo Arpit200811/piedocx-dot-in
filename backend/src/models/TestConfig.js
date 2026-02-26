@@ -27,9 +27,12 @@ const testConfigSchema = new mongoose.Schema({
   targetCollege: { type: String, default: 'All' },
   testAccessKey: { type: String, default: '' },
   questions: [questionSchema],
-  isActive: { type: Boolean, default: true },
-  resultsPublished: { type: Boolean, default: false }
+  isActive: { type: Boolean, default: true, index: true },
+  resultsPublished: { type: Boolean, default: false, index: true }
 }, { timestamps: true });
+
+// Index for high-frequency lookup during exam initialization
+testConfigSchema.index({ isActive: 1, yearGroup: 1, branchGroup: 1, targetCollege: 1 });
 
 const TestConfig = mongoose.model('TestConfig', testConfigSchema);
 export default TestConfig;
