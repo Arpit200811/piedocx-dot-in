@@ -12,7 +12,7 @@ const sliderData = [
     subtitle: 'Building the backbone of modern business!',
     description: 'We engineer complex, scalable enterprise applications that drive efficiency and growth for global organizations.',
     component: <DeveloperIllustration />,
-    color: 'from-blue-600 to-indigo-700'
+    color: 'from-blue-600 to-blue-800'
   },
   {
     title: 'Custom Web & Mobile Apps',
@@ -26,14 +26,14 @@ const sliderData = [
     subtitle: 'Scalable architectures that grow with you!',
     description: 'Leveraging cutting-edge cloud tech and microservices to build resilient systems that never experience downtime.',
     component: <CloudIllustration />,
-    color: 'from-blue-500 to-sky-600'
+    color: 'from-blue-500 to-blue-700'
   },
   {
     title: 'Dedicated Agile Teams',
     subtitle: 'Your vision, our engineering excellence!',
     description: 'Partner with elite developers who integrate seamlessly into your workflow to accelerate product delivery.',
     component: <TeamIllustration />,
-    color: 'from-blue-800 to-indigo-950'
+    color: 'from-blue-800 to-slate-900'
   }
 ];
 
@@ -101,7 +101,7 @@ const Slider = () => {
 
                 <h1 className="text-4xl md:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight group">
                   {sliderData[current].title.split(' ').map((word, i) => (
-                    <span key={i} className={`inline-block mr-3 ${['Software', 'Enterprise', 'Solutions', 'Custom', 'Mobile', 'Cloud-Native', 'Dedicated', 'Agile'].includes(word) ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600' : ''}`}>
+                    <span key={i} className={`inline-block mr-3 ${['Software', 'Enterprise', 'Solutions', 'Custom', 'Mobile', 'Cloud-Native', 'Dedicated', 'Agile'].includes(word) ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800' : ''}`}>
                       {word}
                     </span>
                   ))}
@@ -129,7 +129,7 @@ const Slider = () => {
                     to="/contact"
                     className="group relative px-10 py-5 bg-slate-900 rounded-3xl overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-slate-900/10"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <span className="relative z-10 flex items-center gap-3 font-black text-sm uppercase tracking-widest text-white">
                       Initiate Project <ArrowRight size={18} />
                     </span>

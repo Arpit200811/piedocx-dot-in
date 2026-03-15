@@ -210,6 +210,22 @@ const TestInterface = () => {
     useEffect(() => {
         if (!isStarted || submitting) return;
 
+        // Camera Initialization for Presence Check
+        const initCamera = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                // We don't necessarily need to show the video to the user, just keep it active
+                // to prevent screen sleepers and detect if stream is interrupted
+                stream.getVideoTracks()[0].onended = () => {
+                    handleViolation("Camera Access Terminated");
+                };
+            } catch (err) {
+                console.warn("Camera access denied or unavailable");
+                // Optional: handleViolation("Camera Permission Required")
+            }
+        };
+        initCamera();
+
         const handleVisibilityChange = () => {
             if (document.hidden) {
                 handleViolation("Tab Switch / Hidden");
@@ -226,10 +242,14 @@ const TestInterface = () => {
 
         const handleFocus = () => {
             setIsFocused(true);
+            // Re-check fullscreen on focus
+            if (!document.fullscreenElement) {
+                setTimeout(enterFullScreen, 100);
+            }
         };
 
         const handleFullScreenChange = () => {
-            if (!document.fullscreenElement) {
+            if (!document.fullscreenElement && isStarted && !submitting) {
                 handleViolation("Exited Full Screen");
             }
         };
@@ -239,9 +259,16 @@ const TestInterface = () => {
         };
 
         const handleResize = () => {
-            // Significant resize usually happens during split-screen or keyboard/screenshot editor launch
-            if (window.innerWidth < 300 || window.innerHeight < 300) {
-                handleViolation("Window Minimized / Resize Detected");
+            // Split-screen or DevTools side-dock
+            const widthDiff = window.outerWidth - window.innerWidth;
+            const heightDiff = window.outerHeight - window.innerHeight;
+            
+            if (widthDiff > 200 || heightDiff > 200) {
+                 handleViolation("Split Screen / Side Panel Detected");
+            }
+
+            if (window.innerWidth < 350 || window.innerHeight < 350) {
+                handleViolation("Small Window / Minimized Environment");
             }
         };
 
@@ -362,10 +389,20 @@ const TestInterface = () => {
         setIsSyncing(true);
 
         try {
-            await api.post('/api/student-auth/sync-progress', {
+            const res = await api.post('/api/student-auth/sync-progress', {
                 answers: currentAnswers,
                 timeLeft: currentTimer
             });
+
+            // Update real-time score via socket
+            if (socketRef.current && res.currentScore !== undefined) {
+                socketRef.current.emit('progress_update', {
+                    attemptedCount: Object.keys(currentAnswers).length,
+                    totalQuestions: questions.length,
+                    currentQuestion: currentQuestion + 1,
+                    score: res.currentScore
+                });
+            }
 
             Swal.fire({
                 toast: true,
@@ -667,7 +704,7 @@ const TestInterface = () => {
                             onClick={enterFullScreen}
                             className="bg-blue-600 text-white px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] active:scale-95"
                         >
-                            Resume Assessment
+                            Go Back to Exam
                         </button>
                     </motion.div>
                 )}
@@ -689,7 +726,7 @@ const TestInterface = () => {
                                     <Megaphone size={20} className="text-white" />
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-100 mb-1">Official Test Broadcast</h4>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-100 mb-1">Message from Admin</h4>
                                     <p className="text-base font-bold text-white leading-tight">{broadcastMessage.message}</p>
                                 </div>
                                 <button type="button" onClick={() => setBroadcastMessage(null)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all">
@@ -733,7 +770,7 @@ const TestInterface = () => {
                             </div>
                         </div>
                         <div className={`p-1 flex flex-col items-center justify-center min-w-[100px] md:min-w-[150px]`}>
-                            <span className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Ends In</span>
+                            <span className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Time Left</span>
                             <div className={`text-xl md:text-4xl font-black font-mono transition-all tabular-nums text-glow ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
                                 {mins}<span className="opacity-30 mx-1">:</span>{String(secs).padStart(2, '0')}
                             </div>
@@ -746,8 +783,8 @@ const TestInterface = () => {
                     <aside className="hidden lg:flex flex-col bg-white/5 p-7 rounded-[3rem] border border-white/10 h-[calc(100vh-240px)] sticky top-8 glass-dark">
                         <div className="flex items-center justify-between mb-8">
                             <div>
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">The Board</h3>
-                                <p className="text-xs font-bold text-white uppercase italic">Assessment Map</p>
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Questions</h3>
+                                <p className="text-xs font-bold text-white uppercase italic">Question Map</p>
                             </div>
                             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
                                 <Target size={20} />
@@ -803,7 +840,7 @@ const TestInterface = () => {
                             <div className="relative z-10 h-full flex flex-col">
                                 <div className="flex items-center gap-4 mb-10">
                                     <span className="w-12 h-1 bg-blue-600 rounded-full"></span>
-                                    <span className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">Sector {currentQuestion + 1} of {questions.length}</span>
+                                    <span className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">Question {currentQuestion + 1} of {questions.length}</span>
                                 </div>
 
                                 <h3 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black mb-8 lg:mb-16 leading-[1.2] text-white tracking-tight">
@@ -870,7 +907,7 @@ const TestInterface = () => {
                                     ) : (
                                         <Zap size={14} />
                                     )}
-                                    {isSyncing ? 'Syncing...' : 'Save Progress'}
+                                    {isSyncing ? 'Saving...' : 'Save Answers'}
                                 </button>
                             </div>
 
@@ -887,7 +924,7 @@ const TestInterface = () => {
                                     onClick={() => handleSubmitTest(false)}
                                     className="w-full sm:w-auto bg-emerald-600 px-12 py-5 rounded-2xl font-black text-xs uppercase italic tracking-[0.2em] shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center gap-3"
                                 >
-                                    {submitting ? 'Encrypting...' : 'Final Submission'} <ChevronRight size={18} />
+                                    {submitting ? 'Saving...' : 'Finish Exam'} <ChevronRight size={18} />
                                 </button> :
                                 <button
                                     type="button"
@@ -895,7 +932,7 @@ const TestInterface = () => {
                                     onClick={() => setCurrentQuestion(currentQuestion + 1)}
                                     className="w-full sm:w-auto bg-blue-600 px-12 py-5 rounded-2xl font-black text-xs uppercase italic tracking-[0.2em] shadow-[0_0_40px_rgba(37,99,235,0.3)] hover:bg-blue-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center gap-3 text-white"
                                 >
-                                    Proceed Next <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                    Next Question <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                             }
                         </div>

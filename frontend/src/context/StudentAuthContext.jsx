@@ -1,14 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-
-const StudentAuthContext = createContext({
-    student: null,
-    setStudent: () => { },
-    login: () => { },
-    logout: () => { },
-    loading: true,
-    isAuthenticated: false
-});
+import { StudentAuthContext } from './StudentAuth';
 
 export const StudentAuthProvider = ({ children }) => {
     const [student, setStudent] = useState(null);
@@ -82,10 +74,3 @@ export const StudentAuthProvider = ({ children }) => {
     );
 };
 
-export const useStudentAuth = () => {
-    const context = useContext(StudentAuthContext);
-    if (context === undefined) {
-        console.error("useStudentAuth Hook returned undefined! Checking Provider status...");
-    }
-    return context;
-};

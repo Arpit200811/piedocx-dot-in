@@ -6,6 +6,7 @@ import "./App.css";
 
 // Context
 import { StudentAuthProvider } from "./context/StudentAuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 // components
 import GlobalSearch from "./components/GlobalSearch";
@@ -76,19 +77,21 @@ function App() {
   }, []);
 
   return (
-    <StudentAuthProvider>
-      <HashRouter>
-        <SEO />
-        <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-        <div className="overflow-x-hidden min-h-screen flex flex-col">
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingSpinner />}>
-              <MainRouter />
-            </Suspense>
-          </ErrorBoundary>
-        </div>
-      </HashRouter>
-    </StudentAuthProvider>
+    <ThemeProvider>
+      <StudentAuthProvider>
+        <HashRouter>
+          <SEO />
+          <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+          <div className="overflow-x-hidden min-h-screen flex flex-col">
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <MainRouter />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        </HashRouter>
+      </StudentAuthProvider>
+    </ThemeProvider>
   );
 }
 

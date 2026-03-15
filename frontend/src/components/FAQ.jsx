@@ -1,46 +1,38 @@
 import React, { useEffect, useState } from "react";
-import AOS from "aos";
-import { FaPlus, FaMinus, FaSearch } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Minus, Search, HelpCircle, MessageSquare, Zap, Cpu, ShieldCheck } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
+import SEO from "./SEO";
 
 const FAQ = () => {
+  const { isDarkMode } = useTheme();
   const [openIndex, setOpenIndex] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    AOS.init({ duration: 1000, once: true });
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const faqs = [
     {
-      q: "What services does Piedocx Technologies provide?",
-      a: "We specialize in full-stack web development, mobile app development (Android/iOS), UI/UX design, digital marketing, and industrial training across multiple technologies like MERN, Python, Java, and .NET.",
-      category: "Services"
+      q: "What architectural services does Piedocx provide?",
+      a: "We specialize in end-to-end digital architecture: full-stack MERN development, native mobile systems, high-performance UI/UX, and mission-critical cloud infrastructure.",
+      icon: <Cpu className="text-blue-600" />
     },
     {
-      q: "Do you offer internship programs for students?",
-      a: "Yes, we offer comprehensive industrial training and internship programs focused on practical learning with real-world projects. Students can learn MERN Stack, Python, Java, and many other latest technologies.",
-      category: "Training"
+      q: "Are the industrial training nodes for students?",
+      a: "Yes. Our Innovation Lab offers deep-dive industrial training focused on real-world artifacts. Students master MERN, Python, and Java through hands-on deployment.",
+      icon: <Zap className="text-blue-500" />
     },
     {
-      q: "Can you help me with Domain and Web Hosting?",
-      a: "Absolutely! We provide high-speed, reliable web hosting services along with domain registration, SSL certificates, and technical support to keep your website running smoothly.",
-      category: "Services"
+      q: "Is cloud infrastructure secure and scalable?",
+      a: "Security is our default DNA. We provide military-grade cloud hosting with 99.9% uptime, quantum-resilient SSL, and 24/7 terminal support.",
+      icon: <ShieldCheck className="text-blue-600" />
     },
     {
-      q: "What is the typical timeline for a software project?",
-      a: "Project timelines depend on the complexity. A simple website might take 1-2 weeks, while a complex custom ERP or web application could take 4-12 weeks. We follow an agile process to deliver fast and reliable results.",
-      category: "Process"
-    },
-    {
-      q: "Where is Piedocx Technologies located?",
-      a: "Our office is located at Plot no.5 Chandralok Colony, near Purania Chauraha, Aliganj, Lucknow, UP 226024. You are always welcome to visit us during business hours.",
-      category: "General"
-    },
-    {
-      q: "How can I apply for a job at Piedocx?",
-      a: "You can visit our Careers page to see current openings or directly send your resume to info@piedocx.com. Our HR team will reach out to you if your profile matches our requirements.",
-      category: "Careers"
+      q: "What is your project deployment timeline?",
+      a: "Timelines depend on complexity. Fast-track web artifacts take 1-2 weeks, while complex enterprise DASHBOARDS take 4-12 weeks under our agile orchestration.",
+      icon: <HelpCircle className="text-blue-600" />
     }
   ];
 
@@ -50,77 +42,130 @@ const FAQ = () => {
   );
 
   return (
-    <div className="bg-white min-h-screen pt-14 md:pt-16 lg:pt-20 pb-16 px-6 font-sans">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-blue-600 mb-4" data-aos="fade-down">
-            Frequently Asked Questions
-          </h1>
-          <p className="text-lg text-gray-600" data-aos="fade-up">
-            Find answers to common questions about our services, training, and processes.
+    <div className={`min-h-screen pt-24 pb-20 px-6 transition-colors duration-500 ${isDarkMode ? "bg-dark-mesh text-white" : "bg-slate-50 text-slate-900"}`}>
+      <SEO title="FAQ | Piedocx Architecture Lab" description="Find technical clarity in our architectural archive." />
+      
+      {/* Background Accents */}
+      <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+      <div className="max-w-4xl mx-auto relative z-10">
+        <div className="text-center mb-16">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600/10 text-blue-600 mb-6 text-[10px] font-black uppercase tracking-[0.4em]"
+          >
+            Terminal Access 2025
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-4xl md:text-6xl font-black tracking-tighter uppercase italic leading-none mb-6"
+          >
+            Digital <span className="text-blue-600 underline decoration-blue-500/10 decoration-8 underline-offset-8">Clarity.</span>
+          </motion.h1>
+          <p className="text-lg text-slate-500 dark:text-slate-400 font-medium italic border-l-4 border-blue-600 pl-8 max-w-2xl mx-auto">
+            Find technical specifications and operational insights within our curated knowledge nodes.
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative mb-12" data-aos="fade-up" data-aos-delay="100">
-          <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+        {/* Search Matrix */}
+        <div className="relative mb-16">
+          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-blue-600">
+             <Search size={24} />
+          </div>
           <input 
             type="text" 
-            placeholder="Search your question here..." 
-            className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-blue-50 focus:border-blue-500 focus:outline-none shadow-sm transition"
+            placeholder="Search knowledge logs..." 
+            className={`w-full pl-16 pr-6 py-6 rounded-[2rem] border-2 outline-none transition-all font-bold text-lg shadow-xl ${
+                isDarkMode 
+                ? "bg-slate-900 border-white/5 focus:border-blue-600/50 text-white" 
+                : "bg-white border-blue-50 focus:border-blue-600/20 text-slate-900"
+            }`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        {/* FAQ List */}
-        <div className="space-y-4">
+        {/* Knowledge Nodes */}
+        <div className="space-y-6">
           {filteredFaqs.length > 0 ? (
             filteredFaqs.map((faq, i) => (
-              <div 
+              <motion.div 
                 key={i} 
-                className={`rounded-2xl border-2 transition-all duration-300 ${openIndex === i ? 'border-blue-500 bg-blue-50' : 'border-gray-100 hover:border-blue-200'}`}
-                data-aos="fade-up"
-                data-aos-delay={i * 50}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className={`rounded-[2.5rem] border overflow-hidden transition-all duration-300 ${
+                    openIndex === i 
+                    ? (isDarkMode ? 'bg-white/5 border-blue-600/50 shadow-[0_0_30px_rgba(37,99,235,0.1)]' : 'bg-white border-blue-600/50 shadow-2xl shadow-blue-600/5')
+                    : (isDarkMode ? 'bg-slate-900/50 border-white/5 hover:border-blue-600/30' : 'bg-white border-slate-100 hover:border-blue-200')
+                }`}
               >
                 <button 
-                  className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none"
+                  className="w-full px-8 py-7 flex items-center justify-between text-left"
                   onClick={() => setOpenIndex(openIndex === i ? null : i)}
                 >
-                  <span className={`font-bold text-lg ${openIndex === i ? 'text-blue-700' : 'text-gray-800'}`}>
-                    {faq.q}
-                  </span>
-                  {openIndex === i ? <FaMinus className="text-blue-600 flex-shrink-0" /> : <FaPlus className="text-gray-400 flex-shrink-0" />}
+                  <div className="flex items-center gap-6">
+                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-50 dark:bg-white/5 shadow-inner`}>
+                        {faq.icon}
+                     </div>
+                     <span className={`font-black text-lg uppercase italic tracking-tighter ${openIndex === i ? 'text-blue-600' : (isDarkMode ? 'text-white' : 'text-slate-800')}`}>
+                       {faq.q}
+                     </span>
+                  </div>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${openIndex === i ? 'bg-blue-600 text-white rotate-180' : (isDarkMode ? 'bg-white/5 text-slate-500' : 'bg-slate-50 text-slate-400')}`}>
+                     {openIndex === i ? <Minus size={18} /> : <Plus size={18} />}
+                  </div>
                 </button>
                 
-                {openIndex === i && (
-                  <div className="px-6 pb-6 text-gray-700 leading-relaxed border-t border-blue-100 pt-4">
-                    {faq.a}
-                  </div>
-                )}
-              </div>
+                <AnimatePresence>
+                   {openIndex === i && (
+                     <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="px-8 pb-8 text-slate-500 dark:text-slate-400 font-medium text-base leading-relaxed italic border-t border-blue-600/10 pt-6"
+                     >
+                       <p className="max-w-3xl">
+                          {faq.a}
+                       </p>
+                     </motion.div>
+                   )}
+                </AnimatePresence>
+              </motion.div>
             ))
           ) : (
-            <div className="text-center py-12 text-gray-500 italic">
-              No results found for "{searchQuery}". Try searching for something else.
+            <div className="text-center py-20 bg-slate-900/10 rounded-[3rem] border border-dashed border-slate-700">
+               <HelpCircle size={48} className="mx-auto text-slate-700 mb-4 animate-pulse" />
+               <p className="text-slate-500 font-black uppercase tracking-widest italic">No Knowledge Nodes Found</p>
             </div>
           )}
         </div>
 
-        {/* Call to Action */}
-        <div className="mt-20 text-center bg-gray-50 p-10 rounded-3xl" data-aos="zoom-in">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Still have questions?</h2>
-          <p className="text-gray-600 mb-6">If you couldn't find the answer you're looking for, feel free to contact our support team.</p>
+        {/* Global Support Dispatch */}
+        <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className={`mt-24 p-10 md:p-16 rounded-[4rem] flex flex-col items-center text-center relative overflow-hidden ${isDarkMode ? "bg-slate-900 border border-white/5 shadow-2xl shadow-blue-600/5" : "bg-white border border-slate-100 shadow-2xl shadow-black/5"}`}
+        >
+          <div className="absolute top-0 right-0 p-10 text-blue-600/5 rotate-12">
+             <MessageSquare size={120} />
+          </div>
+          <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-4 uppercase italic tracking-tighter">Still Stuck in the <span className="text-blue-600">void?</span></h2>
+          <p className="text-slate-500 dark:text-slate-400 font-medium italic mb-10 max-w-md">Our lead architects are ready to assist you. Re-initiate connection via our terminal lines.</p>
           <a 
             href="mailto:info@piedocx.com" 
-            className="inline-block bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200"
+            className="group px-12 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/30 flex items-center gap-3"
           >
-            Email Us Today
+            Push Dispatch
+            <Zap size={18} className="group-hover:scale-110 transition-transform" />
           </a>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
 };
 
 export default FAQ;
+

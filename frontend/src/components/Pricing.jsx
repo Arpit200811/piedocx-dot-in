@@ -30,7 +30,7 @@ const Pricing = () => {
       ],
       link: "/contact",
       icon: <FaStar />,
-      color: "from-indigo-600 to-purple-600",
+      color: "from-blue-600 to-blue-800",
       isPopular: true
     },
     {
@@ -71,7 +71,7 @@ const Pricing = () => {
               className={`relative p-8 rounded-[2.5rem] transition-all duration-500 hover:-translate-y-2 border ${plan.isPopular ? 'bg-gray-900 border-gray-800 shadow-2xl md:scale-105 z-10' : 'bg-white border-gray-100 shadow-xl'}`}
             >
               {plan.isPopular && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
                   Most Popular
                 </div>
               )}

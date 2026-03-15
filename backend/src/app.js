@@ -1,7 +1,8 @@
 import { config } from "dotenv";
 config(); // Load environment variables first!
-import dns from "dns";
-dns.setDefaultResultOrder("ipv4first");
+// import dns from "dns";
+// dns.setDefaultResultOrder("ipv4first"); // Commented out to prevent MongoDB SRV (EREFUSED) issues
+
 import express from "express";
 import { createServer } from "http";
 import connectDB from "./config/db.js";
@@ -18,6 +19,7 @@ import registerRoutes from "./routes/register.route.js";
 import studentAuthRoutes from "./routes/studentAuth.route.js";
 import testConfigRoutes from "./routes/testConfig.route.js";
 import analyticsRoutes from "./routes/analytics.route.js";
+import taskRoutes from "./routes/task.route.js";
 import whatsappRoutes from "./routes/whatsapp.route.js";
 import errorHandler from "./middlewares/error.middleware.js";
 
@@ -33,7 +35,7 @@ app.set("trust proxy", 1);
 const allowedOrigins = [
   // "https://piedocx-dot-in-1.onrender.com",
   // "https://piedocx-dot-in.onrender.com",
-  // "http://localhost:5173",
+  "http://localhost:5173",
   "https://piedocx.in",
   "https://www.piedocx.in",
   // "https://piedocx.netlify.app",
@@ -122,6 +124,7 @@ app.use("/api/student-auth", studentAuthRoutes);
 app.use("/api/admin/test-config", testConfigRoutes);
 app.use("/api/admin/analytics", analyticsRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
+app.use("/api/tasks", taskRoutes);
 
 app.use(errorHandler);
 

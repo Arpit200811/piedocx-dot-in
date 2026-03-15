@@ -81,8 +81,8 @@ const Footer = () => {
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-px bg-gradient-to-r from-transparent via-blue-500/10 to-transparent"></div>
       </div>
 
       <div className="mx-auto max-w-7xl px-6 md:px-8 relative z-10">
@@ -153,14 +153,14 @@ const Footer = () => {
           {/* Links Column 2 */}
           <div className="lg:col-span-3 md:col-span-1">
              <div className="flex items-center gap-2 mb-6">
-                <div className="w-1 h-4 bg-purple-600 rounded-full"></div>
+                <div className="w-1 h-4 bg-blue-600 rounded-full"></div>
                 <h4 className="text-xs font-black uppercase tracking-widest text-white">Our Services</h4>
              </div>
              <ul className="space-y-3">
                {footerLinks.specialties.map((item) => (
                  <li key={item.name}>
-                   <Link to={item.link} className="text-slate-400 hover:text-purple-400 transition-colors text-sm font-semibold flex items-center group">
-                     <ArrowRight size={12} className="mr-2 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all text-purple-400" />
+                   <Link to={item.link} className="text-slate-400 hover:text-blue-400 transition-colors text-sm font-semibold flex items-center group">
+                     <ArrowRight size={12} className="mr-2 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all text-blue-400" />
                      {item.name}
                    </Link>
                  </li>
@@ -171,7 +171,7 @@ const Footer = () => {
           {/* Contact Column - Enhanced */}
           <div className="lg:col-span-3">
             <div className="flex items-center gap-2 mb-6">
-               <div className="w-1 h-4 bg-emerald-600 rounded-full"></div>
+               <div className="w-1 h-4 bg-blue-600 rounded-full"></div>
                <h4 className="text-xs font-black uppercase tracking-widest text-white">Contact Us</h4>
             </div>
             <div className="space-y-4">
@@ -189,17 +189,17 @@ const Footer = () => {
                 </div>
 
                 <div className="flex items-start gap-3 group">
-                   <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 group-hover:bg-purple-600/20 group-hover:border-purple-500/30 group-hover:text-purple-400 transition-all">
+                   <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 group-hover:bg-blue-600/20 group-hover:border-blue-500/30 group-hover:text-blue-400 transition-all">
                       <Mail size={16} />
                    </div>
                    <div>
                       <p className="text-[9px] font-bold uppercase text-slate-500 tracking-widest mb-1">Email</p>
-                      <Link to="mailto:info@piedocx.com" className="text-sm font-bold text-slate-300 hover:text-purple-400 transition-colors">info@piedocx.com</Link>
+                      <Link to="mailto:info@piedocx.com" className="text-sm font-bold text-slate-300 hover:text-blue-400 transition-colors">info@piedocx.com</Link>
                    </div>
                 </div>
 
                 <div className="flex items-start gap-3 group">
-                   <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 group-hover:bg-emerald-600/20 group-hover:border-emerald-500/30 group-hover:text-emerald-400 transition-all">
+                   <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 group-hover:bg-blue-600/20 group-hover:border-blue-500/30 group-hover:text-blue-400 transition-all">
                       <MapPin size={16} />
                    </div>
                    <div>
@@ -218,34 +218,34 @@ const Footer = () => {
                 <ShieldCheck size={14} className="text-blue-400" />
                 <p className="text-slate-500 text-xs font-bold">© 2025 Piedocx Technologies.</p>
              </div>
-             <div className="flex gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <div className="flex gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
                 <Link to="/privacy-policy" className="hover:text-blue-400 transition-colors flex items-center gap-1">
                    <span className="w-1 h-1 rounded-full bg-blue-400"></span>
                    Privacy
                 </Link>
-                <Link to="/terms-conditions" className="hover:text-purple-400 transition-colors flex items-center gap-1">
-                   <span className="w-1 h-1 rounded-full bg-purple-400"></span>
+                <Link to="/terms-conditions" className="hover:text-blue-400 transition-colors flex items-center gap-1">
+                   <span className="w-1 h-1 rounded-full bg-blue-400"></span>
                    Terms
                 </Link>
-                <Link to="/refund-policy" className="hover:text-emerald-400 transition-colors flex items-center gap-1">
-                   <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
+                <Link to="/refund-policy" className="hover:text-blue-400 transition-colors flex items-center gap-1">
+                   <span className="w-1 h-1 rounded-full bg-blue-400"></span>
                    Refunds
                 </Link>
-             </div>
+              </div>
           </div>
 
           <div className="flex gap-3">
              {[
-               { icon: <Linkedin size={16} />, link: "https://www.linkedin.com/company/piedocx", color: "blue" },
-               { icon: <Instagram size={16} />, link: "https://www.instagram.com/piedocx", color: "pink" },
-               { icon: <Twitter size={16} />, link: "https://www.twitter.com/piedocx", color: "sky" },
-               { icon: <Youtube size={16} />, link: "https://www.youtube.com/@piedocx", color: "red" }
+               { icon: <Linkedin size={16} />, link: "https://www.linkedin.com/company/piedocx" },
+               { icon: <Instagram size={16} />, link: "https://www.instagram.com/piedocx" },
+               { icon: <Twitter size={16} />, link: "https://www.twitter.com/piedocx" },
+               { icon: <Youtube size={16} />, link: "https://www.youtube.com/@piedocx" }
              ].map((social, i) => (
                <Link 
                  key={i} 
                  to={social.link} 
                  target="_blank" 
-                 className={`w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:bg-${social.color}-600/20 hover:border-${social.color}-500/30 hover:text-${social.color}-400 hover:shadow-lg hover:shadow-${social.color}-600/20 transition-all hover:scale-110`}
+                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:bg-blue-600/20 hover:border-blue-500/30 hover:text-blue-400 hover:shadow-lg hover:shadow-blue-600/20 transition-all hover:scale-110"
                >
                  {social.icon}
                </Link>

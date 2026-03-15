@@ -18,6 +18,8 @@ const AdminResultArchives = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalResultsCount, setTotalResultsCount] = useState(0);
+    const [minScore, setMinScore] = useState('');
+    const [maxScore, setMaxScore] = useState('');
 
     useEffect(() => {
         const fetchMetadata = async () => {
@@ -49,7 +51,7 @@ const AdminResultArchives = () => {
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [selectedDate, selectedCollege, yearGroup, branchGroup, searchTerm, currentPage]);
+    }, [selectedDate, selectedCollege, yearGroup, branchGroup, searchTerm, minScore, maxScore, currentPage]);
 
     const fetchResults = async () => {
         setLoading(true);
@@ -61,6 +63,8 @@ const AdminResultArchives = () => {
                     yearGroup,
                     branchGroup,
                     search: searchTerm,
+                    minScore,
+                    maxScore,
                     page: currentPage,
                     limit: 20
                 }
@@ -258,6 +262,25 @@ const AdminResultArchives = () => {
                             <option value="CS-IT">CS-IT</option>
                             <option value="CORE">CORE</option>
                         </select>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                        <span className="text-[10px] font-black text-slate-400">SCORE</span>
+                        <input 
+                            type="number" 
+                            placeholder="Min" 
+                            value={minScore} 
+                            onChange={(e) => setMinScore(e.target.value)}
+                            className="w-12 bg-transparent border-none outline-none text-[11px] font-black text-slate-700" 
+                        />
+                        <span className="text-slate-300">-</span>
+                        <input 
+                            type="number" 
+                            placeholder="Max" 
+                            value={maxScore} 
+                            onChange={(e) => setMaxScore(e.target.value)}
+                            className="w-12 bg-transparent border-none outline-none text-[11px] font-black text-slate-700" 
+                        />
                     </div>
 
                     <div className="flex items-center gap-2 ml-2">

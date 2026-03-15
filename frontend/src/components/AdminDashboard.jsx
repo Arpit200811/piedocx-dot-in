@@ -57,52 +57,57 @@ function AdminDashboard({ children }) {
 
           <Link to="/admin-dashboard" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
             <LayoutDashboard className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-sm">Dashboard</span>
+            <span className="font-bold text-sm">Home</span>
           </Link>
 
           <Link to="/admin-tests" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
             <Settings className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-sm">Test Config</span>
+            <span className="font-bold text-sm">Exam Settings</span>
           </Link>
 
           <Link to="/admin-content" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
             <Bell className="w-6 h-6 group-hover:scale-110 transition-transform text-amber-500" />
-            <span className="font-bold text-sm">Content Manager</span>
+            <span className="font-bold text-sm">Bulletins & News</span>
           </Link>
 
           <Link to="/admin-results" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
             <Trophy className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-sm">Performance Leaderboards</span>
+            <span className="font-bold text-sm">Exam Results</span>
           </Link>
 
           <Link to="/admin-monitor" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
             <Activity className="w-6 h-6 group-hover:scale-110 transition-transform text-red-500" />
-            <span className="font-bold text-sm">Live Risk Feed</span>
+            <span className="font-bold text-sm">Live Students</span>
           </Link>
 
           <Link to="/admin-certificates" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
             <ShieldCheck className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-sm">Certificate Manager</span>
+            <span className="font-bold text-sm">Certificates</span>
           </Link>
 
           <Link to="/admin-data" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
             <Database className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-sm">Data Archives</span>
+            <span className="font-bold text-sm">Old Records</span>
           </Link>
 
           <Link to="/admin-analytics" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
             <BarChart className="w-6 h-6 group-hover:scale-110 transition-transform text-purple-500" />
-            <span className="font-bold text-sm">Deep Analytics</span>
+            <span className="font-bold text-sm">Full Report</span>
           </Link>
 
           <Link to={ADMIN_PATH} onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
             <UserPlus className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-sm">Add Students</span>
+            <span className="font-bold text-sm">Add New Student</span>
           </Link>
 
           <Link to="/admin-feedback" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
             <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform text-pink-500" />
-            <span className="font-bold text-sm">Student Feedback</span>
+            <span className="font-bold text-sm">Student Reviews</span>
+          </Link>
+
+          <Link to="/admin-audit" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 hover:text-blue-600 group">
+            <ShieldCheck className="w-6 h-6 group-hover:scale-110 transition-transform text-slate-400" />
+            <span className="font-bold text-sm">System History</span>
           </Link>
         </div>
 

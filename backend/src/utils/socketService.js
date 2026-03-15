@@ -106,13 +106,14 @@ export const initSocket = (server) => {
       console.error("[Socket] join_exam room logic error:", err);
     }
   });
-    socket.on('progress_update', async ({ attemptedCount, totalQuestions, currentQuestion }) => {
+    socket.on('progress_update', async ({ attemptedCount, totalQuestions, currentQuestion, score }) => {
         if (!socket.sessionId) return;
         io.to('admin_monitor').emit('student_progress', { 
             studentId: socket.studentId, 
             attemptedCount, 
             totalQuestions,
             currentQuestion,
+            score, // Pass the score to admin monitor
             lastSeen: new Date()
         });
     });
@@ -160,6 +161,26 @@ export const initSocket = (server) => {
         socket.join('admin_monitor');
         console.log("👀 Admin joined monitor");
     });
+    socket.on('admin_terminate_student', async ({ studentId, reason }) => {
+        if (socket.role !== 'admin') return;
+        
+        console.log(`🚫 Admin ${socket.email} terminating student ${studentId}`);
+        
+        const activeSessions = await ExamSession.find({ studentId, status: 'active' });
+        for (const session of activeSessions) {
+            io.to(session.socketId).emit('force_terminate', { 
+                reason: reason || 'Your session has been terminated by an administrator.' 
+            });
+            const targetSocket = io.sockets.sockets.get(session.socketId);
+            if (targetSocket) targetSocket.disconnect(true);
+            
+            await ExamSession.findByIdAndUpdate(session._id, { 
+                status: 'terminated', 
+                endTime: new Date() 
+            });
+        }
+    });
+
     socket.on('send_broadcast', ({ testId, yearGroup, message, type }) => {
         const payload = { 
             message, 

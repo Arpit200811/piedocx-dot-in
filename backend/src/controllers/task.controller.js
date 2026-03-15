@@ -46,11 +46,11 @@ export const getTask = async (req, res) => {
 
 
 export const getTaskOfEmp = async (req, res) => {
- try {
-    
-    const tasks = await Task.find({empid});
-    res.send(tasks);
- } catch (error) {
-    res.send(error)
- }
+  try {
+     const { empid } = req.params;
+     const tasks = await Task.find({ empid });
+     res.send(tasks);
+  } catch (error) {
+     res.send(error)
+  }
 };

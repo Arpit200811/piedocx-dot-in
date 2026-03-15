@@ -61,7 +61,7 @@ const FilterSection = ({ filters, colleges, branches, years, onExport }) => {
     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-4 mb-6">
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <h2 className="text-sm font-black text-slate-900 flex items-center gap-2 uppercase tracking-tighter italic">
-          <Filter size={16} className="text-blue-600" /> Data <span className="text-blue-600">Refinery</span>
+          <Filter size={16} className="text-blue-600" /> Find <span className="text-blue-600">Students</span>
         </h2>
         <div className="flex items-center gap-3">
           {(searchTerm || collegeFilter || branchFilter || yearFilter || startDate || endDate) && (
@@ -69,7 +69,7 @@ const FilterSection = ({ filters, colleges, branches, years, onExport }) => {
               onClick={clearFilters}
               className="px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all"
             >
-              Clear Filters
+              Show All
             </button>
           )}
           <div className="flex items-center gap-2">
@@ -78,7 +78,7 @@ const FilterSection = ({ filters, colleges, branches, years, onExport }) => {
               className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-lg"
               title="Export all matching records across all pages"
             >
-              <Download size={14} /> Export All
+              <Download size={14} /> Download All
             </button>
             <button
               onClick={() => onExport('current')}
@@ -86,6 +86,13 @@ const FilterSection = ({ filters, colleges, branches, years, onExport }) => {
               title="Export only records visible on current page"
             >
               <Download size={14} /> Page
+            </button>
+            <button
+              onClick={() => filters.onBulkWhatsApp()}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-emerald-500/20"
+              title="Send results to selected students via WhatsApp"
+            >
+              <MessageCircle size={14} /> Bulk WhatsApp
             </button>
           </div>
         </div>
@@ -96,7 +103,7 @@ const FilterSection = ({ filters, colleges, branches, years, onExport }) => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
           <input
             type="text"
-            placeholder="Search details..."
+            placeholder="Search by name, email or ID..."
             className="w-full bg-slate-50 border-none rounded-xl py-2 pl-9 pr-3 text-xs font-bold focus:ring-2 focus:ring-blue-500/20"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -206,10 +213,10 @@ const StudentRow = ({ student: s, isSelected, onSelect, onView, onSendEmail, onW
     </td>
     <td className="px-6 py-4 whitespace-nowrap text-right">
       <div className="flex items-center justify-end gap-1.5">
-        <ActionButton onClick={() => onManageProfile(s)} icon={Settings} color="slate" title="Manage Profile" />
+        <ActionButton onClick={() => onManageProfile(s)} icon={Settings} color="slate" title="Edit Info" />
         <ActionButton onClick={() => onSendEmail(s)} icon={Mail} color="indigo" title="Send Email" />
         <ActionButton onClick={() => onWhatsApp(s)} icon={MessageCircle} color="green" title="Send WhatsApp" />
-        <ActionButton onClick={() => onView(s)} icon={Eye} color="blue" title="View Certificate" />
+        <ActionButton onClick={() => onView(s)} icon={Eye} color="blue" title="Check Certificate" />
         <ActionButton
           onClick={() => onStatusToggle(s._id, s.status)}
           icon={s.status === 'active' ? ShieldAlert : ShieldCheck}
@@ -668,7 +675,7 @@ const AdminCertificateManager = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-6 lg:p-8 font-sans">
+    <div className="p-4 md:p-8 space-y-8 bg-slate-50/50 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Header */}

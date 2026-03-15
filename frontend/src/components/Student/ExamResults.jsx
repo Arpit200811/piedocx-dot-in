@@ -42,7 +42,7 @@ const ExamResults = () => {
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
                 <div className="text-center space-y-4">
                     <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-sm font-black text-slate-400 uppercase tracking-widest animate-pulse">Decrypting Matrix...</p>
+                    <p className="text-sm font-black text-slate-400 uppercase tracking-widest animate-pulse">Loading Your Result...</p>
                 </div>
             </div>
         );
@@ -125,7 +125,7 @@ const ExamResults = () => {
                             </motion.div>
 
                             <div className="mt-8 sm:mt-12 text-center space-y-2 relative z-10">
-                                <h3 className="text-lg sm:text-xl font-black uppercase italic tracking-widest text-blue-500">Performance Index</h3>
+                                <h3 className="text-lg sm:text-xl font-black uppercase italic tracking-widest text-blue-500">My Score Card</h3>
                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em]">{results.title}</p>
                             </div>
                         </div>
@@ -134,10 +134,10 @@ const ExamResults = () => {
                         <div className="p-8 sm:p-12 md:p-16 space-y-8 relative z-10 bg-white">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Candidate Status</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Student Status</p>
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                        <span className="text-sm font-black text-slate-900 uppercase italic tracking-tight">Validation Complete</span>
+                                        <span className="text-sm font-black text-slate-900 uppercase italic tracking-tight">Result Verified</span>
                                     </div>
                                 </div>
                                 <div className="w-12 h-12 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
@@ -150,7 +150,7 @@ const ExamResults = () => {
                                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-4 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
                                         <CheckCircle size={20} />
                                     </div>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Accuracy</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">My Percentage</p>
                                     <p className="text-2xl font-black text-slate-900 italic leading-none">{percentage}%</p>
                                 </div>
                                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-purple-200 transition-all">
@@ -164,7 +164,7 @@ const ExamResults = () => {
 
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-slate-400">
-                                    <span>Correct Solutions</span>
+                                    <span>Correct Answers</span>
                                     <span className="text-green-600">{results.correctCount || 0}</span>
                                 </div>
                                 <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -175,7 +175,7 @@ const ExamResults = () => {
                                     />
                                 </div>
                                 <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-slate-400 pt-2">
-                                    <span>Incorrect / Skipped</span>
+                                    <span>Wrong / Skipped</span>
                                     <span className="text-red-400">{results.wrongCount || 0}</span>
                                 </div>
                                 <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -203,7 +203,7 @@ const ExamResults = () => {
                                 <Download size={24} />
                             </div>
                             <div>
-                                <h4 className="font-black text-slate-900 uppercase italic tracking-tight">Academic Certificate</h4>
+                                <h4 className="font-black text-slate-900 uppercase italic tracking-tight">My Certificate</h4>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Ready for download</p>
                             </div>
                         </div>
@@ -226,8 +226,8 @@ const ExamResults = () => {
                                 <Share2 size={24} />
                             </div>
                             <div>
-                                <h4 className="font-black uppercase italic tracking-tight">Share Milestone</h4>
-                                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">LinkedIn / Portfolio</p>
+                                <h4 className="font-black uppercase italic tracking-tight">Share My Result</h4>
+                                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">Share with others</p>
                             </div>
                         </div>
                         <button className="p-3 bg-white/5 rounded-xl text-white/40 group-hover:text-white transition-all">
@@ -241,7 +241,7 @@ const ExamResults = () => {
                         onClick={() => navigate('/student-dashboard')}
                         className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] hover:text-blue-600 transition-all flex items-center justify-center mx-auto gap-3"
                     >
-                        Return to Command Center <ChevronRight size={14} />
+                        Go Back to Dashboard <ChevronRight size={14} />
                     </button>
                 </div>
 

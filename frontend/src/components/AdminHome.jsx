@@ -66,7 +66,13 @@ const AdminHome = () => {
     newSocket.on('student_progress', (data) => {
       setMonitorData(prev => prev.map(s =>
         s._id === data.studentId
-          ? { ...s, attemptedCount: data.attemptedCount, lastQuestion: data.currentQuestion, totalQuestions: data.totalQuestions }
+          ? { 
+              ...s, 
+              attemptedCount: data.attemptedCount, 
+              lastQuestion: data.currentQuestion, 
+              totalQuestions: data.totalQuestions,
+              score: data.score // Accept score from socket
+            }
           : s
       ));
     });
@@ -140,15 +146,17 @@ const AdminHome = () => {
     }
   };
 
-  const handleReset = async (studentId, studentName) => {
+  const handleReset = async (studentId, studentName, hasViolations = false) => {
     const result = await Swal.fire({
-      title: 'Reset Session?',
-      text: `Are you sure you want to wipe ${studentName}'s session? They will have to restart the test from scratch.`,
-      icon: 'warning',
+      title: hasViolations ? 'Grant Security Pardon?' : 'Reset Session?',
+      text: hasViolations 
+        ? `Student ${studentName} was terminated due to violations. Giving permission will clear their history and let them start fresh.`
+        : `Are you sure you want to wipe ${studentName}'s session? They will have to restart the test from scratch.`,
+      icon: hasViolations ? 'shield-check' : 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#ef4444',
+      confirmButtonColor: hasViolations ? '#2563eb' : '#ef4444',
       cancelButtonColor: '#64748b',
-      confirmButtonText: 'Yes, Reset Now',
+      confirmButtonText: hasViolations ? 'Yes, Authorize Retake' : 'Yes, Reset Now',
       customClass: { popup: 'rounded-3xl' }
     });
 
@@ -170,7 +178,7 @@ const AdminHome = () => {
       icon: Users,
       color: 'indigo',
       link: '/admin-certificates',
-      desc: 'Overall student database'
+      desc: 'Overall student list'
     },
     {
       label: 'Exam Appeared',
@@ -178,7 +186,7 @@ const AdminHome = () => {
       icon: Users,
       color: 'amber',
       link: '/admin-dashboard',
-      desc: 'Assigned papers completed'
+      desc: 'Full exams submitted'
     },
     {
       label: 'Currently Testing',
@@ -186,7 +194,7 @@ const AdminHome = () => {
       icon: Users,
       color: 'blue',
       link: '/admin-dashboard',
-      desc: 'Live active sessions'
+      desc: 'In-progress exams'
     },
     {
       label: 'Active Certificates',
@@ -194,7 +202,7 @@ const AdminHome = () => {
       icon: BadgeCheck,
       color: 'emerald',
       link: '/admin-certificates',
-      desc: 'Currently valid'
+      desc: 'Valid certificates issued'
     },
     {
       label: 'Revoked',
@@ -202,7 +210,7 @@ const AdminHome = () => {
       icon: ShieldAlert,
       color: 'red',
       link: '/admin-certificates',
-      desc: 'Suspended records'
+      desc: 'Blocked or invalid'
     },
     {
       label: 'Student Feedback',
@@ -210,7 +218,7 @@ const AdminHome = () => {
       icon: MessageSquare,
       color: 'pink',
       link: '/admin-feedback',
-      desc: 'Reviews & insights'
+      desc: 'Student opinions & ratings'
     }
   ];
 
@@ -233,12 +241,12 @@ const AdminHome = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter uppercase italic">System <span className="text-blue-600">Overview</span></h1>
-          <p className="text-slate-500 font-medium mt-1 text-sm md:text-base">Real-time synchronization with primary database sectors.</p>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Main <span className="text-blue-600">Dashboard</span></h1>
+          <p className="text-slate-500 font-medium mt-1 text-sm md:text-base">All your student data and exam status in one place.</p>
         </div>
         <div className="flex items-center gap-2 mb-1">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Database Active</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">System Working</span>
         </div>
       </div>
 
@@ -273,9 +281,9 @@ const AdminHome = () => {
       {/* Data Hub Quick View */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">Data <span className="text-blue-600">Intelligence</span></h2>
+          <h2 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">Quick <span className="text-blue-600">Summary</span></h2>
           <Link to="/admin-data" className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b-2 border-blue-600/10 hover:border-blue-600 transition-all">
-            Access Full Archives
+            See All Records
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
@@ -302,13 +310,13 @@ const AdminHome = () => {
               <Mail size={32} className="md:w-10 md:h-10" />
             </div>
             <div>
-              <h2 className="text-3xl md:text-4xl font-black tracking-tighter italic uppercase">Comms & Audit <span className="text-blue-400">Logs</span></h2>
-              <p className="text-slate-400 mt-4 font-medium max-w-sm text-sm md:text-base leading-relaxed">Analyze outgoing traffic, certificate delivery status, and student OTP synchronization across all sectors.</p>
+              <h2 className="text-3xl md:text-4xl font-black tracking-tighter italic uppercase">Email & System <span className="text-blue-400">History</span></h2>
+              <p className="text-slate-400 mt-4 font-medium max-w-sm text-sm md:text-base leading-relaxed">Check sent emails, certificate status, and system activity logs here.</p>
             </div>
           </div>
           <div className="relative z-10 pt-10">
-            <Link to="/admin-logs" className="inline-flex items-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-blue-600 hover:text-white transition-all shadow-xl">
-              Launch Analyzer <ArrowRight size={20} />
+            <Link to="/admin-audit" className="inline-flex items-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-blue-600 hover:text-white transition-all shadow-xl">
+              Open Logs <ArrowRight size={20} />
             </Link>
           </div>
           <div className="absolute -right-16 -bottom-16 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] group-hover:bg-blue-600/20 transition-all duration-700"></div>
@@ -322,8 +330,8 @@ const AdminHome = () => {
       <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl overflow-hidden">
         <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
           <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">Live <span className="text-blue-600">Assessment Monitor</span></h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time student progress tracking</p>
+            <h2 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">Live <span className="text-blue-600">Exam Tracking</span></h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">See what students are doing in the exam right now</p>
           </div>
           <button
             onClick={handleBroadcast}
@@ -333,7 +341,7 @@ const AdminHome = () => {
           </button>
           <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[9px] font-black border border-blue-100">
             <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>
-            REAL-TIME: SOCKET
+            ONLINE NOW
           </div>
         </div>
         <div className="block lg:hidden divide-y divide-slate-100">
@@ -385,7 +393,7 @@ const AdminHome = () => {
                   <div className="space-y-1 text-right">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Score / Safety</p>
                     <div className="flex items-center justify-end gap-2">
-                      <span className="font-black text-sm text-blue-600">{student.testAttempted ? student.score : '--'}</span>
+                      <span className="font-black text-sm text-blue-600">{student.score || 0}</span>
                       <div className={`flex items-center gap-1 text-[10px] font-black ${student.violationCount > 0 ? 'text-red-600' : 'text-slate-300'}`}>
                         <AlertTriangle size={10} /> {student.violationCount || 0}
                       </div>
@@ -400,7 +408,7 @@ const AdminHome = () => {
                   </div>
                   {(student.testAttempted || isLive) && (
                     <button
-                      onClick={() => handleReset(student._id, student.fullName)}
+                      onClick={() => handleReset(student._id, student.fullName, (student.violationCount || 0) > 0)}
                       className="flex items-center gap-2 text-[10px] font-black text-red-500 uppercase tracking-widest hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all"
                     >
                       <RotateCcw size={14} /> Reset Session
@@ -416,11 +424,11 @@ const AdminHome = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student / Profile</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Info</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Progress</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Violations</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Auto Score</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Security Alerts</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Live Score</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Time Left</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
@@ -482,8 +490,8 @@ const AdminHome = () => {
                       </div>
                     </td>
                     <td className="px-8 py-6 text-center">
-                      <span className={`font-black text-lg ${student.testAttempted ? 'text-blue-600' : 'text-slate-200 italic'}`}>
-                        {student.testAttempted ? student.score : '--'}
+                      <span className={`font-black text-lg ${student.testAttempted ? 'text-emerald-600' : 'text-blue-600 italic'}`}>
+                        {student.score || 0}
                       </span>
                     </td>
                     <td className="px-8 py-6 text-center font-mono font-bold">
@@ -498,7 +506,7 @@ const AdminHome = () => {
                     <td className="px-8 py-6 text-right">
                       {(student.testAttempted || isLive) && (
                         <button
-                          onClick={() => handleReset(student._id, student.fullName)}
+                          onClick={() => handleReset(student._id, student.fullName, (student.violationCount || 0) > 0)}
                           className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all group/btn"
                           title="Reset Session"
                         >
@@ -514,7 +522,7 @@ const AdminHome = () => {
         </div>
         {monitorData.length === 0 && (
           <div className="p-20 text-center text-slate-400 font-bold italic uppercase tracking-widest text-[10px]">
-            No students found in surveillance matrix
+            No students are currently taking the exam.
           </div>
         )}
       </div>

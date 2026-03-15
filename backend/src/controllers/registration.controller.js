@@ -118,9 +118,9 @@ export const getAllStudents = async (req, res) => {
             ];
         }
 
-        if (college) query.college = { $regex: new RegExp(`^${college}$`, 'i') };
-        if (branch) query.branch = branch;
-        if (year) query.year = year;
+        if (college) query.college = { $regex: new RegExp(college.trim(), 'i') };
+        if (branch) query.branch = { $regex: new RegExp(branch.trim(), 'i') };
+        if (year) query.year = { $regex: new RegExp(year.trim(), 'i') };
 
         if (startDate || endDate) {
             query.createdAt = {};
@@ -228,7 +228,9 @@ export const verifyCertificatePublic = async (req, res) => {
             branch: student.branch,
             year: student.year,
             certificateId: student.certificateId,
-            college: student.college
+            college: student.college,
+            status: student.status,
+            score: student.score
         };
 
         res.json(safeData);

@@ -20,7 +20,8 @@ import {
   deleteResource,
   registerAdmin,
   getFeedbacks,
-  deleteFeedback
+  deleteFeedback,
+  getAuditLogs
 } from "../controllers/admin.controller.js";
 import { adminAuth } from "../middlewares/auth.middleware.js";
 
@@ -48,6 +49,7 @@ router.post("/admin/resources", adminAuth, createResource);
 router.delete("/admin/resources/:id", adminAuth, deleteResource);
 router.get("/admin/feedbacks", adminAuth, getFeedbacks);
 router.delete("/admin/feedbacks/:id", adminAuth, deleteFeedback);
+router.get("/admin/audit-logs", adminAuth, getAuditLogs);
 
 export default router;
 

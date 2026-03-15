@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
+import { useTheme } from "../context/ThemeContext";
+import { Sun, Moon, Search, LogOut, ChevronDown, Monitor, Smartphone, Globe, Palette, Server, Layout } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const NavBar = () => {
   const navigate = useNavigate();
+  const { isDarkMode, toggleTheme } = useTheme();
   const [showNav, setShowNav] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [hasBeenHidden, setHasBeenHidden] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const [studentUser, setStudentUser] = useState(null);
   const location = useLocation();
 
@@ -19,7 +24,7 @@ const NavBar = () => {
     } else {
       setStudentUser(null);
     }
-  }, [location]); // Re-check on route change (like after login/logout)
+  }, [location]);
 
   const handleLogout = () => {
     Swal.fire({
@@ -35,7 +40,6 @@ const NavBar = () => {
         localStorage.removeItem('studentToken');
         localStorage.removeItem('studentData');
         setStudentUser(null);
-
         Swal.fire({
           title: 'Logged Out!',
           text: 'You have been successfully logged out.',
@@ -51,261 +55,246 @@ const NavBar = () => {
 
   const navLinks = [
     { name: "Home", path: "/" },
-    { name: "Services", path: "/services" },
+    { name: "Services", path: "/services", hasMega: true },
     { name: "Projects", path: "/projects" },
     { name: "Our Team", path: "/team" },
     { name: "About Us", path: "/about" },
     { name: "Contact", path: "/contact" },
   ];
 
+  const serviceNodes = [
+    { name: "Full-Stack Dev", path: "/services/full-stack", icon: <Layout className="w-5 h-5" />, desc: "High-fidelity MERN applications." },
+    { name: "Mobile Systems", path: "/services/android-ios", icon: <Smartphone className="w-5 h-5" />, desc: "Native iOS & Android hubs." },
+    { name: "Cloud Labs", path: "/services/domain-web-hosting", icon: <Server className="w-5 h-5" />, desc: "Scalable infrastructure." },
+    { name: "Visual Identity", path: "/services/graphic-design", icon: <Palette className="w-5 h-5" />, desc: "Strategic design nodes." },
+    { name: "SEO Protocols", path: "/services/digital-marketing", icon: <Globe className="w-5 h-5" />, desc: "Digital growth logic." },
+    { name: "Web Genesis", path: "/services/web-development", icon: <Monitor className="w-5 h-5" />, desc: "Performant web artifacts." },
+  ];
+
   const isActive = (path) => location.pathname === path;
 
-  // Hide/show nav on scroll + auto-close menu on scroll
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       if (isLocked) return;
-
       if (currentScrollY <= 5) {
         setShowNav(true);
         setHasBeenHidden(false);
       } else if (currentScrollY > lastScrollY && currentScrollY > 5) {
         setShowNav(false);
         setHasBeenHidden(true);
-      } else if (
-        currentScrollY < lastScrollY &&
-        currentScrollY >= 40 &&
-        hasBeenHidden
-      ) {
+      } else if (currentScrollY < lastScrollY && currentScrollY >= 40 && hasBeenHidden) {
         setShowNav(true);
         setIsLocked(true);
       }
-
       setLastScrollY(currentScrollY);
     };
-
-    const handleMenuCloseOnScroll = () => {
-      if (isOpen) setIsOpen(false);
-    };
-
+    const handleMenuCloseOnScroll = () => { if (isOpen) setIsOpen(false); };
     window.addEventListener("scroll", handleScroll);
     window.addEventListener("scroll", handleMenuCloseOnScroll);
-
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("scroll", handleMenuCloseOnScroll);
     };
   }, [lastScrollY, isLocked, hasBeenHidden, isOpen]);
 
-  // Close menu on route change
-  useEffect(() => {
-    setIsOpen(false);
-  }, [location.pathname]);
-
-  // Auto-close menu on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        isOpen &&
-        !event.target.closest(".mobile-menu") &&
-        !event.target.closest(".menu-toggle")
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [isOpen]);
+  useEffect(() => { setIsOpen(false); setIsMegaMenuOpen(false); }, [location.pathname]);
 
   return (
     <nav
-      className={`fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md border-b border-white/20 shadow-sm transition-transform duration-500 ease-in-out ${showNav ? "translate-y-0" : "-translate-y-full"
-        }`}
+      className={`fixed top-0 w-full z-[100] border-b transition-all duration-500 ease-in-out ${
+        isDarkMode 
+          ? "bg-slate-900/80 border-white/10" 
+          : "bg-white/80 border-gray-200"
+      } backdrop-blur-xl ${showNav ? "translate-y-0" : "-translate-y-full"}`}
     >
-      <div className="max-w-screen-2xl mx-auto px-4 md:px-8 h-14 md:h-16 lg:h-20 flex items-center justify-between font-poppins relative">
-        {/* Logo Left */}
-        <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-          <img
-            src="/pie_logo.png"
-            alt="Logo"
-            className="h-10 md:h-12 lg:h-14 w-auto object-contain mix-blend-multiply"
-          />
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-8 h-14 md:h-20 flex items-center justify-between font-sans relative">
+        <Link to="/" className="flex items-center gap-2 flex-shrink-0 group">
+          <div className="relative">
+             <div className="absolute inset-0 bg-blue-600/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform"></div>
+             <img src="/pie_logo.png" alt="Logo" className={`h-10 md:h-14 w-auto object-contain relative z-10 ${isDarkMode ? "brightness-110 contrast-125" : "mix-blend-multiply"}`} />
+          </div>
+         
         </Link>
 
-        {/* Desktop Nav Links Center */}
-        <ul className="hidden lg:flex gap-4 xl:gap-6 font-medium text-xs lg:text-sm xl:text-base items-center justify-center flex-1 px-4">
-          {navLinks.map(({ name, path }) => (
-            <li key={path} className="relative group flex-shrink-0">
+        {/* Desktop Nav */}
+        <ul className="hidden lg:flex gap-8 items-center justify-center flex-1 px-8">
+          {navLinks.map(({ name, path, hasMega }) => (
+            <li 
+              key={path} 
+              className="relative group py-6"
+              onMouseEnter={() => hasMega && setIsMegaMenuOpen(true)}
+              onMouseLeave={() => hasMega && setIsMegaMenuOpen(false)}
+            >
               <Link
                 to={path}
-                className={`transition-colors duration-300 px-1 py-1 ${isActive(path)
-                    ? "text-blue-700 font-bold"
-                    : "text-gray-800 hover:text-blue-600"
-                  }`}
+                className={`text-sm font-black uppercase tracking-widest transition-all ${
+                  isActive(path) 
+                    ? "text-blue-600" 
+                    : isDarkMode ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-blue-600"
+                } flex items-center gap-1.5`}
               >
                 {name}
+                {hasMega && <ChevronDown size={14} className={`transition-transform duration-300 ${isMegaMenuOpen ? "rotate-180" : ""}`} />}
               </Link>
-              <span
-                className={`absolute left-0 -bottom-1 h-[2.5px] bg-blue-700 transition-all duration-300 group-hover:w-full ${isActive(path) ? "w-full" : "w-0"
-                  }`}
-              ></span>
+              <span className={`absolute left-0 bottom-6 h-0.5 bg-blue-600 transition-all duration-300 ${isActive(path) ? "w-full" : "w-0 group-hover:w-full"}`}></span>
+              
+              {/* Mega Menu Portal */}
+              {hasMega && (
+                <AnimatePresence>
+                  {isMegaMenuOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className={`absolute top-full left-1/2 -translate-x-1/2 w-[600px] p-8 rounded-[2.5rem] shadow-2xl border ${
+                        isDarkMode ? "bg-slate-900 border-white/10" : "bg-white border-slate-100"
+                      }`}
+                    >
+                       <div className="grid grid-cols-2 gap-4">
+                          {serviceNodes.map((node, i) => (
+                            <Link 
+                              key={i} 
+                              to={node.path} 
+                              className={`p-4 rounded-3xl flex items-start gap-4 transition-all ${
+                                isDarkMode ? "hover:bg-white/5" : "hover:bg-blue-50"
+                              } group/node`}
+                            >
+                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                                  isDarkMode ? "bg-slate-800 text-blue-400 group-hover/node:bg-blue-600 group-hover/node:text-white" : "bg-blue-50 text-blue-600 group-hover/node:bg-blue-600 group-hover/node:text-white"
+                               }`}>
+                                  {node.icon}
+                               </div>
+                               <div>
+                                  <h4 className={`text-xs font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{node.name}</h4>
+                                  <p className="text-[10px] font-medium text-slate-500">{node.desc}</p>
+                               </div>
+                            </Link>
+                          ))}
+                       </div>
+                       <div className={`mt-6 pt-6 border-t ${isDarkMode ? "border-white/5" : "border-slate-50"} flex justify-between items-center`}>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 italic">Ready to scale your architecture?</p>
+                          <Link to="/contact" className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:underline">Consult an Architect →</Link>
+                       </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
             </li>
           ))}
         </ul>
 
-        {/* Desktop Search & Action - Right Side */}
-        <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-shrink-0">
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
+          <button 
+            onClick={toggleTheme}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border ${
+                isDarkMode 
+                ? "bg-slate-800 border-white/10 text-yellow-500 hover:bg-slate-700" 
+                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
+          {/* Search */}
+          <button
+            onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+            className={`hidden sm:flex items-center gap-2 px-4 h-10 rounded-full border transition-all text-sm font-black uppercase tracking-widest ${
+                isDarkMode 
+                ? "bg-slate-800 border-white/10 text-slate-400 hover:text-white" 
+                : "bg-slate-50 border-slate-200 text-slate-500 hover:text-blue-600"
+            }`}
+          >
+            <Search size={16} /> <span className="text-[10px]">Matrix Search</span>
+          </button>
+
           {studentUser ? (
-            <div className="flex items-center gap-3 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
-              <Link to="/student-dashboard" className="flex items-center gap-2 hover:bg-blue-100 rounded-full px-2 py-1 transition-colors">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
+            <div className={`flex items-center gap-3 p-1 rounded-full border ${isDarkMode ? "bg-slate-800 border-white/10" : "bg-blue-50 border-blue-100"}`}>
+              <Link to="/student-dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-600/20">
                   {studentUser.firstName?.[0] || 'S'}
                 </div>
-                <span className="text-sm font-bold text-slate-700 mr-2">
-                  {studentUser.firstName || 'Student'}
+                <span className={`hidden md:block text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-700"}`}>
+                  {studentUser.firstName}
                 </span>
               </Link>
               <button
                 onClick={handleLogout}
-                className="p-1.5 hover:bg-red-100 rounded-full text-red-500 transition-colors"
-                title="Logout"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-red-500 hover:bg-red-500/10 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>
+                <LogOut size={16} />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-3">
               <Link
                 to="/student-login"
-                className="px-4 py-2 rounded-full border border-blue-600 text-blue-600 text-[10px] lg:text-xs font-bold uppercase tracking-wide hover:bg-blue-50 transition-all whitespace-nowrap"
+                className={`px-6 h-10 flex items-center rounded-full border text-[10px] font-black uppercase tracking-widest transition-all ${
+                    isDarkMode 
+                    ? "border-white/10 text-white hover:bg-white/5" 
+                    : "border-blue-600 text-blue-600 hover:bg-blue-50"
+                }`}
               >
-                Student Login
+                Access Hub
               </Link>
               <Link
                 to="/student-registration"
-                className="px-4 py-2 rounded-full bg-blue-600 text-white text-[10px] lg:text-xs font-bold uppercase tracking-wide shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:shadow-blue-600/40 transition-all transform hover:-translate-y-0.5 whitespace-nowrap"
+                className="px-6 h-10 flex items-center rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all"
               >
-                Register
+                Register Node
               </Link>
             </div>
           )}
 
-          <button
-            onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all text-sm font-medium group hover:shadow-sm"
+          {/* Hamburger Mobile */}
+          <button 
+            onClick={() => setIsOpen(!isOpen)}
+            className={`lg:hidden w-10 h-10 flex items-center justify-center rounded-full ${isDarkMode ? "text-white" : "text-slate-900"}`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-60 group-hover:opacity-100 transition-opacity"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+            {isOpen ? <LogOut className="rotate-45" size={24} /> : <div className="space-y-1.5"><div className="w-6 h-0.5 bg-current"></div><div className="w-4 h-0.5 bg-current ml-auto"></div></div>}
           </button>
         </div>
-
-
-        {/* Hamburger Icon (Mobile/Tablet) */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsOpen(!isOpen);
-          }}
-          className="menu-toggle lg:hidden text-gray-800 p-2"
-        >
-          {isOpen ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-7 h-7"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-7 h-7"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          )}
-        </button>
       </div>
 
-      {/* Mobile Nav */}
-      <div
-        className={`mobile-menu lg:hidden absolute top-full left-0 w-full bg-white shadow-xl font-poppins z-50 transition-all duration-500 overflow-hidden ${isOpen ? "max-h-screen py-6" : "max-h-0"
-          }`}
-      >
-        <ul className="flex flex-col items-center gap-3 px-6 font-medium text-lg">
-          {navLinks.map(({ name, path }) => (
-            <li key={path} className="w-full text-center">
-              <Link
-                to={path}
-                className={`block w-full py-3 rounded-xl transition-all duration-300 ${isActive(path)
-                    ? "bg-blue-600 text-white font-bold"
-                    : "text-gray-800 hover:bg-blue-50"
-                  }`}
-              >
-                {name}
-              </Link>
-            </li>
-          ))}
-
-          <li className="w-full text-center flex flex-col gap-3">
-            {studentUser ? (
-              <>
-                <Link
-                  to="/student-dashboard"
-                  className="block w-full py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-md"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Go to Dashboard
-                </Link>
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    handleLogout();
-                  }}
-                  className="block w-full py-3 rounded-xl border-2 border-red-500 text-red-500 font-bold hover:bg-red-50 transition-all"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/student-login"
-                  className="block w-full py-3 rounded-xl border-2 border-blue-600 text-blue-600 font-bold hover:bg-blue-50 transition-all"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Student Login
-                </Link>
-                <Link
-                  to="/student-registration"
-                  className="block w-full py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-md"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Register New Student
-                </Link>
-              </>
-            )}
-          </li>
-
-          <li className="w-full text-center">
-            <button
-              onClick={() => { setIsOpen(false); window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true })); }}
-              className="w-full py-3 rounded-xl text-gray-800 hover:bg-blue-50 transition-all duration-300 border border-slate-100 flex items-center justify-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-              Search
-            </button>
-          </li>
-        </ul>
-      </div>
+      {/* Mobile Nav Overlay */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className={`lg:hidden border-t overflow-hidden ${isDarkMode ? "bg-slate-900 border-white/10" : "bg-white border-slate-100"}`}
+          >
+             <div className="p-6 space-y-4">
+                {navLinks.map(({ name, path }) => (
+                  <Link 
+                    key={path} 
+                    to={path} 
+                    className={`block py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] ${
+                        isActive(path) 
+                        ? "bg-blue-600 text-white" 
+                        : isDarkMode ? "text-slate-400 hover:bg-white/5" : "text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {name}
+                  </Link>
+                ))}
+                
+                {!studentUser && (
+                   <div className="grid grid-cols-2 gap-4 pt-4">
+                      <Link to="/student-login" className={`h-12 flex items-center justify-center rounded-2xl border text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "border-white/10 text-white" : "border-blue-600 text-blue-600"}`}>Log In</Link>
+                      <Link to="/student-registration" className="h-12 flex items-center justify-center rounded-2xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20">Register</Link>
+                   </div>
+                )}
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };
 
 export default NavBar;
+

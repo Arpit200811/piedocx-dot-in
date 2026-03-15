@@ -12,7 +12,7 @@ import * as yup from 'yup';
 import Swal from 'sweetalert2';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { useStudentAuth } from '../context/StudentAuthContext';
+import { useStudentAuth } from '../context/StudentAuth';
 
 const registrationSchema = yup.object({
    fullName: yup.string().required("Full Name is required").min(3, "Name is too short"),

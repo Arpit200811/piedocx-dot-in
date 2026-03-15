@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -73,14 +73,16 @@ const Project = () => {
     { 
       id: 1, 
       title: "Command Center", 
-      category: "ECOSYSTEM DASHBOARD", 
+      category: "ECOSYSTEM DASHBOARD",
+      type: "Web",
       imgSrc: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
       tech: ["React", "D3.js", "Redis"]
     },
     { 
       id: 2, 
       title: "Neural Mobile", 
-      category: "SMART INTERFACE", 
+      category: "SMART INTERFACE",
+      type: "Mobile",
       imgSrc: "https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=800&q=80",
       tech: ["Flutter", "Go", "TensorFlow"]
     },
@@ -88,6 +90,7 @@ const Project = () => {
       id: 3, 
       title: "Cloud Genesis", 
       category: "INFRASTRUCTURE", 
+      type: "Cloud",
       imgSrc: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80",
       tech: ["K8s", "AWS", "Terraform"]
     },
@@ -95,6 +98,7 @@ const Project = () => {
       id: 4, 
       title: "Bio-Guard", 
       category: "SECURITY PROTOCOL", 
+      type: "Cloud",
       imgSrc: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80",
       tech: ["Rust", "C++", "Vault"]
     },
@@ -102,6 +106,7 @@ const Project = () => {
       id: 5, 
       title: "Quantum Sync", 
       category: "SaaS CORE", 
+      type: "Web",
       imgSrc: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80",
       tech: ["Next.js", "Supabase", "Node"]
     },
@@ -109,10 +114,16 @@ const Project = () => {
       id: 6, 
       title: "Data Pulse", 
       category: "ANALYTICS ENGINE", 
+      type: "Web",
       imgSrc: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
       tech: ["Python", "Spark", "Elastic"]
     }
   ];
+
+  const [activeFilter, setActiveFilter] = useState('All Systems');
+  const filteredProjects = activeFilter === 'All Systems' 
+    ? projects 
+    : projects.filter(p => p.type === activeFilter);
 
   return (
     <main className="bg-white font-sans selection:bg-blue-600 selection:text-white pt-24 overflow-x-hidden">
@@ -213,7 +224,11 @@ const Project = () => {
               </div>
               <div className="flex flex-wrap gap-3">
                  {['All Systems', 'Web', 'Mobile', 'Cloud'].map((tag, i) => (
-                   <button key={i} className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${i === 0 ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-400 border border-blue-50 hover:border-blue-200'}`}>
+                   <button 
+                     key={i} 
+                     onClick={() => setActiveFilter(tag)}
+                     className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeFilter === tag ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-400 border border-blue-50 hover:border-blue-200'}`}
+                   >
                      {tag}
                    </button>
                  ))}
@@ -221,7 +236,7 @@ const Project = () => {
            </div>
 
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {projects.map((project, i) => (
+              {filteredProjects.map((project, i) => (
                 <motion.article 
                   key={project.id}
                   initial={{ opacity: 0, y: 30 }}

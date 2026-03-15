@@ -11,7 +11,9 @@ import {
     updateProfile,
     getProfile,
     getActiveBulletins,
-    getActiveResources
+    getActiveResources,
+    getPerformanceHistory,
+    getLeaderboard
 } from '../controllers/studentAuth.controller.js';
 import { studentAuth } from '../middlewares/auth.middleware.js';
 
@@ -32,5 +34,7 @@ router.post('/log-violation', studentAuth, logViolation);
 router.post('/submit-feedback', studentAuth, submitFeedback);
 router.get('/profile', studentAuth, getProfile);
 router.post('/update-profile', studentAuth, updateProfile);
+router.get('/performance', studentAuth, getPerformanceHistory);
+router.get('/leaderboard', studentAuth, getLeaderboard);
 
 export default router;

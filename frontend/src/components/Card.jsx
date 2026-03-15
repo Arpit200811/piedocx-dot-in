@@ -21,42 +21,42 @@ function Services() {
       icon: <FaLaptopCode />,
       desc: "Scalable MERN stack applications with high performance. We build everything from pixel-perfect UIs to robust server-side logic.",
       link: "/services/full-stack",
-      gradient: "from-blue-600 to-blue-700"
+      gradient: "from-blue-600 to-blue-800"
     },
     {
       title: "Mobile App Development",
       icon: <FaMobileAlt />,
       desc: "Cross-platform iOS and Android apps using React Native and Flutter. Smooth animations and native-like performance.",
       link: "/services/android-ios",
-      gradient: "from-blue-500 to-indigo-600"
+      gradient: "from-blue-500 to-blue-700"
     },
     {
       title: "Digital Marketing",
       icon: <FaBullhorn />,
       desc: "Result-driven SEO and social media strategies to boost your brand visibility and ROI with data analytics.",
       link: "/services/digital-marketing",
-      gradient: "from-blue-400 to-blue-600"
+      gradient: "from-blue-600 to-blue-700"
     },
     {
       title: "Graphic Designing",
       icon: <FaPaintBrush />,
       desc: "Creative brand identities, logos, and UI/UX designs that communicate your vision clearly and attractively.",
       link: "/services/graphic-design",
-      gradient: "from-blue-700 to-indigo-800"
+      gradient: "from-blue-700 to-blue-900"
     },
     {
       title: "Web Development",
       icon: <FaGlobe />,
       desc: "SEO-optimized, responsive websites using the latest technologies like Next.js and React for maximum speed.",
       link: "/services/web-development",
-      gradient: "from-blue-500 to-cyan-500"
+      gradient: "from-blue-500 to-blue-600"
     },
     {
       title: "Hosting & Domain",
       icon: <FaServer />,
       desc: "Secure cloud hosting with 99.9% uptime, free SSL, and professional business email setup with 24/7 support.",
       link: "/services/domain-web-hosting",
-      gradient: "from-blue-800 to-indigo-900"
+      gradient: "from-blue-800 to-slate-900"
     }
   ];
 

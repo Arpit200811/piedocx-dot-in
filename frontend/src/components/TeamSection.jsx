@@ -80,19 +80,19 @@ const teamMembers = [
 ];
 
 const funStats = [
-   { label: "Caffeine Consumed", value: "5000+", icon: <Coffee className="text-amber-500" /> },
+   { label: "Caffeine Consumed", value: "5000+", icon: <Coffee className="text-blue-600" /> },
    { label: "Lines of Logic", value: "2.4M", icon: <Code className="text-blue-500" /> },
-   { label: "Elite Deployments", value: "150+", icon: <Trophy className="text-yellow-500" /> },
-   { label: "Brain Power", value: "100%", icon: <Activity className="text-rose-500" /> }
+   { label: "Elite Deployments", value: "150+", icon: <Trophy className="text-blue-600" /> },
+   { label: "Brain Power", value: "100%", icon: <Activity className="text-blue-600" /> }
 ];
 
 const collaborationTools = [
-   { name: "Slack", icon: <Slack size={18} className="text-purple-500" /> },
+   { name: "Slack", icon: <Slack size={18} className="text-blue-600" /> },
    { name: "GitHub", icon: <Github size={18} className="text-slate-900" /> },
-   { name: "Figma", icon: <Figma size={18} className="text-rose-500" /> },
+   { name: "Figma", icon: <Figma size={18} className="text-blue-600" /> },
    { name: "Notion", icon: <LayoutGrid size={18} className="text-blue-600" /> },
-   { name: "Jira", icon: <Trello size={18} className="text-blue-500" /> },
-   { name: "VS Code", icon: <Code size={18} className="text-sky-500" /> }
+   { name: "Jira", icon: <Trello size={18} className="text-blue-600" /> },
+   { name: "VS Code", icon: <Code size={18} className="text-blue-600" /> }
 ];
 
 const TeamSection = () => {
@@ -150,7 +150,7 @@ const TeamSection = () => {
                      <Command size={100} />
                   </div>
                   <div className="lg:w-1/3 flex justify-center" data-aos="zoom-in">
-                     <div className="p-1 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[2.5rem] shadow-xl">
+                     <div className="p-1 bg-blue-600 rounded-[2.5rem] shadow-xl">
                         <img src="/Savanrai.jpg" alt="CEO" className="w-56 h-72 object-cover object-top rounded-[2rem] border border-white/10" />
                      </div>
                   </div>
@@ -236,13 +236,13 @@ const TeamSection = () => {
                ))}
 
                {/* Hire Card */}
-               <div className="group relative aspect-square rounded-[1.5rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-6 text-center hover:border-blue-400 hover:bg-blue-50/20 transition-all cursor-pointer" data-aos="fade-up">
+               <Link to="/contact" className="group relative aspect-square rounded-[1.5rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-6 text-center hover:border-blue-400 hover:bg-blue-50/20 transition-all cursor-pointer" data-aos="fade-up">
                   <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all shadow-xl shadow-blue-200">
                      <Plus size={24} />
                   </div>
                   <h3 className="text-lg font-black text-slate-900 tracking-tighter uppercase mb-1 italic">Join Squad</h3>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">Scale with logic.</p>
-               </div>
+               </Link>
             </div>
          </section>
 

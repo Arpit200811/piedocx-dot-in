@@ -12,6 +12,7 @@ import Feedback from "../models/Feedback.js";
 import TestConfig from "../models/TestConfig.js";
 
 import { sendAdminOTP } from "../utils/emailService.js";
+import { logAdminAction } from "../utils/auditLogger.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
@@ -205,6 +206,9 @@ export const resetStudentTest = async (req, res) => {
             feedbackSubmitted: false,
             assignedQuestions: [] 
         });
+        
+        await logAdminAction(req, 'STUDENT_TEST_RESET', studentId, { action: 'Manual Reset' });
+        
         res.json({ message: "Student test session has been reset successfully." });
     } catch (error) {
         console.error("resetStudentTest error:", error);
@@ -259,6 +263,13 @@ export const closeGroupSession = async (req, res) => {
 
         await TestResult.insertMany(resultsToCreate);
 
+        await logAdminAction(req, 'GROUP_SESSION_CLOSE', null, { 
+            yearGroup, 
+            branchGroup, 
+            college, 
+            count: targetedStudents.length 
+        });
+
         res.json({ 
             message: `Successfully closed session for ${targetedStudents.length} students.`,
             closedCount: targetedStudents.length
@@ -278,26 +289,34 @@ export const getHistoricalResults = async (req, res) => {
         const limit = isExport ? 2000000 : (parseInt(req.query.limit) || 20);
         const skipCount = (page - 1) * limit;
 
-        const { date, yearGroup, branchGroup, college, search } = req.query;
+        const { date, yearGroup, branchGroup, college, search, minScore, maxScore } = req.query;
         let query = {};
         
-        if (date) {
+        if (date && date.trim() !== "") {
             query.testDate = date;
-        } else {
-            query.testDate = new Date().toISOString().split('T')[0];
         }
+        // REMOVED: Default to today logic which was hiding older data on initial load.
+
 
         if (yearGroup) query.yearGroup = yearGroup;
         if (branchGroup) query.branchGroup = branchGroup;
-        if (college) query.college = college;
+        if (college) query.college = { $regex: new RegExp(college, 'i') };
+
+        // Score Range Filter
+        if (minScore || maxScore) {
+            query.score = {};
+            if (minScore) query.score.$gte = parseInt(minScore);
+            if (maxScore) query.score.$lte = parseInt(maxScore);
+        }
 
         if (search) {
-            const searchRegex = new RegExp(search, 'i');
+            const searchRegex = new RegExp(search.trim(), 'i');
             query.$or = [
                 { fullName: searchRegex },
                 { email: searchRegex },
                 { studentId: searchRegex },
-                { mobile: searchRegex }
+                { mobile: searchRegex },
+                { college: searchRegex }
             ];
         }
 
@@ -535,3 +554,16 @@ export const deleteFeedback = async (req, res) => {
         res.status(500).json({ message: "Error deleting feedback" });
     }
 };
+
+export const getAuditLogs = async (req, res) => {
+    try {
+        const logs = await (await import("../models/AuditLog.js")).default.find()
+            .sort({ timestamp: -1 })
+            .limit(200);
+        res.json(logs);
+    } catch (error) {
+        console.error("getAuditLogs error:", error);
+        res.status(500).json({ message: "Error fetching audit logs" });
+    }
+};
+

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useStudentAuth } from '../context/StudentAuthContext';
+import { useStudentAuth } from '../context/StudentAuth';
 
 const ProtectedStudentRoute = () => {
     const { isAuthenticated, loading } = useStudentAuth();

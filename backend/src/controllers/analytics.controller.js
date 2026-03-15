@@ -16,19 +16,22 @@ export const getDeepAnalytics = async (req, res) => {
             return res.json({ ...cachedData, source: 'cache' });
         }
 
-        const matchStage = testId ? { testId: new mongoose.Types.ObjectId(testId) } : {};
+        const matchStageResults = testId ? { testConfig: new mongoose.Types.ObjectId(testId) } : {};
+        const matchStageSessions = testId ? { testId: new mongoose.Types.ObjectId(testId) } : {};
+        // Note: ExamStudent doesn't have a direct test link, so we approximate or skip test-specific filtering for it.
+        const matchStageStudents = {}; 
 
         // 1. Completion & Drop-off Stats
-        const totalStudents = await ExamStudent.countDocuments(matchStage);
-        const completedTests = await TestResult.countDocuments(matchStage);
-        const startedSessions = await ExamSession.distinct('studentId', matchStage).then(ids => ids.length);
+        const totalStudents = await ExamStudent.countDocuments(matchStageStudents);
+        const completedTests = await TestResult.countDocuments(matchStageResults);
+        const startedSessions = await ExamSession.distinct('studentId', matchStageSessions).then(ids => ids.length);
         
         const completionRate = totalStudents ? ((completedTests / totalStudents) * 100).toFixed(1) : 0;
         const dropOffRate = startedSessions ? (((startedSessions - completedTests) / startedSessions) * 100).toFixed(1) : 0;
 
         // 2. Risk Distribution (Aggregation)
         const riskDistribution = await ExamSession.aggregate([
-            { $match: matchStage },
+            { $match: matchStageSessions },
             { 
                 $bucket: {
                     groupBy: "$riskScore",
@@ -48,7 +51,7 @@ export const getDeepAnalytics = async (req, res) => {
         // 3. Operational Metrics (Avg Time, Reconnects)
         // Note: For avgTime, we use endTime - startTime from sessions that are 'completed'
         const opsMetrics = await ExamSession.aggregate([
-            { $match: { ...matchStage, status: 'completed', endTime: { $exists: true } } },
+            { $match: { ...matchStageSessions, status: 'completed', endTime: { $exists: true } } },
             {
                 $project: {
                     durationMinutes: { 

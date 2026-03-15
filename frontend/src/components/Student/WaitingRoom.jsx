@@ -211,8 +211,8 @@ const WaitingRoom = () => {
                                         className="text-sm sm:text-base md:text-lg font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] md:tracking-[0.4em] italic text-blue-400"
                                     >
                                         {launchPhase === 1 && "Connecting to Server"}
-                                        {launchPhase === 2 && "Loading Questions"}
-                                        {launchPhase === 3 && "Preparing Test Environment"}
+                                        {launchPhase === 2 && "Getting Paper"}
+                                        {launchPhase === 3 && "Starting Exam Now"}
                                     </motion.p>
                                 </AnimatePresence>
                             </div>
@@ -241,7 +241,7 @@ const WaitingRoom = () => {
                     <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-blue-600/20 rounded-full flex items-center justify-center mb-3 sm:mb-4 animate-bounce">
                         <Clock size={32} className="text-blue-400 sm:w-9 sm:h-9 md:w-10 md:h-10" />
                     </div>
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight mb-2 px-2">{testTitle || "Assessment Lobby"}</h1>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight mb-2 px-2">{testTitle || "Exam Starting Soon"}</h1>
                     <p className="text-slate-400 font-medium text-sm sm:text-base md:text-lg">{status}</p>
                 </div>
 
@@ -250,7 +250,7 @@ const WaitingRoom = () => {
                     <div className="font-mono text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 drop-shadow-lg">
                         {timeLeft !== null ? formatTime(timeLeft) : "-- : -- : --"}
                     </div>
-                    <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-[0.2em] sm:tracking-[0.3em] mt-3 sm:mt-4">Time Until Launch</p>
+                    <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-[0.2em] sm:tracking-[0.3em] mt-3 sm:mt-4">Wait Time</p>
                 </div>
 
                 {/* Info Grid */}
@@ -258,7 +258,7 @@ const WaitingRoom = () => {
                     <div className="bg-slate-700/30 p-4 rounded-2xl border border-slate-600/30 flex items-center gap-4">
                         <div className="p-3 bg-slate-800 rounded-xl text-slate-400"><User size={20} /></div>
                         <div>
-                            <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Candidate</p>
+                            <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">My Name</p>
                             <p className="font-bold text-white">{studentName}</p>
                         </div>
                     </div>
@@ -267,7 +267,7 @@ const WaitingRoom = () => {
                             <Wifi size={20} />
                         </div>
                         <div>
-                            <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Live Connection</p>
+                            <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Internet Connection</p>
                             <p className={`font-bold ${networkStatus === 'Connected' ? 'text-emerald-400' : 'text-red-400'}`}>{networkStatus}</p>
                         </div>
                     </div>

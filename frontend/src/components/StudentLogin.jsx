@@ -5,7 +5,7 @@ import api from '../utils/api';
 import Swal from 'sweetalert2';
 import Typewriter from 'typewriter-effect';
 import { ShieldCheck, GraduationCap } from 'lucide-react';
-import { useStudentAuth } from '../context/StudentAuthContext';
+import { useStudentAuth } from '../context/StudentAuth';
 
 const StudentLogin = () => {
     const navigate = useNavigate();

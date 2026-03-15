@@ -45,8 +45,19 @@ api.interceptors.response.use(
         const message = error.response?.data?.message || error.message || 'Network Error';
         
         // Don't show modal for specific errors that components handle locally
-        const silentErrors = ['Sync rejected', 'Time is over', 'No active test', 'Test not found', 'not Active'];
-        const isSilent = silentErrors.some(s => message.includes(s));
+        const silentErrors = [
+            'Sync rejected', 
+            'Time is over', 
+            'No active test', 
+            'Test not found', 
+            'not Active', 
+            'Student not registered',
+            '404'
+        ];
+        
+        const isSilent = silentErrors.some(s => 
+            message.toLowerCase().includes(s.toLowerCase())
+        );
 
         if (!isSilent) {
             Swal.fire({

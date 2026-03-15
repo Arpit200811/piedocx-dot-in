@@ -58,7 +58,7 @@ const Services = () => {
       title: "Web Engineering",
       path: "/services/full-stack",
       icon: <Laptop size={28} />,
-      color: "from-blue-500 to-indigo-600",
+      color: "from-blue-600 to-blue-800",
       description: "High-performance web ecosystems built with React, Next.js, and Node.js. Scalable, secure, and optimized.",
       tech: ["React", "Next.js", "Node.js", "AWS"],
       features: ["E-commerce", "SaaS Apps", "Corporate"]
@@ -67,7 +67,7 @@ const Services = () => {
       title: "Mobile Architecture",
       path: "/services/android-ios",
       icon: <Smartphone size={28} />,
-      color: "from-blue-400 to-cyan-600",
+      color: "from-blue-500 to-blue-700",
       description: "Cross-platform mastery. Native feel with Flutter and Kotlin for seamless iOS and Android deployment.",
       tech: ["Flutter", "Kotlin", "Swift", "Firebase"],
       features: ["iOS", "Android", "Hybrid"]
@@ -76,7 +76,7 @@ const Services = () => {
       title: "IoT & Intelligence",
       path: "/services/iot",
       icon: <Cpu size={28} />,
-      color: "from-indigo-500 to-blue-700",
+      color: "from-blue-700 to-slate-900",
       description: "Bridging the physical and digital. Real-time smart systems powered by AI and edge computing.",
       tech: ["MQTT", "Python", "Raspberry Pi", "Azure IoT"],
       features: ["Smart Hubs", "ML at Edge", "Real-time"]
@@ -85,7 +85,7 @@ const Services = () => {
       title: "AI & Neural Systems",
       path: "/services/ai-ml",
       icon: <Brain size={28} />,
-      color: "from-blue-600 to-violet-500",
+      color: "from-blue-600 to-blue-900",
       description: "Predictive algorithms and generative models that automate business logic and user experiences.",
       tech: ["Python", "TensorFlow", "PyTorch", "OpenAI"],
       features: ["NLP", "Generative AI", "Vision"]
@@ -94,7 +94,7 @@ const Services = () => {
       title: "Cloud Infrastructure",
       path: "/services/domain-web-hosting",
       icon: <Cloud size={28} />,
-      color: "from-cyan-400 to-blue-500",
+      color: "from-blue-500 to-blue-800",
       description: "Serverless architectures, Kubernetes orchestration, and global CDN deployments for zero-downtime.",
       tech: ["AWS", "Azure", "GCP", "Kubernetes"],
       features: ["Scalability", "Security", "DevOps"]
@@ -103,7 +103,7 @@ const Services = () => {
       title: "Cyber Security",
       path: "/services/security",
       icon: <ShieldCheck size={28} />,
-      color: "from-blue-700 to-indigo-900",
+      color: "from-blue-800 to-slate-950",
       description: "Advanced penetration testing, encryption, and security audits to ensure your digital assets remain impenetrable.",
       tech: ["Metasploit", "Nmap", "Wireshark", "Vault"],
       features: ["Security Audits", "Encryptions", "Hardening"]
@@ -112,7 +112,7 @@ const Services = () => {
       title: "Blockchain & Web3",
       path: "/services/blockchain",
       icon: <Link2 size={28} />,
-      color: "from-blue-600 to-indigo-800",
+      color: "from-blue-700 to-blue-900",
       description: "Developing decentralized trust-less ecosystems, smart contracts, and high-performance DeFi protocols.",
       tech: ["Solidity", "EtherJS", "Rust", "Hyperledger"],
       features: ["Smart Contracts", "Tokenomics", "DApps"]
@@ -121,7 +121,7 @@ const Services = () => {
       title: "Data Engineering",
       path: "/services/data-science",
       icon: <Database size={28} />,
-      color: "from-cyan-500 to-blue-800",
+      color: "from-blue-500 to-blue-900",
       description: "Building resilient data pipelines and real-time processing hubs for massive enterprise datasets.",
       tech: ["Apache Spark", "Kafka", "PostgreSQL", "BigQuery"],
       features: ["ELT/ETL", "Analytics", "Warehousing"]
@@ -130,7 +130,7 @@ const Services = () => {
       title: "Design Systems",
       path: "/services/ui-ux",
       icon: <Palette size={28} />,
-      color: "from-blue-400 to-violet-500",
+      color: "from-blue-400 to-blue-600",
       description: "Crafting scalable UI libraries and intuitive user experiences that maintain brand uniformity across all nodes.",
       tech: ["Figma", "Adobe XD", "Tailwind CSS", "Storybook"],
       features: ["UI/UX", "Branding", "Prototyping"]
@@ -139,7 +139,7 @@ const Services = () => {
       title: "Digital Marketing",
       path: "/services/digital-marketing",
       icon: <TrendingUp size={28} />,
-      color: "from-blue-500 to-indigo-600",
+      color: "from-blue-600 to-blue-800",
       description: "Data-driven marketing strategies to scale your brand reach and optimize conversion funnels.",
       tech: ["SEO", "SEM", "Analytics", "Growth"],
       features: ["SEO", "Ads", "Content Strategy"]
@@ -148,7 +148,7 @@ const Services = () => {
       title: "Custom Software",
       path: "/services/custom-software",
       icon: <Settings size={28} />,
-      color: "from-slate-700 to-slate-900",
+      color: "from-slate-800 to-slate-950",
       description: "Developing bespoke software solutions tailored to your specific enterprise operational workflows.",
       tech: ["Java", "Python", "Go", "Azure"],
       features: ["Enterprise", "B2B", "Scale"]
@@ -157,7 +157,7 @@ const Services = () => {
       title: "ERP Solutions",
       path: "/services/erp-solutions",
       icon: <LayoutGrid size={28} />,
-      color: "from-indigo-600 to-blue-800",
+      color: "from-blue-800 to-blue-950",
       description: "Streamlining complex business processes with integrated resource planning and management modules.",
       tech: ["SAP", "Oracle", "Python", "SQL"],
       features: ["Resource Mgmt", "Odoo", "Custom ERP"]
@@ -235,8 +235,8 @@ const Services = () => {
               </motion.div>
 
               {/* Central Core */}
-              <div className="absolute inset-32 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(37,99,235,0.4)] animate-pulse">
-                <div className="text-center group cursor-pointer">
+              <div className="absolute inset-32 bg-blue-600 rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(37,99,235,0.4)] animate-pulse">
+                <div className="text-center group cursor-pointer font-sans">
                   <Box size={50} className="text-white mx-auto mb-2 group-hover:rotate-45 transition-transform" />
                   <p className="text-[10px] font-black text-white/80 uppercase tracking-widest leading-tight">Innovation<br />Node</p>
                 </div>
@@ -308,7 +308,7 @@ const Services = () => {
 
       {/* 5. CTA Node */}
       <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[4rem] p-12 md:p-20 text-center relative overflow-hidden shadow-2xl shadow-blue-600/40">
+        <div className="max-w-6xl mx-auto bg-blue-600 rounded-[4rem] p-12 md:p-20 text-center relative overflow-hidden shadow-2xl shadow-blue-600/40">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
           <div className="relative z-10">
             <h2 className="text-4xl md:text-6xl font-black text-white uppercase italic tracking-tighter leading-tight mb-8">

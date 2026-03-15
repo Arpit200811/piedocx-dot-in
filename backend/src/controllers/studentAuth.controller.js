@@ -22,14 +22,47 @@ export const getProfile = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
     try {
-        const { profilePicture, mobile } = req.body;
-        const student = await ExamStudent.findByIdAndUpdate(
+        const { profilePicture, mobile, fullName, college, branch, year } = req.body;
+        
+        const student = await ExamStudent.findById(req.student.id);
+        if (!student) return res.status(404).json({ message: 'Student not found' });
+
+        const updateData = {};
+        if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
+        if (mobile !== undefined) updateData.mobile = mobile.trim();
+        if (fullName !== undefined) updateData.fullName = fullName.trim();
+        if (college !== undefined) updateData.college = college.trim();
+        if (branch !== undefined) updateData.branch = branch;
+        if (year !== undefined) updateData.year = year;
+
+        // If sensitive fields change, we must regenerate the signature to maintain integrity
+        const needsResign = updateData.branch !== undefined || updateData.fullName !== undefined || updateData.college !== undefined;
+
+        if (needsResign) {
+            const { generateCertificateSignature, generateQR } = await import('../utils/certUtils.js');
+            const tempStudent = { ...student.toObject(), ...updateData };
+            
+            updateData.signature = generateCertificateSignature({
+                studentId: tempStudent.studentId,
+                course: tempStudent.branch,
+                issueDate: new Date(tempStudent.createdAt || Date.now()).toISOString().split('T')[0],
+                score: tempStudent.score || 0
+            });
+            
+            // Also regenerate QR to ensure everything is in sync
+            const verifyUrl = `${process.env.FRONTEND_URL || 'https://piedocx.in'}/#/verify/${student.certificateId}`;
+            updateData.qrCode = await generateQR(verifyUrl);
+        }
+
+        const updatedStudent = await ExamStudent.findByIdAndUpdate(
             req.student.id,
-            { profilePicture, mobile },
+            { $set: updateData },
             { new: true }
         );
-        res.json({ message: 'Profile updated successfully', student });
+
+        res.json({ message: 'Profile updated successfully', student: updatedStudent });
     } catch (error) {
+        console.error("updateProfile error:", error);
         res.status(500).json({ message: 'Error updating profile' });
     }
 };
@@ -346,21 +379,42 @@ export const syncProgress = async (req, res) => {
         const { answers } = req.body;
         const attemptedCount = Object.keys(answers || {}).length;
 
-        const updated = await ExamStudent.findOneAndUpdate(
-            { _id: req.student.id, testAttempted: false },
-            { 
-                $set: { 
-                    attemptedCount,
-                    savedAnswers: answers 
-                } 
-            }
-        );
-
-        if (!updated) {
-            return res.status(403).json({ message: 'Sync rejected: Test already submitted.' });
+        // Fetch student to get assigned questions for grading
+        const student = await ExamStudent.findById(req.student.id);
+        if (!student || student.testAttempted) {
+            return res.status(403).json({ message: 'Sync rejected: Test already submitted or student not found.' });
         }
 
-        res.json({ success: true });
+        const questionsToGrade = student.assignedQuestions;
+        let score = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+
+        if (questionsToGrade && questionsToGrade.length > 0) {
+            questionsToGrade.forEach(q => {
+                const studentAnswer = answers[q.questionId];
+                if (studentAnswer) {
+                    if (studentAnswer === q.correctAnswer) {
+                        score++;
+                        correctCount++;
+                    } else {
+                        wrongCount++;
+                    }
+                }
+            });
+        }
+
+        await ExamStudent.findByIdAndUpdate(req.student.id, { 
+            $set: { 
+                attemptedCount,
+                savedAnswers: answers,
+                score,
+                correctCount,
+                wrongCount
+            } 
+        });
+
+        res.json({ success: true, currentScore: score });
     } catch (error) {
         console.error("syncProgress error:", error);
         res.status(500).json({ message: 'Sync failed' });
@@ -577,3 +631,52 @@ export const getActiveResources = async (req, res) => {
         res.status(500).json({ message: "Error fetching resources" });
     }
 };
+
+export const getPerformanceHistory = async (req, res) => {
+    try {
+        const results = await TestResult.find({ student: req.student.id })
+            .select('testDate score totalQuestions submittedAt')
+            .sort({ submittedAt: 1 });
+            
+        const history = results.map(r => ({
+            date: r.testDate,
+            timestamp: r.submittedAt,
+            score: r.score,
+            total: r.totalQuestions,
+            percentage: r.totalQuestions > 0 ? ((r.score / r.totalQuestions) * 100).toFixed(1) : 0
+        }));
+        
+        res.json(history);
+    } catch (error) {
+        console.error("getPerformanceHistory error:", error);
+        res.status(500).json({ message: 'Error fetching performance history' });
+    }
+};
+
+export const getLeaderboard = async (req, res) => {
+    try {
+        // Fetch top 10 students globally by score
+        // In a real scenario, you might want to filter by specific test or category
+        const topStudents = await ExamStudent.find({ testAttempted: true })
+            .select('fullName college branch score profilePicture studentId')
+            .sort({ score: -1, updatedAt: 1 })
+            .limit(10);
+
+        const leaderboard = topStudents.map((s, index) => ({
+            rank: index + 1,
+            name: s.fullName,
+            college: s.college,
+            branch: s.branch,
+            score: s.score,
+            photo: s.profilePicture,
+            id: s.studentId
+        }));
+
+        res.json(leaderboard);
+    } catch (error) {
+        console.error("getLeaderboard error:", error);
+        res.status(500).json({ message: 'Error fetching leaderboard' });
+    }
+};
+
+

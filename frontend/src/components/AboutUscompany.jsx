@@ -51,9 +51,9 @@ const AboutUsCompany = () => {
 
    const processSteps = [
       { step: "01", title: "Discovery", desc: "Analyzing project DNA and strategic goals.", icon: <Search size={22} />, color: "text-blue-600", bg: "bg-blue-50" },
-      { step: "02", title: "Architecting", desc: "Designing high-fidelity blueprints and logic.", icon: <PenTool size={22} />, color: "text-indigo-600", bg: "bg-indigo-50" },
-      { step: "03", title: "Engineering", desc: "Translating logic into elite performance code.", icon: <Terminal size={22} />, color: "text-purple-600", bg: "bg-purple-50" },
-      { step: "04", title: "Deployment", desc: "Launching future-ready digital artifacts.", icon: <Rocket size={22} />, color: "text-rose-600", bg: "bg-rose-50" }
+      { step: "02", title: "Architecting", desc: "Designing high-fidelity blueprints and logic.", icon: <PenTool size={22} />, color: "text-blue-600", bg: "bg-blue-50" },
+      { step: "03", title: "Engineering", desc: "Translating logic into elite performance code.", icon: <Terminal size={22} />, color: "text-blue-600", bg: "bg-blue-50" },
+      { step: "04", title: "Deployment", desc: "Launching future-ready digital artifacts.", icon: <Rocket size={22} />, color: "text-blue-600", bg: "bg-blue-50" }
    ];
 
    const techStack = [
@@ -69,8 +69,8 @@ const AboutUsCompany = () => {
 
    const coreValues = [
       { icon: <Zap className="text-blue-600" />, title: "Velocity", desc: "Extreme speed in development without compromising on resilient quality." },
-      { icon: <ShieldCheck className="text-indigo-600" />, title: "Integrity", desc: "Absolute transparency and security in every line of code we ship." },
-      { icon: <Sparkles className="text-purple-600" />, title: "Innovation", desc: "Iterative design and thinking that stays 2 steps ahead of market trends." }
+      { icon: <ShieldCheck className="text-blue-600" />, title: "Integrity", desc: "Absolute transparency and security in every line of code we ship." },
+      { icon: <Sparkles className="text-blue-600" />, title: "Innovation", desc: "Iterative design and thinking that stays 2 steps ahead of market trends." }
    ];
 
    return (
@@ -224,7 +224,7 @@ const AboutUsCompany = () => {
                </div>
 
                <div className="lg:w-1/2 grid grid-cols-2 gap-6" data-aos="fade-left">
-                  <div className="relative overflow-hidden aspect-square bg-gradient-to-br from-blue-600 to-blue-700 rounded-[2.5rem] p-8 text-white flex flex-col justify-end shadow-2xl transition-all hover:scale-[1.02] group">
+                   <div className="relative overflow-hidden aspect-square bg-blue-600 rounded-[2.5rem] p-8 text-white flex flex-col justify-end shadow-2xl transition-all hover:scale-[1.02] group">
                      {/* Fixed animation position: Moved to Top Right to avoid text overlap */}
                      <div className="absolute top-[-20%] right-[-10%] p-8 opacity-10 animate-spin-slow">
                         <Settings size={180} />
@@ -242,7 +242,7 @@ const AboutUsCompany = () => {
                      </div>
                   </div>
 
-                  <div className="relative overflow-hidden aspect-square bg-gradient-to-br from-indigo-700 to-purple-800 rounded-[2.5rem] p-8 text-white flex flex-col justify-end shadow-2xl mt-8 transition-all hover:scale-[1.02] group">
+                  <div className="relative overflow-hidden aspect-square bg-slate-900 rounded-[2.5rem] p-8 text-white flex flex-col justify-end shadow-2xl mt-8 transition-all hover:scale-[1.02] group">
                      {/* Fixed animation position: Moved to Top Right to avoid text overlap */}
                      <div className="absolute top-[-20%] right-[-10%] p-8 opacity-10 animate-pulse">
                         <Layers size={180} />
@@ -268,7 +268,7 @@ const AboutUsCompany = () => {
             <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/10 blur-[100px] rounded-full pointer-events-none"></div>
             <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 relative z-10">
                <div className="lg:w-[35%] flex justify-center" data-aos="zoom-in">
-                  <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-[3rem] shadow-2xl relative inline-block">
+                  <div className="p-1.5 bg-blue-600 rounded-[3rem] shadow-2xl relative inline-block">
                      <img src="/Savanrai.jpg" alt="CEO" className="w-64 h-80 object-cover object-top rounded-[2.5rem] border border-white/10" />
                      <div className="absolute -bottom-4 -right-4 bg-white text-blue-600 w-14 h-14 rounded-[1.5rem] flex items-center justify-center shadow-xl">
                         <MessageSquareQuote size={28} />

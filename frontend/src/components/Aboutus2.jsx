@@ -18,11 +18,11 @@ const Aboutus2 = () => {
 
   const services = [
     { name: "Web App Development", icon: <Code2 strokeWidth={1.5} />, link: "/services/web-development", color: "text-blue-600" },
-    { name: "Android & IOS", icon: <Smartphone strokeWidth={1.5} />, link: "/services/android-ios", color: "text-indigo-600" },
-    { name: "UX/UI Designing", icon: <PenTool strokeWidth={1.5} />, link: "/services/custom-software", color: "text-purple-600" },
-    { name: "Domain & Hosting", icon: <Globe strokeWidth={1.5} />, link: "/services/domain-web-hosting", color: "text-sky-600" },
-    { name: "Graphic Designing", icon: <Palette strokeWidth={1.5} />, link: "/services/graphic-design", color: "text-pink-600" },
-    { name: "Digital Marketing", icon: <Megaphone strokeWidth={1.5} />, link: "/services/digital-marketing", color: "text-cyan-600" },
+    { name: "Android & IOS", icon: <Smartphone strokeWidth={1.5} />, link: "/services/android-ios", color: "text-blue-500" },
+    { name: "UX/UI Designing", icon: <PenTool strokeWidth={1.5} />, link: "/services/custom-software", color: "text-blue-700" },
+    { name: "Domain & Hosting", icon: <Globe strokeWidth={1.5} />, link: "/services/domain-web-hosting", color: "text-blue-600" },
+    { name: "Graphic Designing", icon: <Palette strokeWidth={1.5} />, link: "/services/graphic-design", color: "text-blue-800" },
+    { name: "Digital Marketing", icon: <Megaphone strokeWidth={1.5} />, link: "/services/digital-marketing", color: "text-blue-500" },
   ];
 
   return (

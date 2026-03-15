@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { useStudentAuth } from '../context/StudentAuthContext';
+import { useStudentAuth } from '../context/StudentAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, BookOpen, User, LogOut, Menu, X,

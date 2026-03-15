@@ -12,12 +12,12 @@ import { SiDotnet, SiFlutter } from "react-icons/si";
 
 const AboutUs = () => {
   const topics = [
-    { name: "MERN STACK", link: "/aboutus1/mern", icon: <FaNodeJs />, color: "text-green-600" },
-    { name: ".Net Core", link: "/aboutus1/dotnet-core", icon: <SiDotnet />, color: "text-blue-600" },
-    { name: "PHP Core", link: "/aboutus1/php-core", icon: <FaPhp />, color: "text-indigo-600" },
-    { name: "Python", link: "/aboutus1/python", icon: <FaPython />, color: "text-yellow-600" },
-    { name: "Advance JAVA", link: "/aboutus1/advance-java", icon: <FaJava />, color: "text-red-600" },
-    { name: "Flutter/Kotlin", link: "/aboutus1/flutter-kotlin", icon: <SiFlutter />, color: "text-sky-500" },
+    { name: "MERN STACK", link: "/aboutus1/mern", icon: <FaNodeJs />, color: "text-blue-600" },
+    { name: ".Net Core", link: "/aboutus1/dotnet-core", icon: <SiDotnet />, color: "text-blue-500" },
+    { name: "PHP Core", link: "/aboutus1/php-core", icon: <FaPhp />, color: "text-blue-700" },
+    { name: "Python", link: "/aboutus1/python", icon: <FaPython />, color: "text-blue-600" },
+    { name: "Advance JAVA", link: "/aboutus1/advance-java", icon: <FaJava />, color: "text-blue-800" },
+    { name: "Flutter/Kotlin", link: "/aboutus1/flutter-kotlin", icon: <SiFlutter />, color: "text-blue-400" },
   ];
 
   useEffect(() => {

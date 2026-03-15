@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useStudentAuth } from '../context/StudentAuthContext';
+import { useStudentAuth } from '../context/StudentAuth';
 
 const RedirectIfAuthenticated = () => {
     const { isAuthenticated, loading } = useStudentAuth();

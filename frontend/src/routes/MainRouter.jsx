@@ -16,14 +16,17 @@ const ProtectedStudentRoute = lazy(() => import("../components/ProtectedStudentR
 const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
 
 const RedirectIfAuthenticated = lazy(() => import("../components/RedirectIfAuthenticated"));
-const StudentRegistration = lazy(() => import("../components/StudentRegistration"));
 const StudentLogin = lazy(() => import("../components/StudentLogin"));
+const StudentRegistration = lazy(() => import("../components/StudentRegistration"));
+const PageNotfound = lazy(() => import("../components/PageNotfound"));
 
 const MainRouter = () => {
   return (
     <Suspense fallback={
       <div className="h-screen flex items-center justify-center bg-[#f8fafc]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full border-4 border-blue-600/10 border-t-blue-600 animate-spin"></div>
+        </div>
       </div>
     }>
       <Routes>
@@ -36,6 +39,9 @@ const MainRouter = () => {
             <Route path="student-login" element={<StudentLogin />} />
             <Route path="student-registration" element={<StudentRegistration />} />
           </Route>
+
+          {/* Catch-all for RootLayout */}
+          <Route path="*" element={<PageNotfound />} />
         </Route>
 
         {/* Student Portal (Protected) */}
@@ -60,7 +66,7 @@ const MainRouter = () => {
         {AdminRoutes}
 
         {/* Universal Catch-all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<PageNotfound />} />
       </Routes>
     </Suspense>
   );

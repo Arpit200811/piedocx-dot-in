@@ -13,11 +13,11 @@ const FeedbackForm = () => {
     const [submitting, setSubmitting] = useState(false);
 
     const questions = [
-        { id: 1, text: "How would you rate the difficulty level of the assessment?" },
-        { id: 2, text: "Was the time allocated sufficient for the questions provided?" },
-        { id: 3, text: "How relevant were the questions to your syllabus/training?" },
-        { id: 4, text: "Rate the performance and stability of the testing interface." },
-        { id: 5, text: "Overall, how satisfied are you with the assessment experience?" }
+        { id: 1, text: "How hard was the exam for you?" },
+        { id: 2, text: "Was the time enough to answer all questions?" },
+        { id: 3, text: "Were the questions from your syllabus?" },
+        { id: 4, text: "How was the app working during the exam?" },
+        { id: 5, text: "Are you happy with the overall exam experience?" }
     ];
 
     const handleRating = (id, rating) => {
@@ -34,7 +34,7 @@ const FeedbackForm = () => {
         // Validate
         const answeredAll = questions.every(q => ratings[q.id]);
         if (!answeredAll) {
-            Swal.fire('Incomplete Feedback', 'Please provide a rating for all 5 questions.', 'warning');
+            Swal.fire('Form Missing', 'Please answer all 5 questions.', 'warning');
             return;
         }
 
@@ -63,7 +63,7 @@ const FeedbackForm = () => {
 
             Swal.fire({
                 title: 'Thank You!',
-                text: 'Your feedback has been recorded.',
+                text: 'Your feedback is saved.',
                 icon: 'success',
                 timer: 2000,
                 showConfirmButton: false
@@ -90,8 +90,8 @@ const FeedbackForm = () => {
                         <div className="w-20 h-20 bg-green-50 text-green-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-100">
                             <CheckCircle size={40} />
                         </div>
-                        <h1 className="text-3xl font-black text-slate-900 mb-3 uppercase italic tracking-tighter">Assessment Complete</h1>
-                        <p className="text-slate-500 max-w-lg mx-auto font-medium">Your answers have been securely encrypted and stored. Before you leave, help us improve the system with your feedback.</p>
+                        <h1 className="text-3xl font-black text-slate-900 mb-3 uppercase italic tracking-tighter">Exam Finished</h1>
+                        <p className="text-slate-500 max-w-lg mx-auto font-medium">Your answers are safely saved. Before you leave, please give us your feedback.</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-5 sm:p-8 md:p-12 space-y-12">
@@ -124,7 +124,7 @@ const FeedbackForm = () => {
                                             <MessageSquare className="absolute top-4 left-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
                                             <textarea
                                                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 text-sm font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-slate-400"
-                                                placeholder="Additional comments (optional)..."
+                                                placeholder="Any other message (optional)..."
                                                 rows="2"
                                                 value={comments[q.id] || ""}
                                                 onChange={(e) => handleComment(q.id, e.target.value)}
@@ -141,9 +141,9 @@ const FeedbackForm = () => {
                                 disabled={submitting}
                                 className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
                             >
-                                {submitting ? 'Submitting Feedback...' : (
+                                {submitting ? 'Saving Feedback...' : (
                                     <>
-                                        Complete Session <Send size={16} className="group-hover:translate-x-1 transition-transform" />
+                                        Finish & Go Home <Send size={16} className="group-hover:translate-x-1 transition-transform" />
                                     </>
                                 )}
                             </button>
