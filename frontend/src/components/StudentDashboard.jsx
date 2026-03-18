@@ -409,7 +409,25 @@ const StudentDashboard = () => {
                             </div>
 
                             <div className="lg:col-span-2 space-y-6">
-                                <div className="bg-slate-900 rounded-3xl md:rounded-[4rem] p-8 md:p-10 text-white relative overflow-hidden shadow-2xl"><div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl"></div><div className="relative z-10"><h3 className="text-xl font-black italic uppercase tracking-tighter mb-4">Quick <span className="text-blue-500">Links</span></h3><p className="text-slate-400 text-xs font-medium mb-8 leading-relaxed">Direct shortcuts to important pages.</p><div className="space-y-4"><button onClick={() => navigate('/student-results')} className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group"><span className="text-[9px] font-black uppercase tracking-widest">See My Result</span><ChevronRight size={16} className="text-blue-500 group-hover:translate-x-1 transition-transform" /></button><button onClick={() => window.open('https://api.whatsapp.com/send?phone=919572458428', '_blank')} className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group"><span className="text-[9px] font-black uppercase tracking-widest">Contact Help</span><ChevronRight size={16} className="text-blue-500 group-hover:translate-x-1 transition-transform" /></button></div></div></div>
+                                <div className="bg-slate-900 rounded-3xl md:rounded-[4rem] p-8 md:p-10 text-white relative overflow-hidden shadow-2xl">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl"></div>
+                                    <div className="relative z-10">
+                                        <h3 className="text-xl font-black italic uppercase tracking-tighter mb-4">Quick <span className="text-blue-500">Links</span></h3>
+                                        <p className="text-slate-400 text-xs font-medium mb-8 leading-relaxed">Direct shortcuts to important pages.</p>
+                                        <div className="space-y-4">
+                                            {testInfo?.resultsPublished && (
+                                                <button onClick={() => navigate('/student-results')} className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest">See My Result</span>
+                                                    <ChevronRight size={16} className="text-blue-500 group-hover:translate-x-1 transition-transform" />
+                                                </button>
+                                            )}
+                                            <button onClick={() => window.open('https://api.whatsapp.com/send?phone=919572458428', '_blank')} className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group">
+                                                <span className="text-[9px] font-black uppercase tracking-widest">Contact Help</span>
+                                                <ChevronRight size={16} className="text-blue-500 group-hover:translate-x-1 transition-transform" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div className="bg-white rounded-3xl md:rounded-[4rem] p-8 md:p-10 border border-slate-100 shadow-xl flex flex-col items-center justify-center text-center gap-6 group"><div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Info size={40} /></div><p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400 leading-none">Security: Enabled</p><p className="text-xs font-medium text-slate-500 px-4 leading-relaxed italic">"Your data and profile are completely safe and secure with Piedocx."</p></div>
                             </div>
                         </motion.div>

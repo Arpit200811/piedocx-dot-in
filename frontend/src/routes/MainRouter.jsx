@@ -12,6 +12,9 @@ const lazyWithRetry = (componentImport) =>
 
     try {
       const component = await componentImport();
+      if (!component || !component.default) {
+        throw new Error("Invalid module or missing default export. Attempting recovery...");
+      }
       window.localStorage.setItem('page-has-been-force-refreshed', 'false');
       return component;
     } catch (error) {
@@ -20,16 +23,16 @@ const lazyWithRetry = (componentImport) =>
         try {
           if ('serviceWorker' in navigator) {
             const registrations = await navigator.serviceWorker.getRegistrations();
-            for (let registration of registrations) {
-              await registration.unregister();
-            }
+            for (let reg of registrations) await reg.unregister();
+            const cacheKeys = await caches.keys();
+            await Promise.all(cacheKeys.map(key => caches.delete(key)));
           }
         } catch (swErr) { }
 
         // A temporary load error, try refreshing the page once with a cache-buster
         window.localStorage.setItem('page-has-been-force-refreshed', 'true');
         const url = new URL(window.location.href);
-        url.searchParams.set('reload', Date.now().toString());
+        url.searchParams.set('reload_ts', Date.now().toString());
         window.location.replace(url.toString());
         return new Promise(() => { }); // Never resolve, let page refresh take focus
       }

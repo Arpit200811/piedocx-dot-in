@@ -50,15 +50,13 @@ api.interceptors.response.use(
             'Time is over', 
             'No active test', 
             'Test not found', 
-            'not Active', 
-            'Student not registered',
-            'Network Error',
-            'timeout',
+            'published',
             '404'
         ];
         
         const isSilent = silentErrors.some(s => 
-            message.toLowerCase().includes(s.toLowerCase())
+            (message && message.toLowerCase().includes(s.toLowerCase())) || 
+            (error.response?.status.toString() === s)
         );
 
         if (!isSilent) {

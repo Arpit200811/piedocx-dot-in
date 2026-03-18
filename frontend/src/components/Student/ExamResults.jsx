@@ -73,7 +73,7 @@ const ExamResults = () => {
         );
     }
 
-    const percentage = Math.round((results.score / results.total) * 100);
+    const percentage = results.total > 0 ? Math.round((results.score / results.total) * 100) : 0;
 
     return (
         <div className="min-h-screen bg-[#f8fafc] py-8 sm:py-12 px-3 sm:px-6 lg:px-8 font-sans">

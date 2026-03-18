@@ -14,18 +14,29 @@ class ErrorBoundary extends Component {
 
   async componentDidCatch(error, errorInfo) {
     // Automatic reload for dynamic import failures (caused by build hash changes)
-    if (error && (error.toString().includes('Failed to fetch dynamically imported module') || error.name === 'ChunkLoadError')) {
-      console.log("Chunk load error detected, triggering PWA unregister and reload...");
+    const isModuleError = error && (
+      error.toString().includes('Failed to fetch dynamically imported module') || 
+      error.name === 'ChunkLoadError' ||
+      error.toString().includes('MIME type') ||
+      (error instanceof TypeError && error.message.includes('default'))
+    );
+
+    if (isModuleError) {
+      console.log("Module script error detected, triggering PWA unregister and reload...");
       
       try {
         if ('serviceWorker' in navigator) {
           const registrations = await navigator.serviceWorker.getRegistrations();
           for (let reg of registrations) await reg.unregister();
+          
+          // Also try to clear all caches
+          const cacheKeys = await caches.keys();
+          await Promise.all(cacheKeys.map(key => caches.delete(key)));
         }
       } catch (e) { }
 
       const url = new URL(window.location.href);
-      url.searchParams.set('retry', Date.now().toString());
+      url.searchParams.set('retry_ts', Date.now().toString());
       window.location.replace(url.toString());
       return;
     }
