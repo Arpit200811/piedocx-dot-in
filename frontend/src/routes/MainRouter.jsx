@@ -4,21 +4,43 @@ import { PublicRoutes } from "./PublicRoutes";
 import { AdminRoutes } from "./AdminRoutes";
 import { EmployeeRoutes } from "./EmployeeRoutes";
 
-const RootLayout = lazy(() => import("../components/RootLayout"));
-const StudentDetails = lazy(() => import("../components/StudentDetails"));
-const StudentDashboard = lazy(() => import("../components/StudentDashboard"));
-const TestInterface = lazy(() => import("../components/Student/TestInterface"));
-const WaitingRoom = lazy(() => import("../components/Student/WaitingRoom"));
-const ExamResults = lazy(() => import("../components/Student/ExamResults"));
-const FeedbackForm = lazy(() => import("../components/Student/FeedbackForm"));
-const VerifyCertificate = lazy(() => import("../components/VerifyCertificate"));
-const ProtectedStudentRoute = lazy(() => import("../components/ProtectedStudentRoute"));
-const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
+const lazyWithRetry = (componentImport) =>
+  lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.localStorage.getItem('page-has-been-force-refreshed') || 'false'
+    );
 
-const RedirectIfAuthenticated = lazy(() => import("../components/RedirectIfAuthenticated"));
-const StudentLogin = lazy(() => import("../components/StudentLogin"));
-const StudentRegistration = lazy(() => import("../components/StudentRegistration"));
-const PageNotfound = lazy(() => import("../components/PageNotfound"));
+    try {
+      const component = await componentImport();
+      window.localStorage.setItem('page-has-been-force-refreshed', 'false');
+      return component;
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        // A temporary load error, try refreshing the page once
+        window.localStorage.setItem('page-has-been-force-refreshed', 'true');
+        return window.location.reload();
+      }
+
+      // The error is real and persistent across reloads
+      throw error;
+    }
+  });
+
+const RootLayout = lazyWithRetry(() => import("../components/RootLayout"));
+const StudentDetails = lazyWithRetry(() => import("../components/StudentDetails"));
+const StudentDashboard = lazyWithRetry(() => import("../components/StudentDashboard"));
+const TestInterface = lazyWithRetry(() => import("../components/Student/TestInterface"));
+const WaitingRoom = lazyWithRetry(() => import("../components/Student/WaitingRoom"));
+const ExamResults = lazyWithRetry(() => import("../components/Student/ExamResults"));
+const FeedbackForm = lazyWithRetry(() => import("../components/Student/FeedbackForm"));
+const VerifyCertificate = lazyWithRetry(() => import("../components/VerifyCertificate"));
+const ProtectedStudentRoute = lazyWithRetry(() => import("../components/ProtectedStudentRoute"));
+const DashboardLayout = lazyWithRetry(() => import("../layouts/DashboardLayout"));
+
+const RedirectIfAuthenticated = lazyWithRetry(() => import("../components/RedirectIfAuthenticated"));
+const StudentLogin = lazyWithRetry(() => import("../components/StudentLogin"));
+const StudentRegistration = lazyWithRetry(() => import("../components/StudentRegistration"));
+const PageNotfound = lazyWithRetry(() => import("../components/PageNotfound"));
 
 const MainRouter = () => {
   return (
