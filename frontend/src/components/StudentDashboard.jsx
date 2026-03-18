@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import html2canvas from 'html2canvas';
+import html2canvas from '../utils/html2canvasSafe';
 import {
     BookOpen, Award, Download, User,
     LogOut, Clock, ChevronRight,
@@ -179,25 +179,14 @@ const StudentDashboard = () => {
                             // Recursively remove oklch from all elements in the clone
                             const allElements = el.querySelectorAll('*');
                             allElements.forEach(item => {
-                                const style = window.getComputedStyle(item);
-                                if (style.color?.includes('oklch')) item.style.color = '#000';
-                                if (style.backgroundColor?.includes('oklch')) item.style.backgroundColor = 'transparent';
-                                if (style.borderColor?.includes('oklch')) item.style.borderColor = 'transparent';
+                                try {
+                                    const style = window.getComputedStyle(item);
+                                    if (style.color?.includes('oklch')) item.style.color = '#000';
+                                    if (style.backgroundColor?.includes('oklch')) item.style.backgroundColor = 'transparent';
+                                    if (style.borderColor?.includes('oklch')) item.style.borderColor = 'transparent';
+                                } catch (e) { }
                             });
                         }
-
-                        // Strip modern color functions from all stylesheets in the clone to prevent parser crash
-                        Array.from(clonedDoc.styleSheets).forEach(sheet => {
-                            try {
-                                Array.from(sheet.cssRules).forEach((rule, index) => {
-                                    if (rule.cssText && (rule.cssText.includes('oklch') || rule.cssText.includes('oklab'))) {
-                                        sheet.deleteRule(index);
-                                    }
-                                });
-                            } catch (e) {
-                                console.warn("Could not process stylesheet rule", e);
-                            }
-                        });
                     }
                 });
 

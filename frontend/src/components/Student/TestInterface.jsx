@@ -32,11 +32,20 @@ const TestInterface = () => {
 
     const [broadcastMessage, setBroadcastMessage] = useState(null);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [isOnline, setIsOnline] = useState(true);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
     const timerRef = useRef(null);
     const saveLockRef = useRef(false);
+    const videoRef = useRef(null);
+    const audioContextRef = useRef(null);
+    const analyserRef = useRef(null);
+    const broadcastChannelRef = useRef(null);
 
     useEffect(() => {
+        const setOnline = () => setIsOnline(true);
+        const setOffline = () => setIsOnline(false);
+        window.addEventListener('online', setOnline);
+        window.addEventListener('offline', setOffline);
+
         const fetchInitialData = async () => {
             const token = localStorage.getItem('studentToken');
             if (!token) {
@@ -57,8 +66,6 @@ const TestInterface = () => {
                     return;
                 }
                 setTestInfo(infoData);
-                setInitialLoading(false);
-
             } catch (err) {
                 const status = err.response?.status;
                 if (status === 403 || status === 404) {
@@ -92,8 +99,15 @@ const TestInterface = () => {
                 testId: testInfo._id
             });
 
+            // Try to recover from localStorage first (for this specific specific student + test)
+            const localKey = `answers_${studentProfile?.studentId}_${testInfo?._id}`;
+            const localAnswers = JSON.parse(localStorage.getItem(localKey) || "{}");
+
+            // Merge server saved answers with local cache (server wins if conflict)
+            const combinedAnswers = { ...localAnswers, ...(qData.savedAnswers || {}) };
+
             setQuestions(qData.questions);
-            setAnswers(qData.savedAnswers || {});
+            setAnswers(combinedAnswers);
 
             if (typeof qData.remainingSeconds === 'number') {
                 setTimeLeft(qData.remainingSeconds);
@@ -203,156 +217,244 @@ const TestInterface = () => {
         return () => clearInterval(interval);
     }, [timeLeft]);
 
-    // Focus State for CSS Blur Protection
+    // Violation Cooldown — prevents rapid-fire duplicate detections on mobile
     const [isFocused, setIsFocused] = useState(true);
+    const [screenshotFlash, setScreenshotFlash] = useState(false);
+    
+    // NEW: World-Class Security States
+    const [noiseViolation, setNoiseViolation] = useState(false);
+    const [syncError, setSyncError] = useState(false);
+
+    // API rate-limit only (UI red alert is ALWAYS instant)
+    const lastApiViolationTime = useRef(0);
+    const API_COOLDOWN_MS = 3000;
+    // iOS screenshot detection: track rapid visibility cycles
+    const lastHiddenTime = useRef(0);
 
     // 3. Anti-Cheat & Security Logic (Active only when started)
     useEffect(() => {
         if (!isStarted || submitting) return;
 
+        // --- 1. MULTI-TAB PREVENTION (The "Highlander" Pattern — Only One Can Live) ---
+        const channelName = `test_session_${studentProfile?.studentId}_${testInfo?._id}`;
+        broadcastChannelRef.current = new BroadcastChannel(channelName);
+        
+        // Signal everyone that I AM NOW ACTIVE
+        broadcastChannelRef.current.postMessage({ type: 'NEW_TAB_OPENED', time: Date.now() });
+
+        broadcastChannelRef.current.onmessage = (event) => {
+            if (event.data?.type === 'NEW_TAB_OPENED') {
+                // If another tab opens, I lock myself. 
+                handleViolation("Multi-Tab Access Detected (Forbidden Action)");
+                setIsOutOfSync(true); 
+            }
+        };
+
+        // --- 2. INTERNET GUARDIAN (Detection moved to top level) ---
+
+        // --- 3. SONIC PROCTOR (Noise Monitoring) ---
+        const startSonicProctor = async () => {
+            try {
+                // We use the stream we already got from initCamera in the other effect
+                // Get the video track's associated audio
+                const stream = videoRef.current?.srcObject;
+                if (!stream || stream.getAudioTracks().length === 0) return;
+
+                audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContextRef.current.createMediaStreamSource(stream);
+                analyserRef.current = audioContextRef.current.createAnalyser();
+                analyserRef.current.fftSize = 256;
+                source.connect(analyserRef.current);
+
+                const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+                let noiseCounter = 0;
+
+                const checkNoise = () => {
+                    if (submitting) return;
+                    analyserRef.current.getByteFrequencyData(dataArray);
+                    
+                    // Find Peak Volume (0 to 255)
+                    let peak = 0;
+                    for (let i = 0; i < dataArray.length; i++) {
+                        if (dataArray[i] > peak) peak = dataArray[i];
+                    }
+
+                    // Threshold: 155 out of 255 (Medium speech / talking)
+                    if (peak > 155) {
+                        noiseCounter++;
+                        if (noiseCounter > 30) { // Sustained noise for ~1 second
+                            handleViolation("Excessive Ambient Noise / Speech Detected");
+                            noiseCounter = 0;
+                            setNoiseViolation(true);
+                            setTimeout(() => setNoiseViolation(false), 3000);
+                        }
+                    } else {
+                        noiseCounter = Math.max(0, noiseCounter - 1);
+                    }
+                    requestAnimationFrame(checkNoise);
+                };
+                checkNoise();
+            } catch (e) {
+                console.error("Sonic Proctor Error:", e);
+            }
+        };
+        // Small delay to allow initCamera stream to be ready
+        setTimeout(startSonicProctor, 2000);
+
         // Camera Initialization for Presence Check
         const initCamera = async () => {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                // We don't necessarily need to show the video to the user, just keep it active
-                // to prevent screen sleepers and detect if stream is interrupted
-                stream.getVideoTracks()[0].onended = () => {
-                    handleViolation("Camera Access Terminated");
-                };
+                // Request BOTH audio and video to enforce strict permission and deter cheating
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                }
+                // We don't necessarily need to process audio, just holding the stream deters them.
+                // It also shows the red mic icon in the browser tab.
+                stream.getTracks().forEach(track => {
+                    track.onended = () => {
+                        handleViolation("Camera/Mic Access Terminated");
+                    };
+                });
             } catch (err) {
-                console.warn("Camera access denied or unavailable");
-                // Optional: handleViolation("Camera Permission Required")
+                console.warn("Camera/Mic access denied or unavailable");
+                // Mandatory enforcement: if they block camera, we violate them instantly
+                handleViolation("Hardware Permissions Denied (Camera/Mic)");
+                Swal.fire('Device Error', 'Camera/Mic permissions are MANDATORY for AI Proctoring.', 'error');
             }
         };
         initCamera();
 
+        // --- SCREEN RECORDING / SHARE DETECTION ---
+        // Detect if student starts sharing screen via browser's built-in capture API
+        const detectScreenCapture = async () => {
+            try {
+                // Modern Chrome/Edge expose a list of active capture sessions
+                if (navigator.mediaDevices && 'getDisplayMedia' in navigator.mediaDevices) {
+                    // We cannot block getDisplayMedia calls, but we register a listener
+                    // on the original function to detect when it gets called
+                    const _orig = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
+                    navigator.mediaDevices.getDisplayMedia = async (...args) => {
+                        handleViolation('Screen Recording / Share Attempt Detected');
+                        // Still call original so navigator doesn't break, then immediately stop its tracks
+                        try {
+                            const stream = await _orig(...args);
+                            stream.getTracks().forEach(t => t.stop());
+                            return stream;
+                        } catch (e) { throw e; }
+                    };
+                }
+            } catch (e) { }
+        };
+        detectScreenCapture();
+
+        // --- PRIMARY: visibilitychange — works on BOTH desktop & mobile ---
+        // iOS BONUS: On iPhone, taking a screenshot causes a ~100ms visibility flicker.
+        // We detect that pattern: hidden→visible in under 300ms = screensho
         const handleVisibilityChange = () => {
             if (document.hidden) {
-                handleViolation("Tab Switch / Hidden");
+                lastHiddenTime.current = Date.now();
+                // INSTANT red alert — always, no cooldown
+                handleViolation("App/Tab/Screen Switch Detected");
                 setIsFocused(false);
             } else {
+                const hiddenDuration = Date.now() - lastHiddenTime.current;
+                // iOS screenshot: page goes hidden and comes back in < 300ms
+                if (lastHiddenTime.current > 0 && hiddenDuration < 300) {
+                    triggerScreenshotFlash('iOS Screenshot Pattern Detected');
+                }
                 setIsFocused(true);
+                if (!document.fullscreenElement) {
+                    setTimeout(enterFullScreen, 200);
+                }
             }
         };
 
+        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
         const handleBlur = () => {
+            if (isMobile) return; // Skip: mobile uses visibilitychange exclusively
             setIsFocused(false);
-            handleViolation("Focus Lost / App Switch");
+            handleViolation("Focus Lost / App Switch (Desktop)");
         };
 
         const handleFocus = () => {
             setIsFocused(true);
-            // Re-check fullscreen on focus
             if (!document.fullscreenElement) {
                 setTimeout(enterFullScreen, 100);
             }
         };
 
+        // Fullscreen exit — only for browsers that support it (desktop mostly)
         const handleFullScreenChange = () => {
             if (!document.fullscreenElement && isStarted && !submitting) {
                 handleViolation("Exited Full Screen");
             }
         };
 
+        // Fires when the page unloads / goes into BFCache
         const handlePageHide = () => {
-            handleViolation("Page Hidden/Suspended");
+            // Don't call triggerViolation — just sync answers to server passively
+            // Real cheating is caught by visibilitychange above. pagehide is too noisy.
         };
 
+        // --- SPLIT SCREEN: Safe ratio-based detection ---
+        // Only fires if viewport shrinks to < 55% of physical screen (true split-screen)
+        // This does NOT fire on Android URL bar hide/show (which is < 10% change)
+        let resizeTimeout;
         const handleResize = () => {
-            // Split-screen or DevTools side-dock
-            const widthDiff = window.outerWidth - window.innerWidth;
-            const heightDiff = window.outerHeight - window.innerHeight;
-            
-            if (widthDiff > 200 || heightDiff > 200) {
-                 handleViolation("Split Screen / Side Panel Detected");
-            }
-
-            if (window.innerWidth < 350 || window.innerHeight < 350) {
-                handleViolation("Small Window / Minimized Environment");
-            }
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const screenH = window.screen.height;
+                const screenW = window.screen.width;
+                const heightRatio = window.innerHeight / screenH;
+                const widthRatio = window.innerWidth / screenW;
+                if (heightRatio < 0.55 || widthRatio < 0.55) {
+                    handleViolation("Split Screen / Floating App Detected");
+                    setTimeout(enterFullScreen, 100);
+                }
+            }, 800);
         };
 
+        // --- COPY/PASTE Prevention ---
         const preventCopyPaste = (e) => {
             e.preventDefault();
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'warning',
-                title: 'Action Prohibited',
-                showConfirmButton: false,
-                timer: 1500
-            });
             handleViolation("Copy/Paste Attempt");
+            Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Action Prohibited', showConfirmButton: false, timer: 1500 });
         };
 
+        // --- KEYBOARD Shortcuts (Desktop DevTools) ---
         const blockKeys = (e) => {
-            // Block F12
-            if (e.keyCode === 123) {
-                e.preventDefault();
-                handleViolation("Attempted to open DevTools (F12)");
-                return false;
-            }
-            // Block Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
-            if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
-                e.preventDefault();
-                handleViolation("Attempted to open DevTools (Shortcut)");
-                return false;
-            }
-            // Block Ctrl+U (View Source)
-            if (e.ctrlKey && e.keyCode === 85) {
-                e.preventDefault();
-                handleViolation("Attempted to View Source");
-                return false;
-            }
+            if (e.keyCode === 123) { e.preventDefault(); handleViolation("DevTools F12"); return false; }
+            if (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) { e.preventDefault(); handleViolation("DevTools Keyboard Shortcut"); return false; }
+            if (e.ctrlKey && e.keyCode === 85) { e.preventDefault(); handleViolation("View Source Attempt"); return false; }
         };
 
-        // DevTools detection trick
-        let devtoolsOpen = false;
-        const threshold = 160;
-        const checkDevTools = () => {
-            if (window.outerWidth - window.innerWidth > threshold ||
-                window.outerHeight - window.innerHeight > threshold) {
-                if (!devtoolsOpen) {
-                    handleViolation("Developer Tools Detected");
-                    devtoolsOpen = true;
-                }
-            } else {
-                devtoolsOpen = false;
-            }
-        };
-
+        // --- ORIENTATION (Mobile): WARN only — don't violate (they may just be sitting down) ---
+        // Only mark as violation if it stays flipped for > 3 seconds (deliberate rotation for screenshot)
+        let orientationViolationTimer;
         const handleOrientationChange = () => {
-            handleViolation("Orientation Change Detected (Mobile Security)");
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'info',
-                title: 'Keep device stable',
-                showConfirmButton: false,
-                timer: 2000
-            });
+            clearTimeout(orientationViolationTimer);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: '⚠️ Rotate back to portrait!', showConfirmButton: false, timer: 3000 });
+            orientationViolationTimer = setTimeout(() => {
+                if (window.screen.orientation?.type?.includes('landscape')) {
+                    // Landscape stayed for 3s = deliberate (screenshot attempt)
+                    handleViolation("Deliberate Landscape Rotation (Screenshot Attempt)");
+                }
+            }, 3000);
         };
 
+        // --- MULTI-TOUCH (3+ fingers = Screenshot gesture on Android/iOS) ---
         const handleTouchStart = (e) => {
-            if (e.touches && e.touches.length > 2) {
-                handleViolation("Multi-touch / Screenshot Gesture Detected");
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'error',
-                    title: 'Multi-finger gestures blocked',
-                    showConfirmButton: false,
-                    timer: 2000
-                });
+            if (e.touches && e.touches.length >= 3) {
+                triggerScreenshotFlash("Multi-finger Screenshot Gesture");
+                e.preventDefault();
             }
         };
 
-        const dtInterval = setInterval(checkDevTools, 1000);
-
+        // Register all events
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("blur", handleBlur);
         window.addEventListener("focus", handleFocus);
-        window.addEventListener("pagehide", handlePageHide);
         window.addEventListener("resize", handleResize);
         window.addEventListener("touchstart", handleTouchStart, { passive: false });
         window.addEventListener("orientationchange", handleOrientationChange);
@@ -364,11 +466,19 @@ const TestInterface = () => {
         document.addEventListener("contextmenu", (e) => e.preventDefault());
 
         return () => {
-            clearInterval(dtInterval);
+            clearTimeout(resizeTimeout);
+            clearTimeout(orientationViolationTimer);
+            if (broadcastChannelRef.current) {
+                broadcastChannelRef.current.close();
+                broadcastChannelRef.current = null;
+            }
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+                audioContextRef.current = null;
+            }
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);
             window.removeEventListener("focus", handleFocus);
-            window.removeEventListener("pagehide", handlePageHide);
             window.removeEventListener("resize", handleResize);
             window.removeEventListener("touchstart", handleTouchStart);
             window.removeEventListener("orientationchange", handleOrientationChange);
@@ -382,11 +492,11 @@ const TestInterface = () => {
     }, [isStarted, submitting, navigate]);
 
 
-    // 4. Manual Progress Sync (Triggered only by Button)
-    const syncProgress = async (currentAnswers, currentTimer) => {
-        if (saveLockRef.current) return;
+    // 4. Manual Progress Sync (Triggered by Button or Interval)
+    const syncProgress = async (currentAnswers, currentTimer, isQuiet = false) => {
+        if (saveLockRef.current || !isOnline) return;
         saveLockRef.current = true;
-        setIsSyncing(true);
+        if (!isQuiet) setIsSyncing(true);
 
         try {
             const res = await api.post('/api/student-auth/sync-progress', {
@@ -404,25 +514,33 @@ const TestInterface = () => {
                 });
             }
 
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'success',
-                title: 'Cloud Sync Successful',
-                showConfirmButton: false,
-                timer: 1500,
-                background: '#1e293b',
-                color: '#fff'
-            });
+            setSyncError(false); // Clear any previous error indicator
+
+            if (!isQuiet) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Cloud Sync Successful',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+            }
         } catch (err) {
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'error',
-                title: 'Sync Failed - Check Internet',
-                showConfirmButton: false,
-                timer: 3000
-            });
+            setSyncError(true); // TRIGGER THE RED BANNER UI
+            // Only alert with modal if manual button was clicked.
+            if (!isQuiet) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Sync Failed - Check Internet',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            }
         } finally {
             saveLockRef.current = false;
             setIsSyncing(false);
@@ -447,24 +565,40 @@ const TestInterface = () => {
         return () => clearInterval(timerRef.current);
     }, [isStarted, submitting, timeLeft]);
 
-    // 5. Automatic Background Sync (Every 90 Seconds)
+    // 5. Automatic Background Sync (High Frequency — every 15 Seconds)
     useEffect(() => {
         if (!isStarted || submitting || timeLeft <= 0) return;
 
         const autoSync = setInterval(() => {
-            syncProgress(answers, timeLeft);
-        }, 90000); // 1.5 Minutes
+            syncProgress(answers, timeLeft, true); // true = Quiet mode (no alerts)
+        }, 15000); // 15 Seconds
 
-        return () => clearInterval(autoSync);
+        // Warn before tab closure
+        const handleBeforeUnload = (e) => {
+            if (isStarted && !submitting) {
+                syncProgress(answers, timeLeft, true); // Try one last sync quiet
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            clearInterval(autoSync);
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
     }, [isStarted, submitting, answers, timeLeft]);
 
-    // 6. Answer Selection with Real-time Sync
+    // 6. Answer Selection with Real-time Auto-save (LocalStorage + Debounced Cloud Sync)
     const handleAnswerSelect = (questionId, option) => {
         const newAnswers = { ...answers, [questionId]: option };
         setAnswers(newAnswers);
 
-        // REMOVED: Immediate syncProgress call. 
-        // This was causing excessive API calls and "auto-save" behavior.
+        // INSTANT Persistence to LocalStorage (Zero-loss on refresh)
+        if (studentProfile && testInfo) {
+            const localKey = `answers_${studentProfile.studentId}_${testInfo._id}`;
+            localStorage.setItem(localKey, JSON.stringify(newAnswers));
+        }
 
         // Emit via Socket for Real-time Admin Monitor (Low overhead)
         if (socketRef.current) {
@@ -481,28 +615,48 @@ const TestInterface = () => {
     const handleViolation = (type) => {
         if (!isStarted || submitting) return;
 
+        // UI RED ALERT — ALWAYS INSTANT
         setViolationCount(prev => prev + 1);
-        setIsOutOfSync(true);
+        setIsOutOfSync(true);   // Shows full-screen red overlay immediately
+        setIsFocused(false);    // Blurs exam content immediately
 
-        // Socket Report
+        // Haptic Feedback for Mobile (Vibrate)
+        if (navigator.vibrate) {
+            navigator.vibrate([100, 50, 100, 50, 200]);
+        }
+
+        // Socket Report (no throttle)
         reportViolationSocket(type);
 
-        const token = localStorage.getItem('studentToken');
-        if (token) {
-            api.post('/api/student-auth/log-violation', { type }).then(res => {
-                if (res.shouldTerminate) {
-                    Swal.fire({
-                        title: 'Test Terminated',
-                        text: 'Multiple violations detected. Your test is being auto-submitted.',
-                        icon: 'error',
-                        timer: 3000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        handleSubmitTest(true);
-                    });
-                }
-            }).catch(err => { });
+        // API call — rate-limited to prevent server spam
+        const now = Date.now();
+        if (now - lastApiViolationTime.current >= API_COOLDOWN_MS) {
+            lastApiViolationTime.current = now;
+            const token = localStorage.getItem('studentToken');
+            if (token) {
+                api.post('/api/student-auth/log-violation', { type }).then(res => {
+                    if (res.shouldTerminate) {
+                        Swal.fire({
+                            title: 'TEST TERMINATED',
+                            text: 'Multiple critical violations recorded. Examination terminated.',
+                            icon: 'error',
+                            confirmButtonText: 'Exit Secure Environment',
+                            confirmButtonColor: '#ef4444',
+                            allowOutsideClick: false
+                        }).then(() => {
+                            handleSubmitTest(true);
+                        });
+                    }
+                }).catch(() => { });
+            }
         }
+    };
+
+    // Screenshot Flash Effect 
+    const triggerScreenshotFlash = (reason) => {
+        setScreenshotFlash(true);
+        setTimeout(() => setScreenshotFlash(false), 600);
+        handleViolation(reason);
     };
 
     // Auto-submit on load if time is up
@@ -541,6 +695,10 @@ const TestInterface = () => {
         setSubmitting(true);
         try {
             await api.post('/api/student-auth/submit-test', { answers });
+
+            // Success: Clean up local cache
+            const localKey = `answers_${studentProfile?.studentId}_${testInfo?._id}`;
+            localStorage.removeItem(localKey);
 
             Swal.fire({
                 title: 'Test Submitted!',
@@ -598,6 +756,87 @@ const TestInterface = () => {
                 <h1 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tighter uppercase italic">{testInfo?.title}</h1>
                 <p className="text-slate-400 text-sm font-medium mb-8">Secure Test Environment • {testInfo?.duration} Minutes</p>
 
+                {/* Detailed Exam Security Terms & Conditions (Strict Version) */}
+                <div className="bg-slate-900/60 border border-white/10 rounded-[2rem] p-7 mb-8 text-left max-h-80 overflow-y-auto custom-scrollbar shadow-inner">
+                    <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
+                        <div className="p-2 bg-blue-600/20 rounded-lg">
+                             <BookOpen size={20} className="text-blue-500" />
+                        </div>
+                        <div>
+                            <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none">Security Protocol / परीक्षा नियम</h3>
+                            <p className="text-[9px] text-slate-500 font-bold uppercase mt-1 tracking-tighter italic">Strict AI Monitoring is Active</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-8">
+                        {/* ENGLISH SECTION - ZERO TOLERANCE */}
+                        <div className="space-y-4">
+                            <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <div className="w-4 h-[1px] bg-blue-400"></div> Mandatory Security Rules
+                            </p>
+                            <ul className="text-[11px] text-slate-300 space-y-3 list-none font-medium leading-[1.6]">
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1 shrink-0"></div>
+                                    <span><b>Face Visibility:</b> Only your face should be visible in the camera frame. Don't hide your face or wear hoods/caps.</span>
+                                </li>
+                                <li className="flex gap-3 text-red-400 bg-red-400/5 p-2 rounded-xl border border-red-400/10">
+                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1 shrink-0"></div>
+                                    <span><b>Device Locking:</b> Switching tabs, minimizing the screen, or attempting to open any other app will be RECORDED as a major violation.</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1 shrink-0"></div>
+                                    <span><b>No Gadgets:</b> Headphones, Smartwatches, or holding a second phone is strictly prohibited. AI detects physical objects.</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1 shrink-0"></div>
+                                    <span><b>Environmental Noise:</b> Background talking or "whispering" will trigger an audio violation. Ensure a silent room.</span>
+                                </li>
+                                <li className="flex gap-3 text-emerald-400 font-bold">
+                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1 shrink-0"></div>
+                                    <span><b>Tracking & Logs:</b> Your IP address <b>(LOGGED)</b>, device identity, and GPS location are recorded for forensic analysis.</span>
+                                </li>
+                                <li className="flex gap-3 text-amber-400">
+                                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1 shrink-0"></div>
+                                    <span><b>Auto-Save:</b> Your answers are saved every 15 seconds. Don't worry about power/internet loss.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* HINDI SECTION - INDE-PHASE */}
+                        <div className="space-y-4 pt-6 border-t border-white/5">
+                            <p className="text-[10px] font-black text-orange-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <div className="w-4 h-[1px] bg-orange-400"></div> महत्वपूर्ण परीक्षा नियम (Hindi)
+                            </p>
+                            <ul className="text-[12px] text-slate-300 space-y-3 list-none font-semibold leading-[1.7]">
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 shrink-0"></div>
+                                    <span><b>चेहरा पहचान:</b> आपका चेहरा कैमरे के सामने साफ़ होना चाहिए। कैप या हुड्डी पहनना वर्जित है।</span>
+                                </li>
+                                <li className="flex gap-3 text-red-400 bg-red-400/5 p-2 rounded-xl border border-red-400/10">
+                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-2 shrink-0"></div>
+                                    <span><b>स्क्रीन लॉक:</b> टैब बदलना, स्क्रीनशॉट लेना या ऐप मिनिमाइज करना वर्जित है। (3 बार के बाद टेस्ट रद्द)।</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 shrink-0"></div>
+                                    <span><b>इलेक्ट्रॉनिक गैजेट्स:</b> हेडफोन, ईयरफोन या स्मार्टवॉच पहनना सख्त मना है।</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 shrink-0"></div>
+                                    <span><b>शोर-मुक्त वातावरण:</b> किसी भी प्रकार की बातचीत या आवाज़ को "चीटिंग" माना जाएगा।</span>
+                                </li>
+                                <li className="flex gap-3 text-emerald-400">
+                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2 shrink-0"></div>
+                                    <span><b>सुरक्षा ट्रैकिंग:</b> आपका IP एड्रेस और डिवाइस की जानकारी रिकॉर्ड की जा रही है।</span>
+                                </li>
+                                <li className="flex gap-3 text-amber-400">
+                                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 shrink-0"></div>
+                                    <span><b>ऑटो-सेव:</b> आपके उत्तर हर 15 सेकंड में सुरक्षित (Save) किए जा रहे हैं।</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
                 <form onSubmit={handleStartTest} className="space-y-6">
                     {/* Access Key Input - Conditionally Rendered */}
                     {testInfo?.hasAccessKey && (
@@ -651,6 +890,24 @@ const TestInterface = () => {
                 msUserSelect: 'none'
             }}
         >
+            {/* Offline Guardian Banner — Persistent status alert (High Visibility) */}
+            {(!isOnline || syncError) && (
+                <div className="fixed top-0 left-0 right-0 z-[100001] bg-red-600 px-6 py-2.5 flex items-center justify-between text-white shadow-lg animate-in slide-in-from-top duration-500">
+                    <div className="flex items-center gap-4">
+                        <div className="w-2.5 h-2.5 bg-white rounded-full animate-ping"></div>
+                        <span className="font-black text-[11px] uppercase tracking-[0.2em] italic">Internet / Sync Problem Detected</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-white/80">Check your connection. Answers are saving to your device cache only.</span>
+                </div>
+            )}
+
+            {/* Screenshot Flash Overlay - Violent Red Strike to ruin manual captures */}
+            {screenshotFlash && (
+                <div className="fixed inset-0 z-[100000] bg-red-600 animate-pulse flex items-center justify-center">
+                    <h1 className="text-white text-6xl font-black uppercase italic tracking-tighter">SCREENSHOT BLOCKED</h1>
+                </div>
+            )}
+
             {/* Security Shield Overlay (Mobile Screenshot/Blur Protection) */}
             {!isFocused && (
                 <div className="fixed inset-0 z-[99999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in duration-300">
@@ -658,7 +915,7 @@ const TestInterface = () => {
                         <Lock size={40} className="text-red-500" />
                     </div>
                     <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Security Shield Active</h2>
-                    <p className="text-slate-400 text-sm max-w-xs font-medium">Test content is hidden because focus was lost. Return to the app immediately to resume.</p>
+                    <p className="text-slate-400 text-sm max-w-xs font-medium">Test content is hidden because focus was lost or a capture attempt was detected. Return to the app immediately to resume.</p>
                 </div>
             )}
 
@@ -666,45 +923,120 @@ const TestInterface = () => {
             <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
             <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-            {/* Watermark Overlay */}
+            {/* Forensic Watermark — Visible in Screenshots, Identifies Student */}
             {studentProfile && (
-                <div className="fixed inset-0 pointer-events-none z-[50] opacity-[0.02] flex flex-wrap content-center justify-center gap-24 overflow-hidden select-none">
-                    {Array.from({ length: 24 }).map((_, i) => (
-                        <div key={i} className="transform -rotate-45 text-2xl font-black text-white whitespace-nowrap tracking-widest uppercase">
-                            {studentProfile.studentId} • {studentProfile.email}
+                <>
+                    {/* Full-screen diagonal tiled watermark at 8% opacity — clearly readable in screenshot */}
+                    <div className="fixed inset-0 pointer-events-none z-[50] overflow-hidden select-none"
+                        style={{ opacity: 0.08 }}>
+                        <div className="absolute inset-0 flex flex-wrap content-start gap-y-10 gap-x-6 p-4">
+                            {Array.from({ length: 40 }).map((_, i) => (
+                                <div key={i} className="transform -rotate-[25deg] whitespace-nowrap select-none" style={{ fontSize: '13px', fontWeight: 900, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                                    {studentProfile.fullName} · {studentProfile.studentId}
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    </div>
+                    {/* Pinned forensic ID badge — always visible in any screenshot of the header area */}
+                    <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[9500] pointer-events-none">
+                        <div className="flex items-center gap-2 bg-red-600/80 backdrop-blur-md border border-red-400/50 px-3 py-1 rounded-full shadow-lg shadow-red-900/40">
+                            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                            <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">
+                                CONFIDENTIAL · {studentProfile.studentId}
+                            </span>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* AI Proctoring Camera Feed (Visible Deterrent) */}
+            {isStarted && !submitting && !isOutOfSync && (
+                <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 w-24 h-32 md:w-36 md:h-48 bg-slate-900 rounded-2xl border-4 border-green-500/30 overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.2)] z-[9000] pointer-events-none group">
+                    <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover transform -scale-x-100 opacity-90"></video>
+                    <div className="absolute inset-0 bg-gradient-to-t from-green-500/20 to-transparent mix-blend-overlay"></div>
+
+                    <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
+                         {/* Cloud Status Indicator */}
+                        <div className={`flex items-center gap-1.5 backdrop-blur-md px-2 py-1 rounded-full z-20 shadow-sm border ${syncError ? 'bg-red-600/50 border-white/20' : 'bg-black/70 border-white/10'}`}>
+                             <div className={`w-1 h-1 rounded-full ${syncError ? 'bg-red-400 animate-pulse' : 'bg-emerald-400 animate-pulse'}`}></div>
+                             <span className={`text-[6px] font-black uppercase tracking-widest ${syncError ? 'text-red-100' : 'text-emerald-400'}`}>
+                                 {syncError ? 'SYNC FAIL' : 'CLOUD ON'}
+                             </span>
+                        </div>
+
+                        <div className={`flex items-center gap-1.5 backdrop-blur-md px-2 py-1 rounded-full z-20 shadow-sm border ${noiseViolation ? 'bg-red-600/80 border-white animate-bounce' : 'bg-black/70 border-white/10'}`}>
+                            {noiseViolation ? (
+                                <div className="flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
+                                    <span className="text-[7px] font-black text-white uppercase tracking-widest leading-none">Noise Caught</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.9)]"></div>
+                                    <span className="text-[7px] font-black text-green-400 uppercase tracking-widest leading-none">AI Proctor</span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                    {/* Audio Sensitivity Meter (Visual Deterrent) */}
+                    <div className="absolute bottom-2 left-2 right-2 h-1 bg-white/10 rounded-full overflow-hidden">
+                         <div className={`h-full bg-green-500 transition-all duration-100 ${noiseViolation ? 'bg-red-500' : ''}`} style={{ width: '60%' }}></div>
+                    </div>
+                    {/* Scanning Line overlay */}
+                    <div className="absolute top-0 w-full h-1 bg-green-400/50 shadow-[0_0_15px_rgba(74,222,128,1)] animate-[pulse_2s_ease-in-out_infinite]" style={{ transform: 'translateY(50px)' }}></div>
                 </div>
             )}
 
             <AnimatePresence>
-                {/* Security Lockdown Modal */}
+                {/* Zero-Tolerance Security Lockdown Modal */}
                 {isOutOfSync && (
                     <motion.div
-                        initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-                        animate={{ opacity: 1, backdropFilter: 'blur(20px)' }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[9999] bg-[#030712]/90 flex flex-col items-center justify-center p-8 text-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="fixed inset-0 z-[99999] bg-[#000] flex flex-col items-center justify-center p-8 text-center"
                     >
+                        {/* High-intensity red pulsing background layer */}
+                        <div className="absolute inset-0 bg-red-600/10 animate-pulse pointer-events-none"></div>
+
                         <motion.div
-                            initial={{ scale: 0.8, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            className="w-24 h-24 bg-red-600/20 text-red-500 rounded-[2.5rem] flex items-center justify-center mb-8 border border-red-500/30 shadow-[0_0_50px_rgba(239,68,68,0.3)] animate-float"
+                            initial={{ scale: 0.8 }}
+                            animate={{ scale: [1, 1.05, 1] }}
+                            transition={{ repeat: Infinity, duration: 1 }}
+                            className="w-32 h-32 bg-red-600 text-white rounded-[3rem] flex items-center justify-center mb-10 shadow-[0_0_80px_rgba(239,68,68,0.6)] border-4 border-white/20"
                         >
-                            <Lock size={48} />
+                            <Lock size={60} />
                         </motion.div>
-                        <h2 className="text-4xl font-black tracking-tighter italic uppercase mb-2 text-white">Security Alert</h2>
-                        <div className="h-1 w-20 bg-red-600 mb-6 rounded-full mx-auto"></div>
-                        <p className="text-slate-400 max-w-md font-medium leading-relaxed mb-10">
-                            Strict proctoring is active. Switching tabs or minimizing is prohibited.
-                            <br /><span className="text-red-400 font-bold block mt-4 text-xl">Warning {violationCount} / 3</span>
-                        </p>
+
+                        <h2 className="text-5xl md:text-6xl font-black tracking-tighter italic uppercase mb-2 text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                            Security Alert
+                        </h2>
+                        <div className="h-1.5 w-32 bg-red-600 mb-8 rounded-full mx-auto shadow-[0_0_20px_rgba(239,68,68,0.5)]"></div>
+
+                        <div className="space-y-4 mb-12">
+                            <p className="text-white text-xl font-bold uppercase tracking-widest leading-relaxed">
+                                PROCTORING VIOLATION RECORDED
+                            </p>
+                            <div className="px-6 py-3 bg-red-600/10 border border-red-500/20 rounded-2xl">
+                                <p className="text-red-400 font-black text-2xl uppercase">
+                                    Warning {violationCount} / 3
+                                </p>
+                            </div>
+                            <p className="text-slate-500 max-w-lg mx-auto font-medium text-xs uppercase tracking-widest leading-loose">
+                                Your ID <b>{studentProfile?.studentId}</b> has been flagged. <br />
+                                Activity logged: Switching apps, screenshots, or exiting fullscreen is prohibited. <br />
+                                One more violation may terminate your examination permanently.
+                            </p>
+                        </div>
+
                         <button
                             type="button"
                             onClick={enterFullScreen}
-                            className="bg-blue-600 text-white px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] active:scale-95"
+                            className="group relative bg-white text-black px-16 py-6 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-2xl active:scale-95 overflow-hidden"
                         >
-                            Go Back to Exam
+                            <span className="relative z-10 flex items-center gap-3">
+                                Re-Enter Secure Environment <ChevronRight size={20} />
+                            </span>
+                            <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-500 translate-y-full group-hover:translate-y-0 transition-transform"></div>
                         </button>
                     </motion.div>
                 )}

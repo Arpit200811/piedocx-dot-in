@@ -3,7 +3,7 @@ import { Search, Trash2, ShieldAlert, ShieldCheck, Download, Eye, X, Filter, Mai
 import Certificate from './Certificate';
 import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
-import html2canvas from 'html2canvas';
+import html2canvas from '../utils/html2canvasSafe';
 import api from '../utils/api';
 import { io } from 'socket.io-client';
 import { base_url, getSocketUrl } from '../utils/info';

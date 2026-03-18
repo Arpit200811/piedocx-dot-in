@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import html2canvas from 'html2canvas';
+import html2canvas from '../utils/html2canvasSafe';
 import QRCode from "react-qr-code";
 import { base_url } from '../utils/info';
 import api from '../utils/api';
@@ -60,18 +60,7 @@ const Certificate = ({ student, userEmail, autoSend }) => {
                      el.style.top = '0';
                      el.style.left = '0';
                   }
-                  // Strip oklch to prevent crash
-                  Array.from(clonedDoc.styleSheets).forEach(sheet => {
-                     try {
-                        const rules = Array.from(sheet.cssRules);
-                        for (let i = rules.length - 1; i >= 0; i--) {
-                           if (rules[i].cssText && (rules[i].cssText.includes('oklch') || rules[i].cssText.includes('oklab'))) {
-                              sheet.deleteRule(i);
-                           }
-                        }
-                     } catch (e) { }
-                  });
-               }
+                }
             });
             const base64Image = canvas.toDataURL('image/png');
 
@@ -125,21 +114,6 @@ const Certificate = ({ student, userEmail, autoSend }) => {
                   el.style.top = '0';
                   el.style.left = '0';
                }
-
-               // Strip modern color functions (oklch) from all stylesheets in the clone 
-               // because html2canvas 1.x cannot parse them and crashes.
-               Array.from(clonedDoc.styleSheets).forEach(sheet => {
-                  try {
-                     const rules = Array.from(sheet.cssRules);
-                     for (let i = rules.length - 1; i >= 0; i--) {
-                        if (rules[i].cssText && (rules[i].cssText.includes('oklch') || rules[i].cssText.includes('oklab'))) {
-                           sheet.deleteRule(i);
-                        }
-                     }
-                  } catch (e) {
-                     console.warn("Could not process stylesheet rule in clone", e);
-                  }
-               });
             }
          });
 

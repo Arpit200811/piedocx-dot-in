@@ -52,6 +52,8 @@ api.interceptors.response.use(
             'Test not found', 
             'not Active', 
             'Student not registered',
+            'Network Error',
+            'timeout',
             '404'
         ];
         
