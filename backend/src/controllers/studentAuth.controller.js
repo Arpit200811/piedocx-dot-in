@@ -173,6 +173,15 @@ export const getTestInfo = async (req, res) => {
 
         let config = await TestConfig.findOne(query).sort({ createdAt: -1 });
 
+        // FALLBACK: If no ACTIVE test, but student has TAKEN a previous test, return that test's info
+        // This ensures the dashboard still shows the "See My Result" button if results are published
+        if (!config && student && student.testAttempted) {
+            const lastResult = await TestResult.findOne({ student: student._id }).sort({ createdAt: -1 });
+            if (lastResult) {
+                config = await TestConfig.findById(lastResult.testConfig);
+            }
+        }
+
         if (!config) {
             return res.status(404).json({ message: "No active tests available." });
         }
@@ -547,11 +556,20 @@ export const getResults = async (req, res) => {
         const studentYearGroup = getYearGroup(student.year);
         const studentBranchGroup = getBranchGroup(student.branch);
 
-        const config = await TestConfig.findOne({
-            yearGroup: studentYearGroup,
-            branchGroup: studentBranchGroup,
-            isActive: true
-        }).sort({ createdAt: -1 });
+        // In getResults, we want to find the test results even if the configuration is no longer 'active'
+        // First, see if we have a recorded TestResult for this student
+        const lastResult = await TestResult.findOne({ student: student._id }).sort({ createdAt: -1 });
+        
+        let config = null;
+        if (lastResult) {
+            config = await TestConfig.findById(lastResult.testConfig);
+        } else {
+            // Fallback to searching by group if no result record found yet (legacy or in-flight)
+            config = await TestConfig.findOne({
+                yearGroup: studentYearGroup,
+                branchGroup: studentBranchGroup
+            }).sort({ createdAt: -1 });
+        }
         
         if (!config || !config.resultsPublished) {
             return res.status(403).json({ message: 'Results are not published yet.' });
