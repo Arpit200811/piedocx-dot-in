@@ -75,7 +75,7 @@ export const upsertConfig = async (req, res) => {
         let keyChanged = false;
         
         if (config) {
-            if (config.testAccessKey !== testAccessKey) keyChanged = true;
+            if (config.testAccessKey !== testAccessKey || req.body.resetProgress) keyChanged = true;
             config.title = title;
             config.startDate = new Date(startDate);
             config.endDate = new Date(endDate);
@@ -101,26 +101,20 @@ export const upsertConfig = async (req, res) => {
         }
 
         if (keyChanged) {
-            const csItBranches = ['CSE', 'IT', 'Computer Science', 'Information Technology', 'CS', 'Software Engineering', 'AI', 'Data Science', 'DS'];
-            const coreBranches = ['ECE', 'EE', 'ME', 'Civil', 'Auto', 'Automobile', 'Electronics', 'Electrical', 'Mechanical'];
-
+            const csItRegex = /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS)\b/i;
             const branchFilter = branchGroup === 'CS-IT' 
-                ? { $in: csItBranches.map(b => new RegExp(b, 'i')) }
-                : { $in: coreBranches.map(b => new RegExp(b, 'i')) };
+                ? { $regex: csItRegex }
+                : { $not: { $regex: csItRegex } };
 
-            const yearPrefixes = yearGroup.split('-');
+            const yearFilter = yearGroup === '3-4'
+                ? { year: { $regex: /3|4|3rd|4th|third|fourth|final|graduated/i } }
+                : { year: { $not: { $regex: /3|4|3rd|4th|third|fourth|final|graduated/i } } };
 
             await ExamStudent.updateMany(
                 { 
-                    $or: [
-                        { year: { $in: yearPrefixes } },
-                        { year: { $in: yearPrefixes.map(y => `${y}st`) } },
-                        { year: { $in: yearPrefixes.map(y => `${y}nd`) } },
-                        { year: { $in: yearPrefixes.map(y => `${y}rd`) } },
-                        { year: { $in: yearPrefixes.map(y => `${y}th`) } }
-                    ],
+                    ...yearFilter,
                     branch: branchFilter 
-                }, 
+                },  
                 { 
                     $set: { 
                         testAttempted: false, score: 0, correctCount: 0, wrongCount: 0,

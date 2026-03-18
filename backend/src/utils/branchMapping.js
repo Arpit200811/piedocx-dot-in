@@ -1,27 +1,20 @@
-// Branch mapping configuration
 export const getBranchGroup = (branch) => {
-    const csItBranches = ['CSE', 'IT', 'Computer Science', 'Information Technology', 'CS', 'Software Engineering', 'AI', 'Data Science', 'DS'];
-    const coreBranches = ['ECE', 'EE', 'ME', 'Civil', 'Auto', 'Automobile', 'Electronics', 'Electrical', 'Mechanical'];
+    if (!branch) return 'CORE';
     
-    const branchUpper = branch.toUpperCase();
+    const csItRegex = /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS)\b/i;
+    const coreRegex = /\b(ECE|EE|ME|Civil|Auto|Automobile|Electronics|Electrical|Mechanical)\b/i;
     
-    if (csItBranches.some(b => branchUpper.includes(b.toUpperCase()))) {
+    if (csItRegex.test(branch)) {
         return 'CS-IT';
     }
-    
-    if (coreBranches.some(b => branchUpper.includes(b.toUpperCase()))) {
+    if (coreRegex.test(branch)) {
         return 'CORE';
-    }
-    
-    // Default fallback
+    }  
     return 'CORE';
 };
-
 export const getYearGroup = (year) => {
     if (!year) return '1-2';
     const y = year.toString().toLowerCase();
-    
-    // Check for 3rd or 4th year patterns first
     if (
         y.includes('3') || 
         y.includes('4') || 
@@ -34,7 +27,5 @@ export const getYearGroup = (year) => {
     ) {
         return '3-4';
     }
-
-    // Default to 1-2 for everything else (1st, 2nd, Freshers, etc.)
     return '1-2';
 };
