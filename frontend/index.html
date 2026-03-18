@@ -17,6 +17,22 @@
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Montserrat:wght@400;600&display=swap"
     rel="stylesheet">
   <title>Piedocx - IT Services & Solutions</title>
+  <script>
+    // Build Failure/Asset Change Recovery Script
+    window.addEventListener('error', function (e) {
+      if (e.target && e.target.tagName === 'SCRIPT' || e.message && e.message.includes('MIME type')) {
+        const lastReload = localStorage.getItem('last-build-reload');
+        const now = Date.now();
+        // Limit reloads to once every 10 seconds to prevent infinite loops
+        if (!lastReload || (now - parseInt(lastReload)) > 10000) {
+          localStorage.setItem('last-build-reload', now);
+          console.warn('Asset load failure (MIME mismatch). Force-refreshing build...');
+          // Force refresh bypassing cache
+          window.location.reload(true);
+        }
+      }
+    }, true);
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>

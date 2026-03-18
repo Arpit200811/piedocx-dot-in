@@ -12,12 +12,20 @@ class ErrorBoundary extends Component {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
+  async componentDidCatch(error, errorInfo) {
     // Automatic reload for dynamic import failures (caused by build hash changes)
     if (error && (error.toString().includes('Failed to fetch dynamically imported module') || error.name === 'ChunkLoadError')) {
-      console.log("Chunk load error detected, force-reloading page...");
+      console.log("Chunk load error detected, triggering PWA unregister and reload...");
+      
+      try {
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (let reg of registrations) await reg.unregister();
+        }
+      } catch (e) { }
+
       const url = new URL(window.location.href);
-      url.searchParams.set('reload', Date.now().toString());
+      url.searchParams.set('retry', Date.now().toString());
       window.location.replace(url.toString());
       return;
     }

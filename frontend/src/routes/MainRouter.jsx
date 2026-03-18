@@ -16,11 +16,22 @@ const lazyWithRetry = (componentImport) =>
       return component;
     } catch (error) {
       if (!pageHasAlreadyBeenForceRefreshed) {
+        // Clear potential stuck PWA caches
+        try {
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+              await registration.unregister();
+            }
+          }
+        } catch (swErr) { }
+
         // A temporary load error, try refreshing the page once with a cache-buster
         window.localStorage.setItem('page-has-been-force-refreshed', 'true');
         const url = new URL(window.location.href);
         url.searchParams.set('reload', Date.now().toString());
-        return window.location.replace(url.toString());
+        window.location.replace(url.toString());
+        return new Promise(() => { }); // Never resolve, let page refresh take focus
       }
 
       // The error is real and persistent across reloads
