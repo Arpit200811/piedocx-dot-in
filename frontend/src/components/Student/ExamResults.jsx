@@ -6,8 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Award, CheckCircle, Target, TrendingUp,
     ChevronRight, Download, Share2, Info,
-    AlertCircle, Sparkles, Trophy, Star
+    AlertCircle, Sparkles, Trophy, Star,
+    TrendingDown, BarChart3
 } from 'lucide-react';
+import api from '../../utils/api';
 import { base_url } from '../../utils/info';
 import Swal from 'sweetalert2';
 
@@ -24,11 +26,8 @@ const ExamResults = () => {
     const fetchResults = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('studentToken');
-            const res = await axios.get(`${base_url}/api/student-auth/results`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setResults(res.data);
+            const data = await api.get('/api/student-auth/results');
+            setResults(data);
         } catch (err) {
             console.error(err);
             setError(err.response?.data?.message || 'Unable to retrieve results.');

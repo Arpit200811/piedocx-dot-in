@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import api from '../../utils/api';
 import { motion } from 'framer-motion';
 import { Star, MessageSquare, CheckCircle, Send } from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -40,25 +41,18 @@ const FeedbackForm = () => {
 
         setSubmitting(true);
         try {
-            const token = localStorage.getItem('studentToken');
-
-            // Transform data for backend
             const responses = questions.map(q => ({
                 questionText: q.text,
                 rating: ratings[q.id],
                 comment: comments[q.id] || ""
             }));
 
-            const infoRes = await axios.get(`${base_url}/api/student-auth/test-info`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const testId = infoRes.data.id;
+            const infoData = await api.get('/api/student-auth/test-info');
+            const testId = infoData.id;
 
-            await axios.post(`${base_url}/api/student-auth/submit-feedback`, {
+            await api.post('/api/student-auth/submit-feedback', {
                 testId,
                 responses
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
 
             Swal.fire({

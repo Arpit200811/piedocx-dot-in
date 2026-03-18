@@ -15,8 +15,10 @@ class ErrorBoundary extends Component {
   componentDidCatch(error, errorInfo) {
     // Automatic reload for dynamic import failures (caused by build hash changes)
     if (error && (error.toString().includes('Failed to fetch dynamically imported module') || error.name === 'ChunkLoadError')) {
-      console.log("Chunk load error detected, reloading page...");
-      window.location.reload();
+      console.log("Chunk load error detected, force-reloading page...");
+      const url = new URL(window.location.href);
+      url.searchParams.set('reload', Date.now().toString());
+      window.location.replace(url.toString());
       return;
     }
     // You can also log the error to an error reporting service

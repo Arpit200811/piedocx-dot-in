@@ -16,9 +16,11 @@ const lazyWithRetry = (componentImport) =>
       return component;
     } catch (error) {
       if (!pageHasAlreadyBeenForceRefreshed) {
-        // A temporary load error, try refreshing the page once
+        // A temporary load error, try refreshing the page once with a cache-buster
         window.localStorage.setItem('page-has-been-force-refreshed', 'true');
-        return window.location.reload();
+        const url = new URL(window.location.href);
+        url.searchParams.set('reload', Date.now().toString());
+        return window.location.replace(url.toString());
       }
 
       // The error is real and persistent across reloads

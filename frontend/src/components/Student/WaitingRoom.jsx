@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import api from '../../utils/api';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Wifi, ShieldCheck, User, Zap, Lock, Cpu } from 'lucide-react';
@@ -23,14 +24,14 @@ const WaitingRoom = () => {
         // 1. Initial Status Check
         const checkStatus = async () => {
             try {
-                const res = await axios.get(`${base_url}/api/admin/test-config/time-check`, {
+                const data = await api.get('/api/admin/test-config/time-check', {
                     params: { yearGroup, branchGroup }
                 });
 
-                const now = new Date(res.data.serverTime).getTime();
-                const start = new Date(res.data.startTime).getTime();
+                const now = new Date(data.serverTime).getTime();
+                const start = new Date(data.startTime).getTime();
 
-                if (res.data.isLive) {
+                if (data.isLive) {
                     enterExam();
                 } else if (now < start) {
                     setTimeLeft(start - now);
