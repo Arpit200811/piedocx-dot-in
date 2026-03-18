@@ -3,7 +3,9 @@ import mongoose from 'mongoose';
 const connectDB = async (retryCount = 5) => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s
+      serverSelectionTimeoutMS: 5000, 
+      maxPoolSize: 100, // Increase pool size for high concurrency (150+ students)
+      minPoolSize: 10,
     });
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {

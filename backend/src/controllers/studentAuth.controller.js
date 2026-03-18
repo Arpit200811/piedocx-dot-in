@@ -173,9 +173,9 @@ export const getTestInfo = async (req, res) => {
 
         let config = await TestConfig.findOne(query).sort({ createdAt: -1 });
 
-        // FALLBACK: If no ACTIVE test, but student has TAKEN a previous test, return that test's info
+        // FALLBACK: If no ACTIVE test, but student is logged in, look for their previous test
         // This ensures the dashboard still shows the "See My Result" button if results are published
-        if (!config && student && student.testAttempted) {
+        if (!config && student) {
             const lastResult = await TestResult.findOne({ student: student._id }).sort({ createdAt: -1 });
             if (lastResult) {
                 config = await TestConfig.findById(lastResult.testConfig);
@@ -183,7 +183,8 @@ export const getTestInfo = async (req, res) => {
         }
 
         if (!config) {
-            return res.status(404).json({ message: "No active tests available." });
+            // Return 200 with null instead of 404 to avoid console noise for active/dashboard views
+            return res.json(null);
         }
         
         const hasKey = !!(config.testAccessKey && config.testAccessKey.trim().length > 0);
@@ -634,7 +635,12 @@ export const submitFeedback = async (req, res) => {
 
 export const getActiveBulletins = async (req, res) => {
     try {
+        const cacheKey = 'active_bulletins';
+        const cachedData = await getCache(cacheKey);
+        if (cachedData) return res.json(cachedData);
+
         const bulletins = await Bulletin.find({ isActive: true }).sort({ createdAt: -1 });
+        await setCache(cacheKey, bulletins, 300); // 5 mins
         res.json(bulletins);
     } catch (error) {
         res.status(500).json({ message: "Error fetching bulletins" });
@@ -643,7 +649,12 @@ export const getActiveBulletins = async (req, res) => {
 
 export const getActiveResources = async (req, res) => {
     try {
-        const resources = await Resource.find({ isActive: true }).sort({ createdAt: -1 });
+        const cacheKey = 'active_resources';
+        const cachedData = await getCache(cacheKey);
+        if (cachedData) return res.json(cachedData);
+
+        const resources = await (await import("../models/Resource.js")).default.find().sort({ createdAt: -1 });
+        await setCache(cacheKey, resources, 300); // 5 mins
         res.json(resources);
     } catch (error) {
         res.status(500).json({ message: "Error fetching resources" });

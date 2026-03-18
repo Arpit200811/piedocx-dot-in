@@ -10,6 +10,7 @@ import Bulletin from "../models/Bulletin.js";
 import Resource from "../models/Resource.js";
 import Feedback from "../models/Feedback.js";
 import TestConfig from "../models/TestConfig.js";
+import { getIO } from "../utils/socketService.js";
 
 import { sendAdminOTP } from "../utils/emailService.js";
 import { logAdminAction } from "../utils/auditLogger.js";
@@ -452,6 +453,8 @@ export const getBulletins = async (req, res) => {
 export const createBulletin = async (req, res) => {
     try {
         const bulletin = await Bulletin.create(req.body);
+        const io = getIO();
+        if (io) io.emit('bulletin_updated');
         res.json(bulletin);
     } catch (error) {
         res.status(500).json({ message: "Error creating bulletin" });
@@ -461,6 +464,8 @@ export const createBulletin = async (req, res) => {
 export const deleteBulletin = async (req, res) => {
     try {
         await Bulletin.findByIdAndDelete(req.params.id);
+        const io = getIO();
+        if (io) io.emit('bulletin_updated');
         res.json({ message: "Bulletin deleted" });
     } catch (error) {
         res.status(500).json({ message: "Error deleting bulletin" });
@@ -479,6 +484,8 @@ export const getResources = async (req, res) => {
 export const createResource = async (req, res) => {
     try {
         const resource = await Resource.create(req.body);
+        const io = getIO();
+        if (io) io.emit('resource_updated');
         res.json(resource);
     } catch (error) {
         res.status(500).json({ message: "Error creating resource" });
@@ -488,6 +495,8 @@ export const createResource = async (req, res) => {
 export const deleteResource = async (req, res) => {
     try {
         await Resource.findByIdAndDelete(req.params.id);
+        const io = getIO();
+        if (io) io.emit('resource_updated');
         res.json({ message: "Resource deleted" });
     } catch (error) {
         res.status(500).json({ message: "Error deleting resource" });

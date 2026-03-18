@@ -146,6 +146,17 @@ export const toggleResults = async (req, res) => {
 
         config.resultsPublished = !config.resultsPublished;
         await config.save();
+
+        const io = getIO();
+        if (io) {
+            io.emit('test_config_updated', { 
+                yearGroup: config.yearGroup, 
+                branchGroup: config.branchGroup, 
+                title: config.title,
+                resultsPublished: config.resultsPublished 
+            });
+        }
+
         res.json({ message: `Results ${config.resultsPublished ? 'published' : 'hidden'}`, resultsPublished: config.resultsPublished });
     } catch (error) {
         res.status(500).json({ message: 'Error toggling results' });

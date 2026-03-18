@@ -10,13 +10,19 @@ export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
       origin: "*",
-      methods: ["GET", "POST"]
-    }
+      methods: ["GET", "POST"],
+      credentials: true
+    },
+    transports: ['polling', 'websocket'],
+    allowEIO3: true
   });
 
   io.use(async (socket, next) => {
-    const token = socket.handshake.auth.token;
-    if (!token) return next(new Error("Authentication Error"));
+    const token = socket.handshake.auth?.token;
+    if (!token) {
+        console.warn(`[Socket Auth] Connection Attempt Denied: No Token Provided. ID: ${socket.id}`);
+        return next(new Error("Authentication Error: Token missing"));
+    }
 
     try {
       // Try Student Secret first as it's the primary use case
@@ -29,6 +35,10 @@ export const initSocket = (server) => {
         return next();
       } catch (err) {
         // If student verify fails, try Admin secret
+        if (!process.env.SECRET_KEY) {
+           console.error("[Socket Auth] SECRET_KEY missing in .env, cannot verify admin.");
+           throw new Error("Server config error");
+        }
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
         socket.user = decoded;
         socket.adminId = decoded.id;
@@ -37,7 +47,7 @@ export const initSocket = (server) => {
         return next();
       }
     } catch (err) {
-      console.error("[Socket Auth] Invalid Token Attempt:", err.message);
+      console.error(`[Socket Auth] Handshake Failed: ${err.message} | ID: ${socket.id}`);
       next(new Error("Invalid Token"));
     }
   });

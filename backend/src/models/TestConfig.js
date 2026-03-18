@@ -33,6 +33,8 @@ const testConfigSchema = new mongoose.Schema({
 
 // Index for high-frequency lookup during exam initialization
 testConfigSchema.index({ isActive: 1, yearGroup: 1, branchGroup: 1, targetCollege: 1 });
+testConfigSchema.index({ createdAt: -1 }); // Fast sorting for latest config
+testConfigSchema.index({ isActive: 1, resultsPublished: 1 }); // Fast result page rendering
 
 const TestConfig = mongoose.model('TestConfig', testConfigSchema);
 export default TestConfig;
