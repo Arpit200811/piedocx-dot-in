@@ -66,10 +66,13 @@ const TestInterface = () => {
                     return;
                 }
                 setTestInfo(infoData);
+                setInitialLoading(false);
             } catch (err) {
                 const status = err.response?.status;
                 if (status === 403 || status === 404) {
                     navigate('/student-dashboard');
+                } else {
+                    setInitialLoading(false);
                 }
             }
         };
@@ -96,11 +99,11 @@ const TestInterface = () => {
             // Fetch Questions - Bind to specific Test ID for security key integrity
             const qData = await api.post('/api/student-auth/questions', {
                 accessKey: accessKey,
-                testId: testInfo._id
+                testId: testInfo.id
             });
 
             // Try to recover from localStorage first (for this specific specific student + test)
-            const localKey = `answers_${studentProfile?.studentId}_${testInfo?._id}`;
+            const localKey = `answers_${studentProfile?.studentId}_${testInfo?.id}`;
             const localAnswers = JSON.parse(localStorage.getItem(localKey) || "{}");
 
             // Merge server saved answers with local cache (server wins if conflict)
@@ -153,7 +156,7 @@ const TestInterface = () => {
             newSocket.on('connect', () => {
                 setIsOnline(true);
                 newSocket.emit('join_exam', {
-                    testId: testInfo._id,
+                    testId: testInfo.id,
                     deviceInfo: {
                         userAgent: navigator.userAgent,
                         resolution: `${window.screen.width}x${window.screen.height}`
@@ -206,8 +209,6 @@ const TestInterface = () => {
     const reportViolationSocket = (type) => {
         if (socketRef.current) socketRef.current.emit('violation', { type });
     };
-
-    // Heartbeat
     useEffect(() => {
         const interval = setInterval(() => {
             if (socketRef.current) {
@@ -216,47 +217,27 @@ const TestInterface = () => {
         }, 15000);
         return () => clearInterval(interval);
     }, [timeLeft]);
-
-    // Violation Cooldown — prevents rapid-fire duplicate detections on mobile
     const [isFocused, setIsFocused] = useState(true);
     const [screenshotFlash, setScreenshotFlash] = useState(false);
-    
-    // NEW: World-Class Security States
     const [noiseViolation, setNoiseViolation] = useState(false);
     const [syncError, setSyncError] = useState(false);
-
-    // API rate-limit only (UI red alert is ALWAYS instant)
     const lastApiViolationTime = useRef(0);
     const API_COOLDOWN_MS = 3000;
-    // iOS screenshot detection: track rapid visibility cycles
     const lastHiddenTime = useRef(0);
-
-    // 3. Anti-Cheat & Security Logic (Active only when started)
     useEffect(() => {
         if (!isStarted || submitting) return;
-
-        // --- 1. MULTI-TAB PREVENTION (The "Highlander" Pattern — Only One Can Live) ---
-        const channelName = `test_session_${studentProfile?.studentId}_${testInfo?._id}`;
+        const channelName = `test_session_${studentProfile?.studentId}_${testInfo?.id}`;
         broadcastChannelRef.current = new BroadcastChannel(channelName);
-        
-        // Signal everyone that I AM NOW ACTIVE
         broadcastChannelRef.current.postMessage({ type: 'NEW_TAB_OPENED', time: Date.now() });
 
         broadcastChannelRef.current.onmessage = (event) => {
             if (event.data?.type === 'NEW_TAB_OPENED') {
-                // If another tab opens, I lock myself. 
                 handleViolation("Multi-Tab Access Detected (Forbidden Action)");
                 setIsOutOfSync(true); 
             }
         };
-
-        // --- 2. INTERNET GUARDIAN (Detection moved to top level) ---
-
-        // --- 3. SONIC PROCTOR (Noise Monitoring) ---
         const startSonicProctor = async () => {
             try {
-                // We use the stream we already got from initCamera in the other effect
-                // Get the video track's associated audio
                 const stream = videoRef.current?.srcObject;
                 if (!stream || stream.getAudioTracks().length === 0) return;
 
@@ -265,24 +246,19 @@ const TestInterface = () => {
                 analyserRef.current = audioContextRef.current.createAnalyser();
                 analyserRef.current.fftSize = 256;
                 source.connect(analyserRef.current);
-
                 const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
                 let noiseCounter = 0;
 
                 const checkNoise = () => {
                     if (submitting) return;
                     analyserRef.current.getByteFrequencyData(dataArray);
-                    
-                    // Find Peak Volume (0 to 255)
                     let peak = 0;
                     for (let i = 0; i < dataArray.length; i++) {
                         if (dataArray[i] > peak) peak = dataArray[i];
                     }
-
-                    // Threshold: 155 out of 255 (Medium speech / talking)
                     if (peak > 155) {
                         noiseCounter++;
-                        if (noiseCounter > 30) { // Sustained noise for ~1 second
+                        if (noiseCounter > 30) {
                             handleViolation("Excessive Ambient Noise / Speech Detected");
                             noiseCounter = 0;
                             setNoiseViolation(true);
@@ -298,10 +274,7 @@ const TestInterface = () => {
                 console.error("Sonic Proctor Error:", e);
             }
         };
-        // Small delay to allow initCamera stream to be ready
         setTimeout(startSonicProctor, 2000);
-
-        // Camera Initialization for Presence Check
         const initCamera = async () => {
             try {
                 // Request BOTH audio and video to enforce strict permission and deter cheating
@@ -309,8 +282,6 @@ const TestInterface = () => {
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
-                // We don't necessarily need to process audio, just holding the stream deters them.
-                // It also shows the red mic icon in the browser tab.
                 stream.getTracks().forEach(track => {
                     track.onended = () => {
                         handleViolation("Camera/Mic Access Terminated");
@@ -324,19 +295,13 @@ const TestInterface = () => {
             }
         };
         initCamera();
-
-        // --- SCREEN RECORDING / SHARE DETECTION ---
-        // Detect if student starts sharing screen via browser's built-in capture API
         const detectScreenCapture = async () => {
             try {
                 // Modern Chrome/Edge expose a list of active capture sessions
                 if (navigator.mediaDevices && 'getDisplayMedia' in navigator.mediaDevices) {
-                    // We cannot block getDisplayMedia calls, but we register a listener
-                    // on the original function to detect when it gets called
                     const _orig = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
                     navigator.mediaDevices.getDisplayMedia = async (...args) => {
                         handleViolation('Screen Recording / Share Attempt Detected');
-                        // Still call original so navigator doesn't break, then immediately stop its tracks
                         try {
                             const stream = await _orig(...args);
                             stream.getTracks().forEach(t => t.stop());
@@ -697,7 +662,7 @@ const TestInterface = () => {
             await api.post('/api/student-auth/submit-test', { answers });
 
             // Success: Clean up local cache
-            const localKey = `answers_${studentProfile?.studentId}_${testInfo?._id}`;
+            const localKey = `answers_${studentProfile?.studentId}_${testInfo?.id}`;
             localStorage.removeItem(localKey);
 
             Swal.fire({
