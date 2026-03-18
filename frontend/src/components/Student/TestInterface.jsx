@@ -209,14 +209,18 @@ const TestInterface = () => {
     const reportViolationSocket = (type) => {
         if (socketRef.current) socketRef.current.emit('violation', { type });
     };
+    // Risk Engine Heartbeat - Decoupled from countdown to avoid timer churn
     useEffect(() => {
+        if (!isStarted || submitting) return;
         const interval = setInterval(() => {
             if (socketRef.current) {
-                socketRef.current.emit('heartbeat', { timeLeft });
+                // We use a ref for timeLeft or get it from outside the closure if needed
+                // But since we just need to tell the server "I AM HERE", we don't need accurate timeLeft in the socket
+                socketRef.current.emit('heartbeat', { ts: Date.now() });
             }
-        }, 15000);
+        }, 15000); // Steady 15s heartbeat
         return () => clearInterval(interval);
-    }, [timeLeft]);
+    }, [isStarted, submitting]);
     const [isFocused, setIsFocused] = useState(true);
     const [screenshotFlash, setScreenshotFlash] = useState(false);
     const [noiseViolation, setNoiseViolation] = useState(false);
@@ -590,7 +594,7 @@ const TestInterface = () => {
             navigator.vibrate([100, 50, 100, 50, 200]);
         }
 
-        // Socket Report (no throttle)
+        // Socket Report (no throttle for real-time monitor)
         reportViolationSocket(type);
 
         // API call — rate-limited to prevent server spam
@@ -600,7 +604,7 @@ const TestInterface = () => {
             const token = localStorage.getItem('studentToken');
             if (token) {
                 api.post('/api/student-auth/log-violation', { type }).then(res => {
-                    if (res.shouldTerminate) {
+                    if (res && res.shouldTerminate) {
                         Swal.fire({
                             title: 'TEST TERMINATED',
                             text: 'Multiple critical violations recorded. Examination terminated.',

@@ -73,6 +73,16 @@ const StudentDashboard = () => {
                 auth: { token: localStorage.getItem('studentToken') }
             });
 
+            socket.on('bulletin_updated', () => {
+                fetchBulletins();
+                Swal.fire({ title: 'New Announcement', text: 'Dashboard bulletin board has been updated.', icon: 'info', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+            });
+
+            socket.on('resource_updated', () => {
+                fetchResources();
+                Swal.fire({ title: 'Resources Updated', text: 'New study materials are available in the archive.', icon: 'info', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+            });
+
             socket.on('test_config_updated', (data) => {
                 const myYear = getYearGroup(student.year);
                 const myBranch = getBranchGroup(student.branch);
@@ -80,13 +90,13 @@ const StudentDashboard = () => {
                 if (data.yearGroup === myYear && data.branchGroup === myBranch) {
                     fetchTestInfo();
                     Swal.fire({
-                        title: 'Exam Updated',
-                        text: `New exam settings: ${data.title}`,
+                        title: data.resultsPublished ? 'Results Published!' : 'Exam Updated',
+                        text: data.resultsPublished ? `Results for ${data.title} are now live.` : `New exam settings: ${data.title}`,
                         icon: 'info',
                         toast: true,
                         position: 'top-end',
                         showConfirmButton: false,
-                        timer: 3000
+                        timer: 5000
                     });
                 }
             });
