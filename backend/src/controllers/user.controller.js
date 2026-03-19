@@ -1,6 +1,4 @@
-
 import User from '../models/user.model.js'
-
 
 const userInfo = async(req, res) =>{
     try {
@@ -17,7 +15,6 @@ export const getAllSubmissions = async (req, res) => {
     try {
         const { source, search } = req.query;
         let filter = source ? { source } : {};
-        
         if (search) {
             const searchRegex = new RegExp(search, 'i');
             filter.$or = [
@@ -27,7 +24,6 @@ export const getAllSubmissions = async (req, res) => {
                 { address: searchRegex }
             ];
         }
-
         const submissions = await User.find(filter).sort({ createdAt: -1 });
         res.status(200).json(submissions);
     } catch (error) {
@@ -45,7 +41,6 @@ export const deleteSubmission = async (req, res) => {
         res.status(500).json({ message: "Error deleting submission" });
     }
 };
-
 export default userInfo;
 
 

@@ -205,7 +205,15 @@ router.patch('/toggle-results', adminAuth, async (req, res) => {
 
         config.resultsPublished = !config.resultsPublished;
         await config.save();
-        
+        const io = getIO();
+        if (io) {
+            io.emit('test_config_updated', { 
+                yearGroup: config.yearGroup, 
+                branchGroup: config.branchGroup, 
+                title: config.title,
+                resultsPublished: config.resultsPublished 
+            });
+        }
         res.json({ message: `Results ${config.resultsPublished ? 'published' : 'hidden'}`, resultsPublished: config.resultsPublished });
     } catch (error) {
         console.error("toggleResults error:", error);

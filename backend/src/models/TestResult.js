@@ -22,6 +22,11 @@ const testResultSchema = new mongoose.Schema({
     correctCount: Number,
     wrongCount: Number,
     totalQuestions: Number,
+    violationCount: { type: Number, default: 0 },
+    
+    // Submission Context
+    submissionType: { type: String, enum: ['normal', 'terminated', 'system_closed'], default: 'normal' },
+    submissionReason: String,
     
     // Detailed Answers
     answers: [{

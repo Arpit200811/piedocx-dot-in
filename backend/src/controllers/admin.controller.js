@@ -11,6 +11,7 @@ import Resource from "../models/Resource.js";
 import Feedback from "../models/Feedback.js";
 import TestConfig from "../models/TestConfig.js";
 import { getIO } from "../utils/socketService.js";
+import { delCache } from "../utils/cacheService.js";
 
 import { sendAdminOTP } from "../utils/emailService.js";
 import { logAdminAction } from "../utils/auditLogger.js";
@@ -192,6 +193,34 @@ export const getLiveTestMonitor = async (req, res) => {
     }
 };
 
+export const resumeStudentTest = async (req, res) => {
+    try {
+        const { studentId, extraMinutes } = req.body;
+        const student = await ExamStudent.findById(studentId);
+        if (!student) return res.status(404).json({ message: "Student not found" });
+
+        // Reset the block but keep questions and answers intact
+        const extension = (parseInt(extraMinutes) || 10) * 60 * 1000;
+        const newEndTime = new Date(Date.now() + extension);
+
+        await ExamStudent.findByIdAndUpdate(studentId, {
+            testAttempted: false,
+            violationCount: 0,
+            testEndTime: newEndTime
+        });
+
+        await logAdminAction(req, 'STUDENT_TEST_RESUME', studentId, { 
+            action: 'Resumed Session',
+            extension: `${extraMinutes || 10}m` 
+        });
+
+        res.json({ message: "Student has been allowed to resume the test.", newEndTime });
+    } catch (error) {
+        console.error("resumeStudentTest error:", error);
+        res.status(500).json({ message: "Error resuming test session" });
+    }
+};
+
 export const resetStudentTest = async (req, res) => {
     try {
         const { studentId } = req.body;
@@ -240,29 +269,67 @@ export const closeGroupSession = async (req, res) => {
         const todayStr = new Date().toISOString().split('T')[0];
         const studentIds = targetedStudents.map(s => s._id);
 
-        await ExamStudent.updateMany(
-            { _id: { $in: studentIds } },
-            { $set: { testAttempted: true, score: 0, correctCount: 0, wrongCount: 0 } }
-        );
-        const resultsToCreate = targetedStudents.map(s => ({
-            student: s._id,
-            fullName: s.fullName,
-            email: s.email,
-            branch: s.branch,
-            year: s.year,
-            studentId: s.studentId,
-            college: s.college,
-            mobile: s.mobile,
-            yearGroup,
-            branchGroup,
-            score: 0,
-            correctCount: 0,
-            wrongCount: 0,
-            totalQuestions: 0,
-            testDate: todayStr
-        }));
+        const resultsToCreate = targetedStudents.map(s => {
+            let score = 0;
+            let correctCount = 0;
+            let wrongCount = 0;
+            const answers = s.savedAnswers || {};
+            const questions = s.assignedQuestions || [];
+
+            if (questions.length > 0) {
+                questions.forEach(q => {
+                    const studentAnswer = answers[q.questionId];
+                    if (studentAnswer) {
+                        if (studentAnswer === q.correctAnswer) {
+                            score++;
+                            correctCount++;
+                        } else {
+                            wrongCount++;
+                        }
+                    }
+                });
+            }
+
+            return {
+                student: s._id,
+                fullName: s.fullName,
+                email: s.email,
+                branch: s.branch,
+                year: s.year,
+                studentId: s.studentId,
+                college: s.college,
+                mobile: s.mobile,
+                yearGroup,
+                branchGroup,
+                testConfig: testConfig._id, // LINK TO THE CORRECT TEST CONFIG
+                score: score,
+                correctCount: correctCount,
+                wrongCount: wrongCount,
+                totalQuestions: questions.length,
+                submissionType: 'system_closed',
+                submissionReason: 'Exam Window Closed by Admin',
+                testDate: todayStr
+            };
+        });
 
         await TestResult.insertMany(resultsToCreate);
+
+        await ExamStudent.updateMany(
+            { _id: { $in: studentIds } },
+            { $set: { testAttempted: true } } 
+        );
+        // Note: Students now have their calculated scores in TestResult, 
+        // and we could also update ExamStudent scores here if needed:
+        for (const res of resultsToCreate) {
+             await ExamStudent.findByIdAndUpdate(res.student, {
+                 $set: { 
+                    score: res.score, 
+                    correctCount: res.correctCount, 
+                    wrongCount: res.wrongCount,
+                    testAttempted: true
+                 }
+             });
+        }
 
         await logAdminAction(req, 'GROUP_SESSION_CLOSE', null, { 
             yearGroup, 
@@ -455,6 +522,7 @@ export const createBulletin = async (req, res) => {
         const bulletin = await Bulletin.create(req.body);
         const io = getIO();
         if (io) io.emit('bulletin_updated');
+        await delCache('active_bulletins');
         res.json(bulletin);
     } catch (error) {
         res.status(500).json({ message: "Error creating bulletin" });
@@ -466,6 +534,7 @@ export const deleteBulletin = async (req, res) => {
         await Bulletin.findByIdAndDelete(req.params.id);
         const io = getIO();
         if (io) io.emit('bulletin_updated');
+        await delCache('active_bulletins');
         res.json({ message: "Bulletin deleted" });
     } catch (error) {
         res.status(500).json({ message: "Error deleting bulletin" });
@@ -486,6 +555,7 @@ export const createResource = async (req, res) => {
         const resource = await Resource.create(req.body);
         const io = getIO();
         if (io) io.emit('resource_updated');
+        await delCache('active_resources');
         res.json(resource);
     } catch (error) {
         res.status(500).json({ message: "Error creating resource" });
@@ -497,6 +567,7 @@ export const deleteResource = async (req, res) => {
         await Resource.findByIdAndDelete(req.params.id);
         const io = getIO();
         if (io) io.emit('resource_updated');
+        await delCache('active_resources');
         res.json({ message: "Resource deleted" });
     } catch (error) {
         res.status(500).json({ message: "Error deleting resource" });

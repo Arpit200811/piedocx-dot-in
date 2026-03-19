@@ -30,7 +30,8 @@ const schema = new mongoose.Schema({
       options: [String],
       correctAnswer: String
   }],
-  savedAnswers: { type: Object, default: {} }
+  savedAnswers: { type: Object, default: {} },
+  testId: { type: mongoose.Schema.Types.ObjectId, ref: 'TestConfig', index: true }
 });
 
 // Compound index for search optimization in admin panel

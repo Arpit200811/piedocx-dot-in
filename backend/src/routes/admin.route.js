@@ -8,6 +8,7 @@ import {
   resetPassword,
   getLiveTestMonitor,
   resetStudentTest,
+  resumeStudentTest,
   getHistoricalResults,
   getResultMetadata,
   closeGroupSession,
@@ -34,6 +35,7 @@ router.get("/admin/stats", adminAuth, getAdminStats);
 router.get("/admin/email-logs", adminAuth, getEmailLogs);
 router.get("/admin/monitor", adminAuth, getLiveTestMonitor);
 router.post("/admin/reset-test", adminAuth, resetStudentTest);
+router.post("/admin/resume-test", adminAuth, resumeStudentTest);
 router.post("/admin/close-session", adminAuth, closeGroupSession);
 router.get("/admin/get-historical-results", adminAuth, getHistoricalResults);
 router.get("/admin/result-metadata", adminAuth, getResultMetadata);

@@ -199,11 +199,12 @@ export const getTestInfo = async (req, res) => {
             duration: config.duration,
             totalQuestions: config.questions.length,
             resultsPublished: config.resultsPublished,
-            hasAccessKey: hasKey
+            hasAccessKey: hasKey,
+            isActive: config.isActive
         };
 
-        // Cache for 2 minutes to keep it fresh but reduce load
-        await setCache(cacheKey, responseData, 120);
+        // Cache for 5 seconds to keep it extremely fresh while still preventing basic spam
+        await setCache(cacheKey, responseData, 5);
 
         res.json(responseData);
     } catch (error) {
@@ -341,7 +342,9 @@ export const getQuestions = async (req, res) => {
                     $set: { 
                         assignedQuestions: questionsToSave,
                         testStartTime: nowTime,
-                        testEndTime: testEndTime
+                        testEndTime: testEndTime,
+                        testId: config._id,
+                        violationCount: 0
                     } 
                 },
                 { new: true }
@@ -357,6 +360,7 @@ export const getQuestions = async (req, res) => {
             } else {
                 const freshStudent = await ExamStudent.findById(student._id);
                 student.testEndTime = freshStudent.testEndTime; 
+                student.savedAnswers = freshStudent.savedAnswers;
                 finalQuestions = freshStudent.assignedQuestions.map(q => ({
                     _id: q.questionId,
                     questionText: q.questionText,
@@ -386,7 +390,7 @@ export const getQuestions = async (req, res) => {
 
 export const syncProgress = async (req, res) => {
     try {
-        const { answers } = req.body;
+        const { answers, testId } = req.body;
         const attemptedCount = Object.keys(answers || {}).length;
 
         // Fetch student to get assigned questions for grading
@@ -394,6 +398,14 @@ export const syncProgress = async (req, res) => {
         if (!student || student.testAttempted) {
             return res.status(403).json({ message: 'Sync rejected: Test already submitted or student not found.' });
         }
+
+        // Use the testConfig associated with this student's attempt
+        const activeTestId = testId || student.testId;
+        const config = activeTestId ? await TestConfig.findById(activeTestId) : await TestConfig.findOne({
+            yearGroup: getYearGroup(student.year),
+            branchGroup: getBranchGroup(student.branch),
+            isActive: true
+        }).sort({ createdAt: -1 });
 
         const questionsToGrade = student.assignedQuestions;
         let score = 0;
@@ -420,7 +432,8 @@ export const syncProgress = async (req, res) => {
                 savedAnswers: answers,
                 score,
                 correctCount,
-                wrongCount
+                wrongCount,
+                testId: config?._id || student.testId
             } 
         });
 
@@ -433,7 +446,7 @@ export const syncProgress = async (req, res) => {
 
 export const submitTest = async (req, res) => {
     try {
-        const { answers } = req.body;
+        const { answers, testId, submissionType, reason } = req.body;
         const student = await ExamStudent.findById(req.student.id);
         if (!student) return res.status(404).json({ message: 'Student not found' });
 
@@ -443,7 +456,10 @@ export const submitTest = async (req, res) => {
 
         const studentYearGroup = getYearGroup(student.year);
         const studentBranchGroup = getBranchGroup(student.branch);
-        const config = await TestConfig.findOne({
+        
+        // Find the specific config for this attempt
+        const activeTestId = testId || student.testId;
+        const config = activeTestId ? await TestConfig.findById(activeTestId) : await TestConfig.findOne({
             yearGroup: studentYearGroup,
             branchGroup: studentBranchGroup,
             isActive: true
@@ -518,23 +534,30 @@ export const submitTest = async (req, res) => {
         // Background historical record creation
         setImmediate(async () => {
             try {
+                // Fetch FRESH student data to capture exact final violationCount/metadata
+                const freshStudent = await ExamStudent.findById(student._id);
+                if (!freshStudent) return;
+
                 const todayStr = new Date().toISOString().split('T')[0];
                 await TestResult.create({
                     student: student._id,
                     testConfig: config?._id, 
-                    fullName: student.fullName,
-                    email: student.email,
-                    branch: student.branch,
-                    year: student.year,
-                    studentId: student.studentId,
-                    college: student.college,
-                    mobile: student.mobile,
+                    fullName: freshStudent.fullName,
+                    email: freshStudent.email,
+                    branch: freshStudent.branch,
+                    year: freshStudent.year,
+                    studentId: freshStudent.studentId,
+                    college: freshStudent.college,
+                    mobile: freshStudent.mobile,
                     yearGroup: studentYearGroup,
                     branchGroup: studentBranchGroup,
                     score: score,
                     correctCount: correctCount,
                     wrongCount: wrongCount,
                     totalQuestions: questionsToGrade.length,
+                    violationCount: freshStudent.violationCount || 0,
+                    submissionType: submissionType || 'normal',
+                    submissionReason: reason || (submissionType === 'terminated' ? 'Security Violation' : 'Manual Submit'),
                     answers: detailedAnswers,
                     testDate: todayStr
                 });
