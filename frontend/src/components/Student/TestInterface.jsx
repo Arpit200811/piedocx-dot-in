@@ -39,6 +39,8 @@ const TestInterface = () => {
     const audioContextRef = useRef(null);
     const analyserRef = useRef(null);
     const broadcastChannelRef = useRef(null);
+    const blurTimeoutRef = useRef(null);
+    const mouseLeaveTimeoutRef = useRef(null);
 
     useEffect(() => {
         const setOnline = () => setIsOnline(true);
@@ -109,7 +111,29 @@ const TestInterface = () => {
             // Merge server saved answers with local cache (server wins if conflict)
             const combinedAnswers = { ...localAnswers, ...(qData.savedAnswers || {}) };
 
-            setQuestions(qData.questions);
+            // --- SEEDED SHUFFLE: Consistent randomized order for this student/test session ---
+            const seedShuffle = (array, seedString) => {
+                let seedVal = 0;
+                for (let i = 0; i < seedString.length; i++) seedVal += seedString.charCodeAt(i);
+                
+                const shuffled = [...array];
+                let m = shuffled.length, t, i;
+                while (m) {
+                    i = Math.floor((Math.abs(Math.sin(seedVal++) * 10000)) % m--);
+                    t = shuffled[m];
+                    shuffled[m] = shuffled[i];
+                    shuffled[i] = t;
+                }
+                return shuffled;
+            };
+
+            const mySeed = `${studentProfile?.studentId}_${testInfo?.id}`;
+            const randomizedQuestions = seedShuffle(qData.questions, mySeed).map(q => ({
+                ...q,
+                options: seedShuffle(q.options, q._id)
+            }));
+
+            setQuestions(randomizedQuestions);
             setAnswers(combinedAnswers);
 
             if (typeof qData.remainingSeconds === 'number') {
@@ -118,6 +142,13 @@ const TestInterface = () => {
                 const elapsed = qData.elapsedTime || 0;
                 const totalDuration = qData.duration * 60;
                 setTimeLeft(Math.max(0, totalDuration - elapsed));
+            }
+
+            // Welcome Voice
+            if (window.speechSynthesis) {
+                const msg = new SpeechSynthesisUtterance(`Assessment started. Good luck ${studentProfile?.fullName?.split(' ')[0]}. Monitoring is active.`);
+                msg.rate = 1.0;
+                window.speechSynthesis.speak(msg);
             }
 
             setIsStarted(true);
@@ -214,11 +245,10 @@ const TestInterface = () => {
         if (!isStarted || submitting) return;
         const interval = setInterval(() => {
             if (socketRef.current) {
-                // We use a ref for timeLeft or get it from outside the closure if needed
-                // But since we just need to tell the server "I AM HERE", we don't need accurate timeLeft in the socket
+                // Heartbeat to the server to maintain presence - throttled to 30s for performance
                 socketRef.current.emit('heartbeat', { ts: Date.now() });
             }
-        }, 15000); // Steady 15s heartbeat
+        }, 30000); // 30s instead of 15s (Better for 200+ students)
         return () => clearInterval(interval);
     }, [isStarted, submitting]);
     const [isFocused, setIsFocused] = useState(true);
@@ -323,14 +353,14 @@ const TestInterface = () => {
         const handleVisibilityChange = () => {
             if (document.hidden) {
                 lastHiddenTime.current = Date.now();
-                // INSTANT red alert — always, no cooldown
-                handleViolation("App/Tab/Screen Switch Detected");
+                // INSTANT blackout
                 setIsFocused(false);
+                handleViolation("App/Tab/Screen Switch Detected");
             } else {
                 const hiddenDuration = Date.now() - lastHiddenTime.current;
-                // iOS screenshot: page goes hidden and comes back in < 300ms
-                if (lastHiddenTime.current > 0 && hiddenDuration < 300) {
-                    triggerScreenshotFlash('iOS Screenshot Pattern Detected');
+                // iOS/Android screenshot: page goes hidden and comes back in < 350ms
+                if (lastHiddenTime.current > 0 && hiddenDuration < 350) {
+                    triggerScreenshotFlash('System Screenshot Detected');
                 }
                 setIsFocused(true);
                 if (!document.fullscreenElement) {
@@ -341,12 +371,16 @@ const TestInterface = () => {
 
         const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
         const handleBlur = () => {
-            if (isMobile) return; // Skip: mobile uses visibilitychange exclusively
+            if (isMobile) return;
             setIsFocused(false);
-            handleViolation("Focus Lost / App Switch (Desktop)");
+            if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+            blurTimeoutRef.current = setTimeout(() => {
+                handleViolation("Prolonged Focus Loss (Desktop Notification or Switch)");
+            }, 2000); 
         };
 
         const handleFocus = () => {
+            if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
             setIsFocused(true);
             if (!document.fullscreenElement) {
                 setTimeout(enterFullScreen, 100);
@@ -377,7 +411,7 @@ const TestInterface = () => {
                 const screenW = window.screen.width;
                 const heightRatio = window.innerHeight / screenH;
                 const widthRatio = window.innerWidth / screenW;
-                if (heightRatio < 0.55 || widthRatio < 0.55) {
+                if (heightRatio < 0.50 || widthRatio < 0.50) {
                     handleViolation("Split Screen / Floating App Detected");
                     setTimeout(enterFullScreen, 100);
                 }
@@ -393,9 +427,30 @@ const TestInterface = () => {
 
         // --- KEYBOARD Shortcuts (Desktop DevTools) ---
         const blockKeys = (e) => {
+            // F12
             if (e.keyCode === 123) { e.preventDefault(); handleViolation("DevTools F12"); return false; }
+            // Ctrl+Shift+I, J, C
             if (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) { e.preventDefault(); handleViolation("DevTools Keyboard Shortcut"); return false; }
+            // Ctrl+U
             if (e.ctrlKey && e.keyCode === 85) { e.preventDefault(); handleViolation("View Source Attempt"); return false; }
+            // PrintScreen (Keycode 44)
+            if (e.keyCode === 44 || e.key === 'PrintScreen') { 
+                e.preventDefault(); 
+                triggerScreenshotFlash("PrintScreen Key Pressed"); 
+                return false; 
+            }
+            // Win+Shift+S (S is 83)
+            if (e.metaKey && e.shiftKey && e.keyCode === 83) {
+                 e.preventDefault();
+                 triggerScreenshotFlash("Snipping Tool Shortcut");
+                 return false;
+            }
+            // Ctrl+P (Print)
+            if (e.ctrlKey && e.keyCode === 80) {
+                e.preventDefault();
+                handleViolation("Print Attempt Prohibited");
+                return false;
+            }
         };
 
         // --- ORIENTATION (Mobile): WARN only — don't violate (they may just be sitting down) ---
@@ -411,30 +466,51 @@ const TestInterface = () => {
                 }
             }, 3000);
         };
-
-        // --- MULTI-TOUCH (3+ fingers = Screenshot gesture on Android/iOS) ---
         const handleTouchStart = (e) => {
             if (e.touches && e.touches.length >= 3) {
                 triggerScreenshotFlash("Multi-finger Screenshot Gesture");
                 e.preventDefault();
             }
         };
-
-        // Register all events
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("blur", handleBlur);
         window.addEventListener("focus", handleFocus);
         window.addEventListener("resize", handleResize);
+        // Multi-touch detection for screenshots on mobile
         window.addEventListener("touchstart", handleTouchStart, { passive: false });
+        window.addEventListener("touchmove", (e) => {
+            if (e.touches && e.touches.length >= 3) {
+                e.preventDefault(); // Block 3+ finger gestures (screenshot gestures)
+            }
+        }, { passive: false });
         window.addEventListener("orientationchange", handleOrientationChange);
         document.addEventListener("fullscreenchange", handleFullScreenChange);
         document.addEventListener("copy", preventCopyPaste);
         document.addEventListener("cut", preventCopyPaste);
         document.addEventListener("paste", preventCopyPaste);
         document.addEventListener("keydown", blockKeys);
+        window.addEventListener("mouseleave", () => {
+            if (isMobile) return;
+            setIsFocused(false);
+            if (mouseLeaveTimeoutRef.current) clearTimeout(mouseLeaveTimeoutRef.current);
+            mouseLeaveTimeoutRef.current = setTimeout(() => {
+                handleViolation("Prolonged Mouse Exit (Desktop)");
+            }, 2500); 
+        });
+        window.addEventListener("mouseenter", () => {
+            if (mouseLeaveTimeoutRef.current) clearTimeout(mouseLeaveTimeoutRef.current);
+            setIsFocused(true);
+        });
+        document.addEventListener("keyup", (e) => {
+            if (e.key === 'PrintScreen') {
+                triggerScreenshotFlash("PrintScreen Released");
+            }
+        });
         document.addEventListener("contextmenu", (e) => e.preventDefault());
 
         return () => {
+            if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+            if (mouseLeaveTimeoutRef.current) clearTimeout(mouseLeaveTimeoutRef.current);
             clearTimeout(resizeTimeout);
             clearTimeout(orientationViolationTimer);
             if (broadcastChannelRef.current) {
@@ -450,15 +526,40 @@ const TestInterface = () => {
             window.removeEventListener("focus", handleFocus);
             window.removeEventListener("resize", handleResize);
             window.removeEventListener("touchstart", handleTouchStart);
+            window.removeEventListener("touchmove", () => {});
             window.removeEventListener("orientationchange", handleOrientationChange);
             document.removeEventListener("fullscreenchange", handleFullScreenChange);
             document.removeEventListener("copy", preventCopyPaste);
             document.removeEventListener("cut", preventCopyPaste);
             document.removeEventListener("paste", preventCopyPaste);
             document.removeEventListener("keydown", blockKeys);
+            window.removeEventListener("mouseleave", () => {});
+            window.removeEventListener("mouseenter", () => {});
+            document.removeEventListener("keyup", () => {});
             document.removeEventListener("contextmenu", (e) => e.preventDefault());
         };
     }, [isStarted, submitting, navigate]);
+
+    // FRAME-LAG ENGINE: Detects when the OS "freezes" the browser for a screenshot (Android/iOS pattern)
+    useEffect(() => {
+        if (!isStarted || submitting) return;
+        let lastTime = performance.now();
+        let frameHandle;
+
+        const checkFrameLag = (now) => {
+            if (submitting) return;
+            const diff = now - lastTime;
+            // Most OS screenshots cause a CPU stall of 350ms - 800ms
+            if (diff > 850) {
+                setIsFocused(false);
+                setTimeout(() => setIsFocused(true), 1500); // Auto-recover after blackout
+            }
+            lastTime = now;
+            frameHandle = requestAnimationFrame(checkFrameLag);
+        };
+        frameHandle = requestAnimationFrame(checkFrameLag);
+        return () => cancelAnimationFrame(frameHandle);
+    }, [isStarted, submitting]);
 
 
     // 4. Manual Progress Sync (Triggered by Button or Interval)
@@ -540,7 +641,7 @@ const TestInterface = () => {
 
         const autoSync = setInterval(() => {
             syncProgress(answers, timeLeft, true); // true = Quiet mode (no alerts)
-        }, 15000); // 15 Seconds
+        }, 30000); // 30s periodic sync for performance optimization
 
         // Warn before tab closure
         const handleBeforeUnload = (e) => {
@@ -596,6 +697,20 @@ const TestInterface = () => {
 
         // Socket Report (no throttle for real-time monitor)
         reportViolationSocket(type);
+
+        // Voice Warning (Intimidation Factor)
+        if (window.speechSynthesis && !submitting) {
+            const warningMsgs = [
+                "Violation detected.",
+                "Focus on your test.",
+                "Movement recorded.",
+                "Cheating attempt logged."
+            ];
+            const randomMsg = warningMsgs[Math.floor(Math.random() * warningMsgs.length)];
+            const utterance = new SpeechSynthesisUtterance(randomMsg);
+            utterance.volume = 0.5;
+            window.speechSynthesis.speak(utterance);
+        }
 
         // API call — rate-limited to prevent server spam
         const now = Date.now();
@@ -850,7 +965,7 @@ const TestInterface = () => {
     // 3. Main Test Interface (When Started)
     return (
         <div
-            className={`min-h-screen dark-mesh text-white p-3 md:p-6 lg:p-8 font-sans select-none relative overflow-hidden transition-all duration-300 ${!isFocused ? 'blur-2xl grayscale brightness-50 pointer-events-none' : ''}`}
+            className={`min-h-screen dark-mesh text-white p-3 md:p-6 lg:p-8 font-sans select-none relative overflow-hidden ${!isFocused ? 'blur-3xl grayscale brightness-0 pointer-events-none' : ''}`}
             onContextMenu={e => e.preventDefault()}
             style={{
                 WebkitUserSelect: 'none',
@@ -866,25 +981,44 @@ const TestInterface = () => {
                         <div className="w-2.5 h-2.5 bg-white rounded-full animate-ping"></div>
                         <span className="font-black text-[11px] uppercase tracking-[0.2em] italic">Internet / Sync Problem Detected</span>
                     </div>
-                    <span className="text-[10px] font-medium text-white/80">Check your connection. Answers are saving to your device cache only.</span>
+                    <div className="flex items-center gap-6">
+                        <span className="text-[10px] font-bold text-white/90 uppercase tracking-widest hidden md:block">Saving to local cache...</span>
+                        <button 
+                            onClick={() => syncProgress(answers, timeLeft)}
+                            className="bg-white text-red-600 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-neutral-100 transition-all shadow-lg active:scale-95"
+                        >
+                            Retry Sync Now
+                        </button>
+                    </div>
                 </div>
             )}
 
             {/* Screenshot Flash Overlay - Violent Red Strike to ruin manual captures */}
             {screenshotFlash && (
-                <div className="fixed inset-0 z-[100000] bg-red-600 animate-pulse flex items-center justify-center">
-                    <h1 className="text-white text-6xl font-black uppercase italic tracking-tighter">SCREENSHOT BLOCKED</h1>
+                <div className="fixed inset-0 z-[1000000] bg-black flex items-center justify-center">
+                    <div className="text-center">
+                        <h1 className="text-white text-7xl font-black uppercase italic tracking-tighter mb-4">CAPTURE BLOCKED</h1>
+                        <p className="text-red-500 text-2xl font-black uppercase tracking-[0.3em]">CRITICAL VIOLATION LOGGED</p>
+                    </div>
                 </div>
             )}
 
             {/* Security Shield Overlay (Mobile Screenshot/Blur Protection) */}
             {!isFocused && (
-                <div className="fixed inset-0 z-[99999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in duration-300">
-                    <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6 border border-red-500/50">
-                        <Lock size={40} className="text-red-500" />
+                <div className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center text-center p-6">
+                    <div className="w-24 h-24 bg-red-600/20 rounded-full flex items-center justify-center mb-8 border-4 border-red-600/50 animate-pulse">
+                        <Lock size={48} className="text-red-600" />
                     </div>
-                    <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Security Shield Active</h2>
-                    <p className="text-slate-400 text-sm max-w-xs font-medium">Test content is hidden because focus was lost or a capture attempt was detected. Return to the app immediately to resume.</p>
+                    <h2 className="text-4xl font-black text-white mb-4 uppercase tracking-[0.2em]">ACCESS RESTRICTED</h2>
+                    <p className="text-red-500 text-lg max-w-md font-black uppercase italic animate-bounce">
+                        SCREEN CAPTURE / FOCUS LOSS DETECTED
+                    </p>
+                    <div className="mt-8 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl">
+                         <p className="text-slate-400 text-xs font-bold uppercase tracking-widest leading-loose">
+                            CONTENT AUTOMATICALLY BLACKED OUT <br />
+                            VIOLATION HAS BEEN LOGGED TO THE SERVER
+                        </p>
+                    </div>
                 </div>
             )}
 
@@ -895,26 +1029,39 @@ const TestInterface = () => {
             {/* Forensic Watermark — Visible in Screenshots, Identifies Student */}
             {studentProfile && (
                 <>
-                    {/* Full-screen diagonal tiled watermark at 8% opacity — clearly readable in screenshot */}
-                    <div className="fixed inset-0 pointer-events-none z-[50] overflow-hidden select-none"
-                        style={{ opacity: 0.08 }}>
-                        <div className="absolute inset-0 flex flex-wrap content-start gap-y-10 gap-x-6 p-4">
-                            {Array.from({ length: 40 }).map((_, i) => (
-                                <div key={i} className="transform -rotate-[25deg] whitespace-nowrap select-none" style={{ fontSize: '13px', fontWeight: 900, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                                    {studentProfile.fullName} · {studentProfile.studentId}
+                    {/* Full-screen moving diagonal tiled watermark — Hard to remove via simple PS or AI */}
+                    <div className="fixed inset-0 pointer-events-none z-[50] overflow-hidden select-none opacity-[0.07]">
+                        <motion.div 
+                            animate={{ 
+                                x: [0, -20, 0, 20, 0],
+                                y: [0, 20, 0, -20, 0]
+                            }}
+                            transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
+                            className="absolute inset-[-10%] flex flex-wrap content-start gap-y-16 gap-x-12 p-4"
+                        >
+                            {Array.from({ length: 60 }).map((_, i) => (
+                                <div key={i} className="transform -rotate-[25deg] whitespace-nowrap select-none font-black text-[14px] uppercase tracking-widest text-white">
+                                    {studentProfile.studentId} • {studentProfile.fullName}
                                 </div>
                             ))}
-                        </div>
+                        </motion.div>
                     </div>
-                    {/* Pinned forensic ID badge — always visible in any screenshot of the header area */}
-                    <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[9500] pointer-events-none">
-                        <div className="flex items-center gap-2 bg-red-600/80 backdrop-blur-md border border-red-400/50 px-3 py-1 rounded-full shadow-lg shadow-red-900/40">
-                            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                            <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">
-                                CONFIDENTIAL · {studentProfile.studentId}
+                    {/* Floating Forensic ID — Changes position randomly to avoid being covered */}
+                    <motion.div 
+                        animate={{ 
+                            top: ['5%', '85%', '85%', '5%', '5%'],
+                            left: ['5%', '5%', '85%', '85%', '5%']
+                        }}
+                        transition={{ repeat: Infinity, duration: 40, ease: "easeInOut" }}
+                        className="fixed z-[9500] pointer-events-none"
+                    >
+                        <div className="flex items-center gap-2 bg-red-600/60 backdrop-blur-md border border-red-400/50 px-3 py-1.5 rounded-full shadow-xl">
+                            <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
+                            <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">
+                                ID: {studentProfile.studentId}
                             </span>
                         </div>
-                    </div>
+                    </motion.div>
                 </>
             )}
 
