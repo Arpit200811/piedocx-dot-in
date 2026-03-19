@@ -21,10 +21,26 @@ api.interceptors.request.use(
         let token = null;
 
         // Strict Token Isolation
-        if (url.includes('/admin/') || url.includes('/analytics/') || url.includes('/whatsapp/') || url.includes('/certificate/students')) {
+        const isAdminRoute = 
+            url.includes('/admin/') || 
+            url.includes('/analytics/') || 
+            url.includes('/whatsapp/') || 
+            url.includes('/certificate/bulk-') || 
+            url.includes('/certificate/students') || 
+            url.includes('/certificate/send-');
+
+        const isStudentRoute = url.includes('/student-auth/');
+        
+        const isPublicRoute = 
+            url.includes('/certificate/verify-public/') || 
+            url.includes('/certificate/view/');
+
+        if (isAdminRoute) {
             token = localStorage.getItem('adminToken');
-        } else if (url.includes('/student-auth/') || (url.includes('/certificate/') && !url.includes('/students'))) {
+        } else if (isStudentRoute) {
             token = localStorage.getItem('studentToken');
+        } else if (isPublicRoute) {
+            token = null; // Don't send tokens for public verification
         } else {
             // General routes (fallback order)
             token = localStorage.getItem('adminToken') || localStorage.getItem('studentToken');

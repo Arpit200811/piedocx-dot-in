@@ -782,7 +782,15 @@ const AdminCertificateManager = () => {
         )}
 
         <FilterSection
-          filters={{ searchTerm, setSearchTerm, collegeFilter, setCollegeFilter, branchFilter, setBranchFilter, yearFilter, setYearFilter, startDate, setStartDate, endDate, setEndDate }}
+          filters={{ 
+            searchTerm, setSearchTerm, 
+            collegeFilter, setCollegeFilter, 
+            branchFilter, setBranchFilter, 
+            yearFilter, setYearFilter, 
+            startDate, setStartDate, 
+            endDate, setEndDate,
+            onBulkWhatsApp: handleBulkWhatsApp
+          }}
           colleges={colleges}
           branches={branches}
           years={years}
