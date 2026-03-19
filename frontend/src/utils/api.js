@@ -27,22 +27,19 @@ api.interceptors.request.use(
             url.includes('/whatsapp/') || 
             url.includes('/certificate/bulk-') || 
             url.includes('/certificate/students') || 
-            url.includes('/certificate/send-');
+            url.includes('/certificate/send-single');
 
-        const isStudentRoute = url.includes('/student-auth/');
+        const isStudentRoute = 
+            url.includes('/student-auth/') ||
+            url.includes('/certificate/send-email');
         
-        const isPublicRoute = 
-            url.includes('/certificate/verify-public/') || 
-            url.includes('/certificate/view/');
-
         if (isAdminRoute) {
             token = localStorage.getItem('adminToken');
         } else if (isStudentRoute) {
             token = localStorage.getItem('studentToken');
-        } else if (isPublicRoute) {
-            token = null; // Don't send tokens for public verification
         } else {
             // General routes (fallback order)
+            // This will handle Public routes by sending whichever token is available
             token = localStorage.getItem('adminToken') || localStorage.getItem('studentToken');
         }
 
@@ -53,8 +50,6 @@ api.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
-
-// Response Interceptor: Global Error Handling & State Logic
 api.interceptors.response.use(
     (response) => response.data,
     (error) => {
@@ -86,8 +81,6 @@ api.interceptors.response.use(
 
         // Handle Session Expiry
         if (error.response?.status === 401) {
-            // localStorage.clear(); // Use with caution
-            // window.location.href = '/login'; 
         }
 
         return Promise.reject(error);

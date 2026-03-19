@@ -1343,20 +1343,6 @@ const TestInterface = () => {
                                 >
                                     [ Back ]
                                 </button>
-
-                                <button
-                                    type="button"
-                                    disabled={submitting || timeLeft <= 0 || isSyncing}
-                                    onClick={() => syncProgress(answers, timeLeft)}
-                                    className={`px-6 py-5 rounded-2xl font-black border transition-all text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 ${isSyncing ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'text-blue-400 border-blue-500/30 hover:bg-blue-500/10'}`}
-                                >
-                                    {isSyncing ? (
-                                        <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                        <Zap size={14} />
-                                    )}
-                                    {isSyncing ? 'Saving...' : 'Save Answers'}
-                                </button>
                             </div>
 
                             <div className="hidden sm:flex gap-2">

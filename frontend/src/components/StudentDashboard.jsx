@@ -8,7 +8,7 @@ import {
     LogOut, Clock, ChevronRight,
     FileText, ExternalLink, ShieldCheck,
     Phone, Mail, GraduationCap, Building2, Calendar, Camera,
-    QrCode, MapPin, Trophy, Info
+    QrCode, MapPin, Trophy, Info, X
 } from 'lucide-react';
 import SEO from './SEO';
 import Swal from 'sweetalert2';
@@ -22,6 +22,7 @@ import BroadcastBanner from './Student/BroadcastBanner';
 import StatsScore from './Student/StatsScore';
 import DashboardHero from './Student/DashboardHero';
 import IDCardAsset from './Student/IDCardAsset';
+import Certificate from './Certificate';
 import OperationLog from './Student/OperationLog';
 import PerformanceJourney from './PerformanceJourney';
 import Leaderboard from './Student/Leaderboard';
@@ -61,6 +62,7 @@ const StudentDashboard = () => {
     const [isExamsLoading, setIsExamsLoading] = useState(true);
     const [isResourcesLoading, setIsResourcesLoading] = useState(true);
     const [isCertificatesLoading, setIsCertificatesLoading] = useState(true);
+    const [showCertificate, setShowCertificate] = useState(false);
 
     useEffect(() => {
         fetchTestInfo();
@@ -359,7 +361,7 @@ const StudentDashboard = () => {
                                         <p className="text-slate-500 text-sm md:text-base font-medium leading-relaxed max-w-sm mx-auto md:mx-0 opacity-70">Download your verified exam certificates from here securely.</p>
                                         <div className="pt-2">
                                             {student.testAttempted ? (
-                                                <button onClick={() => navigate(`/verify/${student.studentId}`)} className="w-full sm:w-auto px-10 md:px-14 py-5 md:py-6 bg-blue-600 text-white rounded-2xl md:rounded-[2rem] font-black text-[10px] md:text-xs uppercase italic tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-blue-700 transition-all shadow-2xl hover:scale-105 active:scale-95">Download PDF <Download size={20} /></button>
+                                                <button onClick={() => setShowCertificate(true)} className="w-full sm:w-auto px-10 md:px-14 py-5 md:py-6 bg-blue-600 text-white rounded-2xl md:rounded-[2rem] font-black text-[10px] md:text-xs uppercase italic tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-blue-700 transition-all shadow-2xl hover:scale-105 active:scale-95">View & Download <Download size={20} /></button>
                                             ) : (
                                                 <div className="inline-flex px-8 py-4 bg-slate-50 text-slate-400 rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] border border-slate-100 italic">Status: Exam Not Done Yet</div>
                                             )}
@@ -444,6 +446,54 @@ const StudentDashboard = () => {
                     )}
                 </AnimatePresence>
             </main>
+            
+            {/* Full-Screen Certificate View Modal */}
+            <AnimatePresence>
+                {showCertificate && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[1000] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 30 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 30 }}
+                            className="relative w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl p-4 md:p-10 overflow-auto max-h-[95vh] custom-scrollbar"
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="text-left">
+                                    <h1 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic tracking-tighter leading-none mb-1">Your <span className="text-blue-600">Credential</span></h1>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Verified Secure Assert • Asset ID: {student.studentId}</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowCertificate(false)}
+                                    className="p-3 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-600 transition-all shadow-sm"
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <div className="flex justify-center bg-slate-50/50 p-4 rounded-3xl border border-slate-100 min-h-[400px]">
+                                <Certificate
+                                    student={{
+                                        name: student.fullName,
+                                        college: student.college,
+                                        branch: student.branch,
+                                        year: student.year,
+                                        studentId: student.studentId,
+                                        certificateId: student.certificateId || student.studentId,
+                                        _id: student._id
+                                    }}
+                                    userEmail={student.email}
+                                    autoSend={false}
+                                />
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
