@@ -28,6 +28,7 @@ const TestInterface = () => {
     const [isOutOfSync, setIsOutOfSync] = useState(false);
     const [violationCount, setViolationCount] = useState(0);
     const [accessKey, setAccessKey] = useState('');
+    const [agreed, setAgreed] = useState(false);
     const [studentProfile, setStudentProfile] = useState(null);
 
     const [broadcastMessage, setBroadcastMessage] = useState(null);
@@ -41,6 +42,11 @@ const TestInterface = () => {
     const broadcastChannelRef = useRef(null);
     const blurTimeoutRef = useRef(null);
     const mouseLeaveTimeoutRef = useRef(null);
+    const stateRef = useRef({ answers, timeLeft });
+
+    useEffect(() => {
+        stateRef.current = { answers, timeLeft };
+    }, [answers, timeLeft]);
 
     useEffect(() => {
         const setOnline = () => setIsOnline(true);
@@ -156,12 +162,13 @@ const TestInterface = () => {
 
         } catch (err) {
             setStartingTest(false);
+            const errorMsg = err.response?.data?.message || 'Could not start test. Please check internet and try again.';
             if (err.response?.status === 401 && err.response.data.requiresKey) {
                 Swal.fire('Wrong Key', 'Incorrect key. Please try again.', 'error');
             } else if (err.response?.status === 403) {
-                Swal.fire('Access Denied', err.response.data.message, 'error');
+                Swal.fire('Access Denied', errorMsg, 'error');
             } else {
-                Swal.fire('Error', 'Could not start test. Check console for details.', 'error');
+                Swal.fire('Error', errorMsg, 'error');
             }
         }
     };
@@ -270,9 +277,8 @@ const TestInterface = () => {
                 setIsOutOfSync(true); 
             }
         };
-        const startSonicProctor = async () => {
+        const startSonicProctor = async (stream) => {
             try {
-                const stream = videoRef.current?.srcObject;
                 if (!stream || stream.getAudioTracks().length === 0) return;
 
                 audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -308,7 +314,6 @@ const TestInterface = () => {
                 console.error("Sonic Proctor Error:", e);
             }
         };
-        setTimeout(startSonicProctor, 2000);
         const initCamera = async () => {
             try {
                 // Request BOTH audio and video to enforce strict permission and deter cheating
@@ -321,6 +326,10 @@ const TestInterface = () => {
                         handleViolation("Camera/Mic Access Terminated");
                     };
                 });
+                
+                // --- ONCE CAMERA/MIC IS READY, START AUDIO ANALYSIS ---
+                startSonicProctor(stream);
+
             } catch (err) {
                 console.warn("Camera/Mic access denied or unavailable");
                 // Mandatory enforcement: if they block camera, we violate them instantly
@@ -570,6 +579,7 @@ const TestInterface = () => {
 
         try {
             const res = await api.post('/api/student-auth/sync-progress', {
+                testId: testInfo?.id,
                 answers: currentAnswers,
                 timeLeft: currentTimer
             });
@@ -625,7 +635,7 @@ const TestInterface = () => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     clearInterval(timerRef.current);
-                    handleSubmitTest(true); // Auto submit
+                    handleSubmitTest(true, 'normal', 'Time Out'); // Auto submit
                     return 0;
                 }
                 return prev - 1;
@@ -637,16 +647,15 @@ const TestInterface = () => {
 
     // 5. Automatic Background Sync (High Frequency — every 15 Seconds)
     useEffect(() => {
-        if (!isStarted || submitting || timeLeft <= 0) return;
+        if (!isStarted || submitting) return;
 
         const autoSync = setInterval(() => {
-            syncProgress(answers, timeLeft, true); // true = Quiet mode (no alerts)
-        }, 30000); // 30s periodic sync for performance optimization
+            syncProgress(stateRef.current.answers, stateRef.current.timeLeft, true);
+        }, 15000); // 15s stable sync
 
-        // Warn before tab closure
         const handleBeforeUnload = (e) => {
             if (isStarted && !submitting) {
-                syncProgress(answers, timeLeft, true); // Try one last sync quiet
+                syncProgress(stateRef.current.answers, stateRef.current.timeLeft, true);
                 e.preventDefault();
                 e.returnValue = '';
             }
@@ -657,20 +666,14 @@ const TestInterface = () => {
             clearInterval(autoSync);
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
-    }, [isStarted, submitting, answers, timeLeft]);
-
-    // 6. Answer Selection with Real-time Auto-save (LocalStorage + Debounced Cloud Sync)
+    }, [isStarted, submitting]);
     const handleAnswerSelect = (questionId, option) => {
         const newAnswers = { ...answers, [questionId]: option };
         setAnswers(newAnswers);
-
-        // INSTANT Persistence to LocalStorage (Zero-loss on refresh)
         if (studentProfile && testInfo) {
-            const localKey = `answers_${studentProfile.studentId}_${testInfo._id}`;
+            const localKey = `answers_${studentProfile.studentId}_${testInfo.id}`;
             localStorage.setItem(localKey, JSON.stringify(newAnswers));
         }
-
-        // Emit via Socket for Real-time Admin Monitor (Low overhead)
         if (socketRef.current) {
             socketRef.current.emit('progress_update', {
                 attemptedCount: Object.keys(newAnswers).length,
@@ -679,26 +682,15 @@ const TestInterface = () => {
             });
         }
     };
-
-
-    // 6. Utility Functions
     const handleViolation = (type) => {
         if (!isStarted || submitting) return;
-
-        // UI RED ALERT — ALWAYS INSTANT
         setViolationCount(prev => prev + 1);
-        setIsOutOfSync(true);   // Shows full-screen red overlay immediately
-        setIsFocused(false);    // Blurs exam content immediately
-
-        // Haptic Feedback for Mobile (Vibrate)
+        setIsOutOfSync(true);
+        setIsFocused(false);  
         if (navigator.vibrate) {
             navigator.vibrate([100, 50, 100, 50, 200]);
         }
-
-        // Socket Report (no throttle for real-time monitor)
         reportViolationSocket(type);
-
-        // Voice Warning (Intimidation Factor)
         if (window.speechSynthesis && !submitting) {
             const warningMsgs = [
                 "Violation detected.",
@@ -711,8 +703,6 @@ const TestInterface = () => {
             utterance.volume = 0.5;
             window.speechSynthesis.speak(utterance);
         }
-
-        // API call — rate-limited to prevent server spam
         const now = Date.now();
         if (now - lastApiViolationTime.current >= API_COOLDOWN_MS) {
             lastApiViolationTime.current = now;
@@ -728,28 +718,23 @@ const TestInterface = () => {
                             confirmButtonColor: '#ef4444',
                             allowOutsideClick: false
                         }).then(() => {
-                            handleSubmitTest(true);
+                            handleSubmitTest(true, 'terminated', type || 'Multiple Violations');
                         });
                     }
                 }).catch(() => { });
             }
         }
     };
-
-    // Screenshot Flash Effect 
     const triggerScreenshotFlash = (reason) => {
         setScreenshotFlash(true);
         setTimeout(() => setScreenshotFlash(false), 600);
         handleViolation(reason);
     };
-
-    // Auto-submit on load if time is up
     useEffect(() => {
         if (isStarted && !submitting && timeLeft === 0) {
-            handleSubmitTest(true);
+            handleSubmitTest(true, 'normal', 'Time Out');
         }
-    }, [isStarted, timeLeft]);
-
+    }, [isStarted, timeLeft])
     const enterFullScreen = () => {
         const elem = document.documentElement;
         if (elem.requestFullscreen) {
@@ -757,10 +742,8 @@ const TestInterface = () => {
         }
         setIsOutOfSync(false);
     };
-
-    const handleSubmitTest = async (autoSubmit = false) => {
+    const handleSubmitTest = async (autoSubmit = false, submissionType = 'normal', reason = 'Manual Submit') => {
         if (submitting) return;
-
         if (!autoSubmit) {
             const result = await Swal.fire({
                 title: 'Submit Assessment?',
@@ -773,17 +756,18 @@ const TestInterface = () => {
             });
             if (!result.isConfirmed) return;
         }
-
         if (saveLockRef.current) return;
         saveLockRef.current = true;
         setSubmitting(true);
         try {
-            await api.post('/api/student-auth/submit-test', { answers });
-
-            // Success: Clean up local cache
+            await api.post('/api/student-auth/submit-test', { 
+                testId: testInfo?.id,
+                answers, 
+                submissionType, 
+                reason 
+            });
             const localKey = `answers_${studentProfile?.studentId}_${testInfo?.id}`;
             localStorage.removeItem(localKey);
-
             Swal.fire({
                 title: 'Test Submitted!',
                 text: 'Taking you to feedback...',
@@ -801,15 +785,8 @@ const TestInterface = () => {
             saveLockRef.current = false;
         }
     };
-
-
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;
-
-
-    // --- RENDER ---
-
-    // 1. Initial Loading
     if (initialLoading) return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
@@ -818,122 +795,124 @@ const TestInterface = () => {
             </div>
         </div>
     );
-
-    // 2. Start Screen (Unified Gate)
     if (!isStarted) return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden font-sans">
-            {/* Background Effects */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px]"></div>
             </div>
-
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 md:p-12 rounded-[2.5rem] shadow-2xl max-w-lg w-full text-center relative z-10"
+                className="bg-white/5 backdrop-blur-3xl border border-white/10 p-8 md:p-12 rounded-[2.5rem] shadow-2xl max-w-2xl w-full text-center relative z-10"
             >
                 <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-blue-500/20">
                     <Zap size={40} className="text-white" />
                 </div>
-
-                <h1 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tighter uppercase italic">{testInfo?.title}</h1>
-                <p className="text-slate-400 text-sm font-medium mb-8">Secure Test Environment • {testInfo?.duration} Minutes</p>
-
-                {/* Detailed Exam Security Terms & Conditions (Strict Version) */}
-                <div className="bg-slate-900/60 border border-white/10 rounded-[2rem] p-7 mb-8 text-left max-h-80 overflow-y-auto custom-scrollbar shadow-inner">
-                    <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
-                        <div className="p-2 bg-blue-600/20 rounded-lg">
-                             <BookOpen size={20} className="text-blue-500" />
+                <h1 className="text-3xl md:text-5xl font-black text-white mb-2 tracking-tighter uppercase italic">{testInfo?.title}</h1>
+                <p className="text-slate-400 text-sm font-medium mb-8 uppercase tracking-widest">AI-Secure Assessment Protocol • {testInfo?.duration} Minutes</p>
+                
+                <div className="bg-slate-900/80 border border-white/10 rounded-[2.5rem] p-6 md:p-10 mb-8 text-left max-h-[500px] overflow-y-auto custom-scrollbar shadow-2xl">
+                    <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
+                        <div className="p-3 bg-blue-600/20 rounded-2xl">
+                             <ShieldAlert size={24} className="text-blue-500" />
                         </div>
                         <div>
-                            <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none">Security Protocol / परीक्षा नियम</h3>
-                            <p className="text-[9px] text-slate-500 font-bold uppercase mt-1 tracking-tighter italic">Strict AI Monitoring is Active</p>
+                            <h3 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Security Rules & Guidelines</h3>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase mt-2 tracking-widest italic">परीक्षा के नियम और दिशा-निर्देश</p>
                         </div>
                     </div>
 
-                    <div className="space-y-8">
-                        {/* ENGLISH SECTION - ZERO TOLERANCE */}
-                        <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        {/* ENGLISH SECTION */}
+                        <div className="space-y-6">
                             <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                <div className="w-4 h-[1px] bg-blue-400"></div> Mandatory Security Rules
+                                <span className="w-6 h-[1px] bg-blue-400"></span> English Instructions
                             </p>
-                            <ul className="text-[11px] text-slate-300 space-y-3 list-none font-medium leading-[1.6]">
+                            <ul className="text-[11px] text-slate-300 space-y-4 list-none font-medium leading-relaxed">
                                 <li className="flex gap-3">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1 shrink-0"></div>
-                                    <span><b>Face Visibility:</b> Only your face should be visible in the camera frame. Don't hide your face or wear hoods/caps.</span>
-                                </li>
-                                <li className="flex gap-3 text-red-400 bg-red-400/5 p-2 rounded-xl border border-red-400/10">
-                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1 shrink-0"></div>
-                                    <span><b>Device Locking:</b> Switching tabs, minimizing the screen, or attempting to open any other app will be RECORDED as a major violation.</span>
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0"></div>
+                                    <span><b>Strict Proctoring:</b> Switching tabs, minimizing windows, or taking screenshots will trigger an <b>INSTANT TERMINATION</b> warning.</span>
                                 </li>
                                 <li className="flex gap-3">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1 shrink-0"></div>
-                                    <span><b>No Gadgets:</b> Headphones, Smartwatches, or holding a second phone is strictly prohibited. AI detects physical objects.</span>
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0"></div>
+                                    <span><b>Mobile DND:</b> Turn on "Do Not Disturb" (DND) to block calls/WhatsApp. Any popup will be logged as a violation.</span>
                                 </li>
                                 <li className="flex gap-3">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1 shrink-0"></div>
-                                    <span><b>Environmental Noise:</b> Background talking or "whispering" will trigger an audio violation. Ensure a silent room.</span>
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0"></div>
+                                    <span><b>No Private Mode:</b> Do NOT use Incognito/Private browser mode. It disables the auto-save recovery engine.</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0"></div>
+                                    <span><b>Environment:</b> Ensure constant face visibility and zero background noise. AI monitors your surroundings. No second person should be in the frame.</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0"></div>
+                                    <span><b>No External Help:</b> Using books, notes, or receiving help from any person is strictly prohibited. AI detects physical objects & gaze movement.</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0"></div>
+                                    <span><b>Stable Connection:</b> Ensure a solid internet connection and power. The auto-save system helps, but stability is your responsibility.</span>
                                 </li>
                                 <li className="flex gap-3 text-emerald-400 font-bold">
-                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1 shrink-0"></div>
-                                    <span><b>Tracking & Logs:</b> Your IP address <b>(LOGGED)</b>, device identity, and GPS location are recorded for forensic analysis.</span>
-                                </li>
-                                <li className="flex gap-3 text-amber-400">
-                                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1 shrink-0"></div>
-                                    <span><b>Auto-Save:</b> Your answers are saved every 15 seconds. Don't worry about power/internet loss.</span>
+                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 shrink-0"></div>
+                                    <span><b>Auto-Sync:</b> Progress is saved every 15 seconds. In case of crash, log in again immediately to resume.</span>
                                 </li>
                             </ul>
                         </div>
 
-                        {/* HINDI SECTION - INDE-PHASE */}
-                        <div className="space-y-4 pt-6 border-t border-white/5">
+                        {/* HINDI SECTION */}
+                        <div className="space-y-6 border-t md:border-t-0 md:border-l border-white/5 pt-6 md:pt-0 md:pl-10">
                             <p className="text-[10px] font-black text-orange-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                <div className="w-4 h-[1px] bg-orange-400"></div> महत्वपूर्ण परीक्षा नियम (Hindi)
+                                <span className="w-6 h-[1px] bg-orange-400"></span> हिंदी निर्देश
                             </p>
-                            <ul className="text-[12px] text-slate-300 space-y-3 list-none font-semibold leading-[1.7]">
+                            <ul className="text-[12px] text-slate-300 space-y-4 list-none font-semibold leading-relaxed">
                                 <li className="flex gap-3">
                                     <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 shrink-0"></div>
-                                    <span><b>चेहरा पहचान:</b> आपका चेहरा कैमरे के सामने साफ़ होना चाहिए। कैप या हुड्डी पहनना वर्जित है।</span>
+                                    <span><b>टैब लॉगिंग:</b> टेस्ट के दौरान टैब बदलना या स्क्रीनशॉट लेना सख्त मना है। <b>3 वार्निंग</b> के बाद टेस्ट रद्द कर दिया जाएगा।</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 shrink-0"></div>
+                                    <span><b>DND मोड:</b> फोन में <b>Do Not Disturb</b> ऑन रखें। कॉल या मैसेज आने से आपका टेस्ट रुक सकता है।</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 shrink-0"></div>
+                                    <span><b>प्राइवेट ब्राउज़िंग:</b> Incognito मोड का उपयोग न करें, अन्यथा क्रैश होने पर आपका डेटा वापस नहीं आएगा।</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 shrink-0"></div>
+                                    <span><b>कैमरा और आवाज़:</b> अपना चेहरा कैमरे के सामने रखें। बैकग्राउंड में शोर या किसी दूसरे व्यक्ति के आने को चीटिंग माना जाएगा।</span>
                                 </li>
                                 <li className="flex gap-3 text-red-400 bg-red-400/5 p-2 rounded-xl border border-red-400/10">
                                     <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-2 shrink-0"></div>
-                                    <span><b>स्क्रीन लॉक:</b> टैब बदलना, स्क्रीनशॉट लेना या ऐप मिनिमाइज करना वर्जित है। (3 बार के बाद टेस्ट रद्द)।</span>
+                                    <span><b>सीट न छोड़ें:</b> टेस्ट के दौरान अपनी सीट से उठना वर्जित है। आपकी हर हलचल AI द्वारा रिकॉर्ड की जा रही है।</span>
                                 </li>
-                                <li className="flex gap-3">
-                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 shrink-0"></div>
-                                    <span><b>इलेक्ट्रॉनिक गैजेट्स:</b> हेडफोन, ईयरफोन या स्मार्टवॉच पहनना सख्त मना है।</span>
-                                </li>
-                                <li className="flex gap-3">
-                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 shrink-0"></div>
-                                    <span><b>शोर-मुक्त वातावरण:</b> किसी भी प्रकार की बातचीत या आवाज़ को "चीटिंग" माना जाएगा।</span>
+                                <li className="flex gap-3 text-amber-500">
+                                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 shrink-0"></div>
+                                    <span><b>फाइनल सबमिशन:</b> एक बार "Finish Exam" क्लिक करने के बाद उत्तर नहीं बदल पाएंगे। अंत में सावधानी से सबमिट करें।</span>
                                 </li>
                                 <li className="flex gap-3 text-emerald-400">
                                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2 shrink-0"></div>
-                                    <span><b>सुरक्षा ट्रैकिंग:</b> आपका IP एड्रेस और डिवाइस की जानकारी रिकॉर्ड की जा रही है।</span>
-                                </li>
-                                <li className="flex gap-3 text-amber-400">
-                                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 shrink-0"></div>
-                                    <span><b>ऑटो-सेव:</b> आपके उत्तर हर 15 सेकंड में सुरक्षित (Save) किए जा रहे हैं।</span>
+                                    <span><b>ऑटो-सेव:</b> आपके उत्तर हर 15 सेकंड में सुरक्षित किए जाते हैं। क्रैश होने पर तुरंत लॉग-इन करें।</span>
                                 </li>
                             </ul>
                         </div>
                     </div>
                 </div>
 
-                <form onSubmit={handleStartTest} className="space-y-6">
+                <form onSubmit={handleStartTest} className="space-y-6 max-w-md mx-auto">
                     {/* Access Key Input - Conditionally Rendered */}
                     {testInfo?.hasAccessKey && (
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Access Key</label>
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">SECURE ACCESS KEY</label>
                             <div className="relative">
-                                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                <KeyRound className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" size={24} />
                                 <input
                                     type="text"
                                     value={accessKey}
                                     onChange={(e) => setAccessKey(e.target.value)}
                                     placeholder="ENTER 6-DIGIT KEY"
-                                    className="w-full bg-slate-900/50 border-2 border-slate-700/50 rounded-2xl pl-12 pr-4 py-4 text-center text-xl font-bold tracking-[0.2em] text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all uppercase placeholder:text-slate-600 placeholder:tracking-normal"
+                                    className="w-full bg-slate-900/80 border-2 border-white/5 rounded-[2rem] pl-16 pr-6 py-6 text-center text-3xl font-black tracking-[0.4em] text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all uppercase placeholder:text-slate-700 placeholder:tracking-normal placeholder:font-bold placeholder:text-base"
                                     maxLength={6}
                                     autoFocus
                                 />
@@ -941,28 +920,35 @@ const TestInterface = () => {
                         </div>
                     )}
 
-                    <div className="pt-4">
+                    <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex items-start gap-4 text-left group cursor-pointer hover:bg-white/10 transition-all mb-4" onClick={() => setAgreed(!agreed)}>
+                        <div className={`w-6 h-6 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-all ${agreed ? 'bg-blue-600 border-blue-600' : 'border-slate-600'}`}>
+                            {agreed && <Check size={16} className="text-white" />}
+                        </div>
+                        <p className="text-[11px] text-slate-300 font-bold leading-relaxed uppercase tracking-widest select-none">
+                            I have read all terms and conditions and I am ready to start the assessment. I agree to the AI monitoring.
+                        </p>
+                    </div>
+
+                    <div className="">
                         <button
                             type="submit"
-                            disabled={startingTest || (testInfo?.hasAccessKey && !accessKey)}
-                            className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:bg-blue-50 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3"
+                            disabled={startingTest || (testInfo?.hasAccessKey && !accessKey) || !agreed}
+                            className="w-full py-6 bg-white text-slate-900 rounded-[2rem] font-black text-base uppercase tracking-[0.2em] hover:bg-blue-50 transition-all shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1 active:scale-95 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-4 group"
                         >
                             {startingTest ? (
-                                <>Loading...</>
+                                <div className="w-6 h-6 border-4 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
                             ) : (
-                                <>Start Test <ChevronRight size={18} /></>
+                                <>START SECURE ASSESSMENT <ChevronRight size={22} className="group-hover:translate-x-1 transition-transform" /></>
                             )}
                         </button>
-                        <p className="text-[10px] text-slate-500 mt-4 font-medium">
-                            By clicking start, you agree to enter full-screen mode. <br /> Exiting full-screen will be recorded as a violation.
+                        <p className="text-[10px] text-slate-500 mt-6 font-bold uppercase tracking-widest leading-relaxed">
+                            I understand and agree to the secure environment terms. <br /> My activity is being logged for forensic review.
                         </p>
                     </div>
                 </form>
             </motion.div>
         </div>
     );
-
-    // 3. Main Test Interface (When Started)
     return (
         <div
             className={`min-h-screen dark-mesh text-white p-3 md:p-6 lg:p-8 font-sans select-none relative overflow-hidden ${!isFocused ? 'blur-3xl grayscale brightness-0 pointer-events-none' : ''}`}
@@ -974,7 +960,6 @@ const TestInterface = () => {
                 msUserSelect: 'none'
             }}
         >
-            {/* Offline Guardian Banner — Persistent status alert (High Visibility) */}
             {(!isOnline || syncError) && (
                 <div className="fixed top-0 left-0 right-0 z-[100001] bg-red-600 px-6 py-2.5 flex items-center justify-between text-white shadow-lg animate-in slide-in-from-top duration-500">
                     <div className="flex items-center gap-4">
@@ -992,8 +977,6 @@ const TestInterface = () => {
                     </div>
                 </div>
             )}
-
-            {/* Screenshot Flash Overlay - Violent Red Strike to ruin manual captures */}
             {screenshotFlash && (
                 <div className="fixed inset-0 z-[1000000] bg-black flex items-center justify-center">
                     <div className="text-center">
@@ -1002,8 +985,6 @@ const TestInterface = () => {
                     </div>
                 </div>
             )}
-
-            {/* Security Shield Overlay (Mobile Screenshot/Blur Protection) */}
             {!isFocused && (
                 <div className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center text-center p-6">
                     <div className="w-24 h-24 bg-red-600/20 rounded-full flex items-center justify-center mb-8 border-4 border-red-600/50 animate-pulse">
@@ -1021,15 +1002,10 @@ const TestInterface = () => {
                     </div>
                 </div>
             )}
-
-            {/* Ambient background glows */}
             <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
             <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-
-            {/* Forensic Watermark — Visible in Screenshots, Identifies Student */}
             {studentProfile && (
                 <>
-                    {/* Full-screen moving diagonal tiled watermark — Hard to remove via simple PS or AI */}
                     <div className="fixed inset-0 pointer-events-none z-[50] overflow-hidden select-none opacity-[0.07]">
                         <motion.div 
                             animate={{ 
@@ -1046,7 +1022,6 @@ const TestInterface = () => {
                             ))}
                         </motion.div>
                     </div>
-                    {/* Floating Forensic ID — Changes position randomly to avoid being covered */}
                     <motion.div 
                         animate={{ 
                             top: ['5%', '85%', '85%', '5%', '5%'],
@@ -1064,22 +1039,17 @@ const TestInterface = () => {
                     </motion.div>
                 </>
             )}
-
-            {/* AI Proctoring Camera Feed (Visible Deterrent) */}
             {isStarted && !submitting && !isOutOfSync && (
                 <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 w-24 h-32 md:w-36 md:h-48 bg-slate-900 rounded-2xl border-4 border-green-500/30 overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.2)] z-[9000] pointer-events-none group">
                     <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover transform -scale-x-100 opacity-90"></video>
                     <div className="absolute inset-0 bg-gradient-to-t from-green-500/20 to-transparent mix-blend-overlay"></div>
-
                     <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
-                         {/* Cloud Status Indicator */}
                         <div className={`flex items-center gap-1.5 backdrop-blur-md px-2 py-1 rounded-full z-20 shadow-sm border ${syncError ? 'bg-red-600/50 border-white/20' : 'bg-black/70 border-white/10'}`}>
                              <div className={`w-1 h-1 rounded-full ${syncError ? 'bg-red-400 animate-pulse' : 'bg-emerald-400 animate-pulse'}`}></div>
                              <span className={`text-[6px] font-black uppercase tracking-widest ${syncError ? 'text-red-100' : 'text-emerald-400'}`}>
                                  {syncError ? 'SYNC FAIL' : 'CLOUD ON'}
                              </span>
                         </div>
-
                         <div className={`flex items-center gap-1.5 backdrop-blur-md px-2 py-1 rounded-full z-20 shadow-sm border ${noiseViolation ? 'bg-red-600/80 border-white animate-bounce' : 'bg-black/70 border-white/10'}`}>
                             {noiseViolation ? (
                                 <div className="flex items-center gap-1">
@@ -1094,26 +1064,20 @@ const TestInterface = () => {
                             )}
                         </div>
                     </div>
-                    {/* Audio Sensitivity Meter (Visual Deterrent) */}
                     <div className="absolute bottom-2 left-2 right-2 h-1 bg-white/10 rounded-full overflow-hidden">
                          <div className={`h-full bg-green-500 transition-all duration-100 ${noiseViolation ? 'bg-red-500' : ''}`} style={{ width: '60%' }}></div>
                     </div>
-                    {/* Scanning Line overlay */}
                     <div className="absolute top-0 w-full h-1 bg-green-400/50 shadow-[0_0_15px_rgba(74,222,128,1)] animate-[pulse_2s_ease-in-out_infinite]" style={{ transform: 'translateY(50px)' }}></div>
                 </div>
             )}
-
             <AnimatePresence>
-                {/* Zero-Tolerance Security Lockdown Modal */}
                 {isOutOfSync && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className="fixed inset-0 z-[99999] bg-[#000] flex flex-col items-center justify-center p-8 text-center"
                     >
-                        {/* High-intensity red pulsing background layer */}
                         <div className="absolute inset-0 bg-red-600/10 animate-pulse pointer-events-none"></div>
-
                         <motion.div
                             initial={{ scale: 0.8 }}
                             animate={{ scale: [1, 1.05, 1] }}
@@ -1122,12 +1086,10 @@ const TestInterface = () => {
                         >
                             <Lock size={60} />
                         </motion.div>
-
                         <h2 className="text-5xl md:text-6xl font-black tracking-tighter italic uppercase mb-2 text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]">
                             Security Alert
                         </h2>
                         <div className="h-1.5 w-32 bg-red-600 mb-8 rounded-full mx-auto shadow-[0_0_20px_rgba(239,68,68,0.5)]"></div>
-
                         <div className="space-y-4 mb-12">
                             <p className="text-white text-xl font-bold uppercase tracking-widest leading-relaxed">
                                 PROCTORING VIOLATION RECORDED
@@ -1355,7 +1317,7 @@ const TestInterface = () => {
                                 <button
                                     type="button"
                                     disabled={submitting}
-                                    onClick={() => handleSubmitTest(false)}
+                                    onClick={() => handleSubmitTest(false, 'normal', 'Manual Submit')}
                                     className="w-full sm:w-auto bg-emerald-600 px-12 py-5 rounded-2xl font-black text-xs uppercase italic tracking-[0.2em] shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center gap-3"
                                 >
                                     {submitting ? 'Saving...' : 'Finish Exam'} <ChevronRight size={18} />
