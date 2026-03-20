@@ -43,6 +43,8 @@ const TestInterface = () => {
     const broadcastChannelRef = useRef(null);
     const blurTimeoutRef = useRef(null);
     const mouseLeaveTimeoutRef = useRef(null);
+    const noiseTimerRef = useRef(null); // TRACK NOISE REQUEST ANIMATION FRAME
+    const cameraStreamRef = useRef(null); // TRACK CAMERA STREAM
     const stateRef = useRef({ answers, timeLeft });
 
     useEffect(() => {
@@ -333,9 +335,9 @@ const TestInterface = () => {
                     } else {
                         noiseCounter = Math.max(0, noiseCounter - 1);
                     }
-                    requestAnimationFrame(checkNoise);
+                    noiseTimerRef.current = requestAnimationFrame(checkNoise);
                 };
-                checkNoise();
+                noiseTimerRef.current = requestAnimationFrame(checkNoise);
             } catch (e) {
                 console.error("Sonic Proctor Error:", e);
             }
@@ -344,6 +346,7 @@ const TestInterface = () => {
             try {
                 // Request BOTH audio and video to enforce strict permission and deter cheating
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                cameraStreamRef.current = stream; 
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
@@ -555,6 +558,13 @@ const TestInterface = () => {
             if (audioContextRef.current) {
                 audioContextRef.current.close();
                 audioContextRef.current = null;
+            }
+            if (noiseTimerRef.current) {
+                cancelAnimationFrame(noiseTimerRef.current);
+            }
+            if (cameraStreamRef.current) {
+                cameraStreamRef.current.getTracks().forEach(track => track.stop());
+                cameraStreamRef.current = null;
             }
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);

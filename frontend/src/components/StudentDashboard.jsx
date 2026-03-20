@@ -47,12 +47,11 @@ const StudentDashboard = () => {
     });
 
     const getActiveTabFromPath = () => {
-        const path = location.pathname;
-        if (path.endsWith('/exams')) return 'exams';
-        if (path.endsWith('/resources')) return 'resources';
-        if (path.endsWith('/certificates')) return 'certificates';
-        if (path.endsWith('/profile')) return 'profile';
-        return 'dashboard';
+        const pathSegment = location.pathname.split('/').pop();
+        if (pathSegment === 'student-dashboard' || !pathSegment) {
+            return 'dashboard';
+        }
+        return pathSegment;
     };
 
     const activeTab = getActiveTabFromPath();
@@ -68,8 +67,10 @@ const StudentDashboard = () => {
         fetchTestInfo();
         fetchBulletins();
         fetchResources();
-        fetchProfile(); // Re-fetch profile to update testAttempted state
+        fetchProfile();
+    }, []);
 
+    useEffect(() => {
         if (student) {
             const socketUrl = getSocketUrl();
             const socket = io(socketUrl, {
