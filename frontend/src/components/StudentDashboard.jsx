@@ -68,6 +68,7 @@ const StudentDashboard = () => {
         fetchTestInfo();
         fetchBulletins();
         fetchResources();
+        fetchProfile(); // Re-fetch profile to update testAttempted state
 
         if (student) {
             const socketUrl = getSocketUrl();
@@ -142,6 +143,16 @@ const StudentDashboard = () => {
             setIsExamsLoading(false);
             setIsCertificatesLoading(false);
         }
+    };
+
+    const fetchProfile = async () => {
+        try {
+            const data = await api.get('/api/student-auth/profile');
+            if (data) {
+                setStudent(prev => ({ ...prev, ...data }));
+                localStorage.setItem('studentData', JSON.stringify({ ...student, ...data }));
+            }
+        } catch (err) { }
     };
 
     const handlePhotoUpload = async (e) => {

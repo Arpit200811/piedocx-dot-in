@@ -69,6 +69,17 @@ const TestInterface = () => {
                 ]);
 
                 setStudentProfile(profileData);
+                
+                // CRITICAL: Prevent re-entry if already attempted
+                if (profileData.testAttempted) {
+                    Swal.fire({
+                        title: 'Exam Already Attempted',
+                        text: 'You have already submitted this assessment. You cannot enter twice.',
+                        icon: 'info',
+                        confirmButtonColor: '#2563eb'
+                    }).then(() => navigate('/student-dashboard'));
+                    return;
+                }
 
                 if (!infoData) {
                     Swal.fire('Error', 'No active test found.', 'error').then(() => navigate('/student-dashboard'));
@@ -176,6 +187,7 @@ const TestInterface = () => {
 
         } catch (err) {
             setStartingTest(false);
+            hasAutoStarted.current = false; // RESET THE AUTO-START LOADER ON FAILURE
             const errorMsg = err.response?.data?.message || 'Could not start test. Please check internet and try again.';
             if (err.response?.status === 401 && err.response.data.requiresKey) {
                 Swal.fire('Wrong Key', 'Incorrect key. Please try again.', 'error');

@@ -79,8 +79,14 @@ api.interceptors.response.use(
             });
         }
 
-        // Handle Session Expiry
+        // Handle Session Expiry - Forces a clean login to prevent stale states
         if (error.response?.status === 401) {
+            localStorage.removeItem('studentToken');
+            localStorage.removeItem('studentData');
+            // If we are currently in a test or dashboard, bounce to login
+            if (window.location.hash.includes('student-')) {
+                window.location.href = '/#/student-login';
+            }
         }
 
         return Promise.reject(error);

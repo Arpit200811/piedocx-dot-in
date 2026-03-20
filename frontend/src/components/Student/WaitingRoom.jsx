@@ -53,7 +53,12 @@ const WaitingRoom = () => {
             return () => clearInterval(timer);
         } else {
             // Fallback for direct access without state
-            setStatus('Invalid Session Data');
+            Swal.fire({
+                title: 'No Session Found',
+                text: 'Please select an exam from the dashboard to enter the waiting room.',
+                icon: 'error',
+                confirmButtonColor: '#2563eb'
+            }).then(() => navigate('/student-dashboard'));
         }
     }, [yearGroup, branchGroup]);
 
@@ -262,8 +267,12 @@ const WaitingRoom = () => {
                     <div className="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center mb-3">
                         <Clock size={24} className="text-blue-400" />
                     </div>
+                    <div className="flex items-center gap-2 mb-2 bg-blue-600/10 px-3 py-1 rounded-full border border-blue-500/20 shadow-sm animate-pulse">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.3em]">Secure Waiting Area</span>
+                    </div>
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight mb-2 px-2 uppercase italic">{testTitle || "Exam Starting Soon"}</h1>
-                    <p className="text-slate-400 font-medium text-xs sm:text-sm uppercase tracking-widest leading-none">{status}</p>
+                    <p className="text-slate-400 font-medium text-xs sm:text-sm uppercase tracking-widest leading-none">Status: {status}</p>
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-8 items-start">
@@ -337,7 +346,7 @@ const WaitingRoom = () => {
                     </div>
 
                     {/* Right Column: T&C */}
-                    <div className="bg-slate-900/50 border border-white/10 rounded-3xl p-6 text-left shadow-2xl flex flex-col h-full max-h-[460px]">
+                    <div className="bg-slate-900/50 border border-white/10 rounded-3xl p-6 text-left shadow-2xl flex flex-col h-full max-h-[350px]">
                         <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
                             <div className="p-2 bg-blue-600/20 rounded-xl">
                                 <ShieldAlert size={20} className="text-blue-500" />
