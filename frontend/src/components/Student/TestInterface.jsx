@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Zap, BookOpen, CheckCircle, Target, ChevronRight, KeyRound, Megaphone, X } from 'lucide-react';
+import { Lock, Zap, Target, ChevronRight, KeyRound, Megaphone, X, ShieldAlert, Check } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +14,7 @@ const TestInterface = () => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState({});
     const [timeLeft, setTimeLeft] = useState(0);
+    const hasAutoStarted = useRef(false);
     const [testInfo, setTestInfo] = useState(null);
 
     // Loading States
@@ -88,13 +89,26 @@ const TestInterface = () => {
         fetchInitialData();
     }, [navigate]);
 
+    useEffect(() => {
+        if (!initialLoading && !isStarted && !hasAutoStarted.current && testInfo) {
+            const state = window.history.state?.usr; 
+            if (state?.agreed) {
+                console.log("Auto-starting test with state:", state);
+                hasAutoStarted.current = true;
+                if (state.accessKey) setAccessKey(state.accessKey);
+                handleStartTest(null, state.accessKey);
+            }
+        }
+    }, [initialLoading, isStarted, testInfo]);
+
 
     // 2. Start Test Function
-    const handleStartTest = async (e) => {
-        e.preventDefault();
+    const handleStartTest = async (e = null, manualAccessKey = null) => {
+        if (e) e.preventDefault();
 
         // Input Validation
-        if (testInfo?.hasAccessKey && !accessKey.trim()) {
+        const keyToUse = manualAccessKey || accessKey || '';
+        if (testInfo?.hasAccessKey && !keyToUse.trim()) {
             Swal.fire('Key Required', 'Please enter the access key to start.', 'warning');
             return;
         }
@@ -106,7 +120,7 @@ const TestInterface = () => {
         try {
             // Fetch Questions - Bind to specific Test ID for security key integrity
             const qData = await api.post('/api/student-auth/questions', {
-                accessKey: accessKey,
+                accessKey: keyToUse,
                 testId: testInfo.id
             });
 
@@ -787,11 +801,14 @@ const TestInterface = () => {
     };
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;
-    if (initialLoading) return (
+    if (initialLoading || (hasAutoStarted.current && !isStarted)) return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col items-center gap-4 text-center">
                 <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-blue-400 font-bold tracking-widest uppercase text-xs animate-pulse">Establishing Connection...</p>
+                <p className="text-blue-400 font-bold tracking-widest uppercase text-xs animate-pulse">
+                    {hasAutoStarted.current ? "Launching Your Secure Assessment..." : "Establishing Connection..."}
+                </p>
+                {hasAutoStarted.current && <p className="text-slate-500 text-[9px] uppercase font-bold tracking-widest">Applying proctoring protocols</p>}
             </div>
         </div>
     );
