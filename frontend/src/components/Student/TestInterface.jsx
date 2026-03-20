@@ -305,6 +305,7 @@ const TestInterface = () => {
                 setIsOutOfSync(true); 
             }
         };
+        /* 
         const startSonicProctor = async (stream) => {
             try {
                 if (!stream || stream.getAudioTracks().length === 0) return;
@@ -342,6 +343,8 @@ const TestInterface = () => {
                 console.error("Sonic Proctor Error:", e);
             }
         };
+        */
+        /*
         const initCamera = async () => {
             try {
                 // Request BOTH audio and video to enforce strict permission and deter cheating
@@ -367,6 +370,7 @@ const TestInterface = () => {
             }
         };
         initCamera();
+        */
         const detectScreenCapture = async () => {
             try {
                 // Modern Chrome/Edge expose a list of active capture sessions
@@ -1078,6 +1082,7 @@ const TestInterface = () => {
                     </motion.div>
                 </>
             )}
+            {/* 
             {isStarted && !submitting && !isOutOfSync && (
                 <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 w-24 h-32 md:w-36 md:h-48 bg-slate-900 rounded-2xl border-4 border-green-500/30 overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.2)] z-[9000] pointer-events-none group">
                     <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover transform -scale-x-100 opacity-90"></video>
@@ -1109,6 +1114,7 @@ const TestInterface = () => {
                     <div className="absolute top-0 w-full h-1 bg-green-400/50 shadow-[0_0_15px_rgba(74,222,128,1)] animate-[pulse_2s_ease-in-out_infinite]" style={{ transform: 'translateY(50px)' }}></div>
                 </div>
             )}
+            */}
             <AnimatePresence>
                 {isOutOfSync && (
                     <motion.div
