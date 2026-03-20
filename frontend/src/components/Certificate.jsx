@@ -93,10 +93,10 @@ const Certificate = ({ student, userEmail, autoSend }) => {
          await new Promise((r) => setTimeout(r, 800));
 
          const canvas = await html2canvas(certificateRef.current, {
-            scale: 3, // High quality
+            scale: 2.2, // Balanced quality and memory (prevents mobile crash)
             useCORS: true,
             allowTaint: false,
-            backgroundColor: "#f8fbff",
+            backgroundColor: "#ffffff",
             width: 1123,
             height: 794,
             windowWidth: 1123,

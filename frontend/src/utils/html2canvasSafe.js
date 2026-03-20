@@ -22,10 +22,20 @@ export const html2canvasSafe = async (element, options = {}) => {
             for (let i = 0; i < allElements.length; i++) {
                 const el = allElements[i];
                 try {
-                    // Check for inline style attribute
+                    // Force replace computed oklch to prevent hardware acceleration crashes in html2canvas
+                    const style = window.getComputedStyle(el);
+                    const colorProps = ['color', 'backgroundColor', 'borderColor', 'outlineColor', 'fill', 'stroke'];
+                    colorProps.forEach(prop => {
+                        const val = style[prop];
+                        if (val && (val.includes('oklch') || val.includes('oklab'))) {
+                            el.style[prop] = '#000000'; // Hard reset to black
+                        }
+                    });
+
+                    // Check for inline style attribute too
                     const styleAttr = el.getAttribute('style');
                     if (styleAttr && (styleAttr.includes('oklch') || styleAttr.includes('oklab'))) {
-                        el.setAttribute('style', styleAttr.replace(/(oklch|oklab)\([^)]+\)/g, '#000'));
+                        el.setAttribute('style', styleAttr.replace(/(oklch|oklab)\([^)]+\)/g, '#000000'));
                     }
                 } catch (e) { }
             }
