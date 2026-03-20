@@ -415,10 +415,8 @@ const TestInterface = () => {
         const handleBlur = () => {
             if (isMobile) return;
             setIsFocused(false);
-            if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
-            blurTimeoutRef.current = setTimeout(() => {
-                handleViolation("Prolonged Focus Loss (Desktop Notification or Switch)");
-            }, 2000); 
+            // Instant violation on blur for desktop (prevents sniping tool delay)
+            handleViolation("Prolonged Focus Loss (Desktop Notification or Switch)");
         };
 
         const handleFocus = () => {
@@ -534,10 +532,11 @@ const TestInterface = () => {
         window.addEventListener("mouseleave", () => {
             if (isMobile) return;
             setIsFocused(false);
+            // Slightly shorter delay for mouse exit
             if (mouseLeaveTimeoutRef.current) clearTimeout(mouseLeaveTimeoutRef.current);
             mouseLeaveTimeoutRef.current = setTimeout(() => {
                 handleViolation("Prolonged Mouse Exit (Desktop)");
-            }, 2500); 
+            }, 800); 
         });
         window.addEventListener("mouseenter", () => {
             if (mouseLeaveTimeoutRef.current) clearTimeout(mouseLeaveTimeoutRef.current);
@@ -1049,18 +1048,18 @@ const TestInterface = () => {
             <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
             {studentProfile && (
                 <>
-                    <div className="fixed inset-0 pointer-events-none z-[50] overflow-hidden select-none opacity-[0.07]">
+                    <div className="fixed inset-0 pointer-events-none z-[50] overflow-hidden select-none opacity-[0.14]">
                         <motion.div 
                             animate={{ 
-                                x: [0, -20, 0, 20, 0],
-                                y: [0, 20, 0, -20, 0]
+                                x: [0, -40, 0, 40, 0],
+                                y: [0, 40, 0, -40, 0]
                             }}
-                            transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
-                            className="absolute inset-[-10%] flex flex-wrap content-start gap-y-16 gap-x-12 p-4"
+                            transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
+                            className="absolute inset-[-20%] flex flex-wrap content-start gap-y-24 gap-x-20 p-4"
                         >
-                            {Array.from({ length: 60 }).map((_, i) => (
-                                <div key={i} className="transform -rotate-[25deg] whitespace-nowrap select-none font-black text-[14px] uppercase tracking-widest text-white">
-                                    {studentProfile.studentId} • {studentProfile.fullName}
+                            {Array.from({ length: 80 }).map((_, i) => (
+                                <div key={i} className="transform -rotate-[35deg] whitespace-nowrap select-none font-black text-[18px] uppercase tracking-tighter text-black/80">
+                                    {studentProfile.studentId} • {studentProfile.fullName} • IP: REQ_LOGGED
                                 </div>
                             ))}
                         </motion.div>
@@ -1165,7 +1164,7 @@ const TestInterface = () => {
                 )}
             </AnimatePresence>
 
-            <div className={`max-w-7xl mx-auto flex flex-col gap-6 h-full min-h-[92vh] transition-all duration-700 ${isOutOfSync ? 'blur-2xl scale-95 opacity-30 grayscale' : ''}`}>
+            <div className={`max-w-7xl mx-auto flex flex-col gap-6 h-full min-h-[92vh] transition-all duration-300 ${isOutOfSync || !isFocused ? 'blur-[80px] scale-95 opacity-20 grayscale pointer-events-none' : ''}`}>
 
                 {/* Global Notification Hub */}
                 <AnimatePresence mode="wait">
