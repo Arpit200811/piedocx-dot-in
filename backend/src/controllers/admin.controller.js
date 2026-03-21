@@ -42,21 +42,30 @@ export const adminRequestLogin = async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
     const hashedPassword = hashPassword(password);
     
-    // Case-insensitive search for admin
+    // 1. Try exact email match + hashed password (Case-insensitive via normalized)
     let admin = await Admin.findOne({ 
-      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }, 
+      email: normalizedEmail,
       password: hashedPassword 
     });
     
+    // 2. Fallback for legacy plain-text password with exact email
     if (!admin) {
-        // Double check for legacy plain-text password (case-insensitive)
         admin = await Admin.findOne({ 
-            email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }, 
+            email: normalizedEmail,
             password: password 
+        });
+    }
+
+    // 3. Last resort: Case-insensitive search via regex if they used different casing in DB
+    if (!admin) {
+        admin = await Admin.findOne({ 
+          email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }, 
+          $or: [{ password: hashedPassword }, { password: password }]
         });
     }
     
     if (!admin) {
+      console.warn(`[AUTH FAIL] Admin login failed for: ${normalizedEmail}`);
       return res.status(401).json({ message: "Invalid credentials!" });
     }
 

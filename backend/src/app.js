@@ -33,24 +33,28 @@ initRedis();
 app.set("trust proxy", 1);
 
 const allowedOrigins = [
-  // "https://piedocx-dot-in-1.onrender.com",
-  // "https://piedocx-dot-in.onrender.com",
   "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:5174",
   "https://piedocx.in",
   "https://www.piedocx.in",
-  // "https://piedocx.netlify.app",
   "https://api.piedocx.in",
-  // "http://api.piedocx.in",
-  // "http://piedocx.in",
-  // "http://www.piedocx.in",
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allow non-browser requests (Postman, etc)
     if (!origin) return callback(null, true);
+    
     const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
     
-    if (allowedOrigins.map(o => o.toLowerCase()).indexOf(normalizedOrigin) !== -1) {
+    // Check if origin is in allowed list
+    const isAllowed = allowedOrigins.some(ao => ao.toLowerCase() === normalizedOrigin);
+    
+    // Safety check: Allow any subdomain of piedocx.in as a fallback
+    const isDomainMatch = normalizedOrigin.endsWith("piedocx.in") || normalizedOrigin.includes("piedocx-dot-in");
+
+    if (isAllowed || isDomainMatch) {
       return callback(null, true);
     } else {
       console.error(`[CORS REJECTED] Origin: "${origin}" | Normalized: "${normalizedOrigin}"`);
@@ -59,11 +63,11 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
 };
 
 app.use((req, res, next) => {
-  console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.get('origin') || 'no-origin'}`);
+  // console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.get('origin') || 'no-origin'}`);
   next();
 });
 
@@ -74,6 +78,7 @@ app.use(
   helmet({
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
     crossOriginEmbedderPolicy: false,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
@@ -105,7 +110,8 @@ app.use(
           "*.onrender.com",
           "http://localhost:5002",
           "https://api.piedocx.in",
-          "https://cdnjs.cloudflare.com"
+          "https://cdnjs.cloudflare.com",
+          "https://piedocx.in"
         ],
         "img-src": ["'self'", "data:", "https://*.googleusercontent.com", "https://placehold.co"],
       },

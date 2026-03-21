@@ -23,8 +23,8 @@ router.post('/register', registrationRateLimiter, registerStudent);
 router.get('/view/:id', verifyCertificate);
 router.get('/verify-public/:id', verifyCertificatePublic);
 
-// Admin: Email & Management
-router.post('/send-email', adminAuth, sendEmailCertificate);
+// Admin & Student: Email & Management
+router.post('/send-email', studentAuth, sendEmailCertificate);
 router.post('/send-single-email', adminAuth, sendSingleEmailAdmin);
 router.get('/students', adminAuth, getAllStudents);
 router.patch('/students/:id/status', adminAuth, updateStudentStatus);
