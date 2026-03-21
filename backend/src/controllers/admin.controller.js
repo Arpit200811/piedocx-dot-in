@@ -275,6 +275,17 @@ export const closeGroupSession = async (req, res) => {
             return res.json({ message: "No pending students found in this group to close." });
         }
 
+        // Fetch TestConfig to handle scoring correctly (fixed bug where testConfig was undefined)
+        const testConfig = await TestConfig.findOne({ 
+            yearGroup, 
+            branchGroup,
+            isActive: true
+        });
+
+        if (!testConfig) {
+            return res.status(404).json({ message: "No active test configuration found for this group." });
+        }
+
         const todayStr = new Date().toISOString().split('T')[0];
         const studentIds = targetedStudents.map(s => s._id);
 
@@ -375,7 +386,16 @@ export const getHistoricalResults = async (req, res) => {
         // REMOVED: Default to today logic which was hiding older data on initial load.
 
 
-        if (yearGroup) query.yearGroup = yearGroup;
+        if (yearGroup) {
+            // Flexible matching: if user sends '3', match both '3' and '3-4'
+            if (yearGroup === '3' || yearGroup === '3-4') {
+                query.yearGroup = { $in: ['3', '3-4'] };
+            } else if (yearGroup === '1-2' || yearGroup === '1' || yearGroup === '2') {
+                query.yearGroup = { $in: ['1', '2', '1-2'] };
+            } else {
+                query.yearGroup = yearGroup;
+            }
+        }
         if (branchGroup) query.branchGroup = branchGroup;
         if (college) query.college = { $regex: new RegExp(college, 'i') };
 
