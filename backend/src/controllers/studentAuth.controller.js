@@ -732,23 +732,7 @@ export const getLeaderboard = async (req, res) => {
 };
 
 
-    try {
-        const { message } = req.body;
-        const student = await ExamStudent.findById(req.student.id);
-        const { getSmartResponse } = await import('../utils/aiService.js');
-        
-        const response = await getSmartResponse(message, {
-            studentName: student?.fullName || 'Student',
-            branch: student?.branch,
-            college: student?.college,
-            studentId: student?.studentId
-        });
-        
-        res.json(response);
-    } catch (error) {
-        console.error("getSmartSupport error:", error);
-        res.status(500).json({ message: "Support system busy. Try again later." });
-    }
+
 
 
 
