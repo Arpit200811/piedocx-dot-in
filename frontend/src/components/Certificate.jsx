@@ -206,7 +206,7 @@ const Certificate = ({ student, userEmail, autoSend }) => {
 
                   {/* 2. BRANDING SECTION */}
                   <div style={{ position: 'absolute', top: '40px', left: '0', right: '0', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
-                     <img src="/Logo_Pie.png" crossOrigin="anonymous" alt="Piedocx Logo" style={{ height: '70px', width: 'auto', marginBottom: '6px' }} />
+                     <img src="/Logo_Pie.png" alt="Piedocx Logo" style={{ height: '70px', width: 'auto', marginBottom: '6px' }} />
                      <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#0c4a6e', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>
                         PIEDOCX TECHNOLOGIES PVT LTD
                      </h2>
@@ -300,12 +300,12 @@ const Certificate = ({ student, userEmail, autoSend }) => {
 
                   {/* 11. PARTNER LOGOS */}
                   <div style={{ position: 'absolute', top: '608px', left: '0', right: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', zIndex: 10, transform: 'scale(0.85)' }}>
-                     <img src="/digital_india.png" crossOrigin="anonymous" alt="Digital India" style={{ height: '36px', width: 'auto' }} />
-                     <img src="/start.png" crossOrigin="anonymous" alt="Startup India" style={{ height: '32px', width: 'auto' }} />
-                     <img src="/msme.png" crossOrigin="anonymous" alt="MSME" style={{ height: '36px', width: 'auto' }} />
-                     <img src="/mca.png" crossOrigin="anonymous" alt="MCA" style={{ height: '40px', width: 'auto' }} />
-                     <img src="/gem.png" crossOrigin="anonymous" alt="GeM" style={{ height: '32px', width: 'auto' }} />
-                     <img src="/iso.png" crossOrigin="anonymous" alt="ISO" style={{ height: '36px', width: 'auto' }} />
+                     <img src="/digital_india.png" alt="Digital India" style={{ height: '36px', width: 'auto' }} />
+                     <img src="/start.png" alt="Startup India" style={{ height: '32px', width: 'auto' }} />
+                     <img src="/msme.png" alt="MSME" style={{ height: '36px', width: 'auto' }} />
+                     <img src="/mca.png" alt="MCA" style={{ height: '40px', width: 'auto' }} />
+                     <img src="/gem.png" alt="GeM" style={{ height: '32px', width: 'auto' }} />
+                     <img src="/iso.png" alt="ISO" style={{ height: '36px', width: 'auto' }} />
                   </div>
 
                   {/* 12. FOOTER (SIGNATURE & QR) */}

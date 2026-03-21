@@ -70,11 +70,18 @@ api.interceptors.response.use(
             (error.response?.status.toString() === s)
         );
 
+        // Enhanced Network Error Reporting
+        let finalMessage = message;
+        if (message === 'Network Error' || !error.response) {
+            finalMessage = "Network Connection Issue: Please check your internet or retry in a moment.";
+            console.error(" [NETWORK_CRITICAL] ", error);
+        }
+
         if (!isSilent) {
             Swal.fire({
                 icon: 'error',
-                title: 'Oops...',
-                text: message,
+                title: 'Operation Failed',
+                text: finalMessage,
                 confirmButtonColor: '#2563eb'
             });
         }
