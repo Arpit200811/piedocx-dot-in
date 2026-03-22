@@ -24,7 +24,7 @@ const AdminLogin = () => {
     setLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const data = await api.post('/api/admins/admin/request-login', { email: normalizedEmail, password });
+      const data = await api.post('/api/admin/request-login', { email: normalizedEmail, password });
       console.log("Login API Response:", data);
 
       if (data.token) {
@@ -51,7 +51,7 @@ const AdminLogin = () => {
     setLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      await api.post('/api/admins/admin/forgot-password', { email: normalizedEmail });
+      await api.post('/api/admin/forgot-password', { email: normalizedEmail });
       setStep(4);
       setSuccess('OTP sent for password reset.');
     } catch (err) {
@@ -67,7 +67,7 @@ const AdminLogin = () => {
     setLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      await api.post('/api/admins/admin/reset-password', { email: normalizedEmail, otp, newPassword });
+      await api.post('/api/admin/reset-password', { email: normalizedEmail, otp, newPassword });
       setStep(1);
       setSuccess('Password updated successfully! Login now.');
       setOtp('');

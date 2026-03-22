@@ -99,15 +99,15 @@ const Slider = () => {
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Enterprise Ready</span>
                 </div>
 
-                <h1 className="text-4xl md:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight group">
+                <h1 className="text-3xl sm:text-4xl md:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight group">
                   {sliderData[current].title.split(' ').map((word, i) => (
-                    <span key={i} className={`inline-block mr-3 ${['Software', 'Enterprise', 'Solutions', 'Custom', 'Mobile', 'Cloud-Native', 'Dedicated', 'Agile'].includes(word) ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800' : ''}`}>
+                    <span key={i} className={`inline-block mr-2 sm:mr-3 ${['Software', 'Enterprise', 'Solutions', 'Custom', 'Mobile', 'Cloud-Native', 'Dedicated', 'Agile'].includes(word) ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800' : ''}`}>
                       {word}
                     </span>
                   ))}
                 </h1>
 
-                <div className="min-h-[30px] text-xl md:text-2xl font-black text-blue-500 uppercase italic flex items-center gap-3">
+                <div className="min-h-[30px] text-lg md:text-2xl font-black text-blue-500 uppercase italic flex items-center gap-3">
                   <div className="w-8 h-[2px] bg-blue-500/30"></div>
                   <Typewriter
                     key={current}
@@ -159,7 +159,7 @@ const Slider = () => {
                 {/* Decorative Frame Elements */}
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-64 bg-blue-100 rounded-[4rem] group-hover:bg-blue-200 blur-3xl opacity-20 transition-colors duration-1000"></div>
 
-                <div className="relative z-10 w-full max-w-[320px] md:max-w-xl mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.1)] hover:drop-shadow-[0_35px_35px_rgba(37,99,235,0.1)] transition-all animate-float will-change-transform">
+                <div className="relative z-10 w-full max-w-[280px] sm:max-w-[320px] md:max-w-xl mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.1)] hover:drop-shadow-[0_35px_35px_rgba(37,99,235,0.1)] transition-all animate-float will-change-transform">
                   {sliderData[current].component}
                 </div>
 

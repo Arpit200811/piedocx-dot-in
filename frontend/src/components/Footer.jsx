@@ -76,7 +76,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-20 pb-8 overflow-hidden font-sans">
+    <footer className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-20 pb-32 md:pb-12 overflow-hidden font-sans">
       
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -92,7 +92,7 @@ const Footer = () => {
           
           {/* Brand Column - Enhanced */}
           <div className="lg:col-span-4 pr-0 lg:pr-8">
-            <Link to="/" className="inline-flex items-center gap-3 mb-8 group">
+            {/* <Link to="/" className="inline-flex items-center gap-3 mb-8 group">
                <div className="relative">
                   <div className="absolute inset-0 bg-blue-600/20 rounded-2xl blur-xl group-hover:bg-blue-600/30 transition-all"></div>
                   <img src="/pie_logo.png" alt="Piedocx Logo" className="relative w-14 h-14 object-contain" />
@@ -103,7 +103,7 @@ const Footer = () => {
                   </h2>
                   <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500">TECHNOLOGIES PVT LTD</p>
                </div>
-            </Link>
+            </Link> */}
             <p className="text-slate-400 text-sm leading-relaxed mb-8 font-medium">
               Engineering the future through elite tech stacks, visionary design, and mission-critical digital infrastructure.
             </p>
@@ -235,12 +235,12 @@ const Footer = () => {
           </div>
 
           <div className="flex gap-3">
-             {[
-               { icon: <Linkedin size={16} />, link: "https://www.linkedin.com/company/piedocx" },
-               { icon: <Instagram size={16} />, link: "https://www.instagram.com/piedocx" },
-               { icon: <Twitter size={16} />, link: "https://www.twitter.com/piedocx" },
-               { icon: <Youtube size={16} />, link: "https://www.youtube.com/@piedocx" }
-             ].map((social, i) => (
+              {[
+                { icon: <Facebook size={16} />, link: "https://www.facebook.com/share/1DDQgX1sdF/" },
+                { icon: <Linkedin size={16} />, link: "https://lnkd.in/gKyK7Bkw" },
+                { icon: <Instagram size={16} />, link: "https://www.instagram.com/piedocx?igsh=b3hzMDRzbm0ycDhq" },
+                { icon: <Youtube size={16} />, link: "https://youtube.com/@piedocxtechnologies?si=Hg8FKgLd_YkK8l9X" }
+              ].map((social, i) => (
                <Link 
                  key={i} 
                  to={social.link} 

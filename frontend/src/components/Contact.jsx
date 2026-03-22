@@ -19,9 +19,9 @@ import {
    Globe,
    Clock,
    Video,
-   Twitter,
+   Facebook,
    Linkedin,
-   Github,
+   Youtube,
    Instagram,
    ChevronDown,
    Briefcase
@@ -284,10 +284,10 @@ const Contact = () => {
                <div className="flex flex-col md:flex-row justify-between items-center gap-10 md:gap-8">
                   <div className="flex gap-4">
                      {[
-                        { icon: <Linkedin size={18} />, bg: "hover:bg-[#0077b5] hover:border-[#0077b5]", url: "https://www.linkedin.com/company/piedocx" },
-                        { icon: <Github size={18} />, bg: "hover:bg-[#333] hover:border-[#333]", url: "https://github.com/piedocx" },
-                        { icon: <Twitter size={18} />, bg: "hover:bg-[#1da1f2] hover:border-[#1da1f2]", url: "https://twitter.com/piedocx" },
-                        { icon: <Instagram size={18} />, bg: "hover:bg-[#e1306c] hover:border-[#e1306c]", url: "https://www.instagram.com/piedocx" }
+                        { icon: <Facebook size={18} />, bg: "hover:bg-[#1877f2] hover:border-[#1877f2]", url: "https://www.facebook.com/share/1DDQgX1sdF/" },
+                        { icon: <Linkedin size={18} />, bg: "hover:bg-[#0077b5] hover:border-[#0077b5]", url: "https://lnkd.in/gKyK7Bkw" },
+                        { icon: <Youtube size={18} />, bg: "hover:bg-[#ff0000] hover:border-[#ff0000]", url: "https://youtube.com/@piedocxtechnologies?si=Hg8FKgLd_YkK8l9X" },
+                        { icon: <Instagram size={18} />, bg: "hover:bg-[#e1306c] hover:border-[#e1306c]", url: "https://www.instagram.com/piedocx?igsh=b3hzMDRzbm0ycDhq" }
                      ].map((social, i) => (
                         <a key={i} href={social.url} target="_blank" rel="noopener noreferrer" className={`w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center transition-all hover:text-white hover:scale-110 ${social.bg}`}>
                            {social.icon}

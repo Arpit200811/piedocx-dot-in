@@ -24,7 +24,7 @@ const AdminResultArchives = () => {
     useEffect(() => {
         const fetchMetadata = async () => {
             try {
-                const res = await api.get(`/api/admins/admin/result-metadata`);
+                const res = await api.get(`/api/admin/result-metadata`);
                 setDates(res.dates || []);
                 setColleges(res.colleges || []);
 
@@ -56,7 +56,7 @@ const AdminResultArchives = () => {
     const fetchResults = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/api/admins/admin/get-historical-results`, {
+            const res = await api.get(`/api/admin/get-historical-results`, {
                 params: {
                     date: selectedDate,
                     college: selectedCollege,
@@ -91,7 +91,7 @@ const AdminResultArchives = () => {
                 didOpen: () => { Swal.showLoading(); }
             });
 
-            const res = await api.get(`/api/admins/admin/get-historical-results`, {
+            const res = await api.get(`/api/admin/get-historical-results`, {
                 params: {
                     date: selectedDate,
                     college: selectedCollege,
@@ -147,7 +147,7 @@ const AdminResultArchives = () => {
                 didOpen: () => { Swal.showLoading(); }
             });
 
-            const res = await api.get(`/api/admins/admin/get-historical-results`, {
+            const res = await api.get(`/api/admin/get-historical-results`, {
                 params: {
                     date: selectedDate,
                     college: selectedCollege,

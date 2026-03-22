@@ -112,7 +112,7 @@ const NavBar = () => {
         <Link to="/" className="flex items-center gap-2 flex-shrink-0 group">
           <div className="relative">
              <div className="absolute inset-0 bg-blue-600/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform"></div>
-             <img src="/pie_logo.png" alt="Logo" className={`h-10 md:h-14 w-auto object-contain relative z-10 ${isDarkMode ? "brightness-110 contrast-125" : "mix-blend-multiply"}`} />
+             <img src="/pie_logo.png" alt="Logo" className={`h-10 sm:h-12 md:h-16 lg:h-20 w-auto object-contain relative z-10 ${isDarkMode ? "brightness-110 contrast-125" : "mix-blend-multiply"}`} />
           </div>
          
         </Link>
@@ -262,17 +262,18 @@ const NavBar = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className={`lg:hidden border-t overflow-hidden ${isDarkMode ? "bg-slate-900 border-white/10" : "bg-white border-slate-100"}`}
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className={`lg:hidden fixed inset-0 top-14 z-[90] overflow-y-auto ${isDarkMode ? "bg-slate-950/95" : "bg-white/95"} backdrop-blur-xl border-t ${isDarkMode ? "border-white/10" : "border-slate-100"}`}
           >
              <div className="p-6 space-y-4">
                 {navLinks.map(({ name, path }) => (
                   <Link 
                     key={path} 
                     to={path} 
-                    className={`block py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] ${
+                    className={`block py-3 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] ${
                         isActive(path) 
                         ? "bg-blue-600 text-white" 
                         : isDarkMode ? "text-slate-400 hover:bg-white/5" : "text-slate-600 hover:bg-slate-50"

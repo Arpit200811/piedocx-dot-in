@@ -52,7 +52,7 @@ const AdminLogs = () => {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/api/admins/admin/email-logs`);
+      const res = await api.get(`/api/admin/email-logs`);
       setLogs(res);
     } catch (err) {
       console.error("Error fetching logs:", err);

@@ -168,7 +168,7 @@ const AdminTestManager = () => {
 
         if (result.isConfirmed) {
             try {
-                const data = await api.post('/api/admins/admin/close-session', {
+                const data = await api.post('/api/admin/close-session', {
                     yearGroup: yg,
                     branchGroup: bg
                 });

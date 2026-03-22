@@ -17,7 +17,7 @@ const AdminResultDetails = () => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                const res = await api.get(`/api/admins/admin/result/${id}`);
+                const res = await api.get(`/api/admin/result/${id}`);
                 setData(res);
             } catch (err) {
                 console.error(err);

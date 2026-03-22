@@ -75,7 +75,7 @@ function Services() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter uppercase italic leading-[0.9]"
+          className="text-3xl md:text-6xl font-black text-slate-900 tracking-tighter uppercase italic leading-[0.9]"
         >
           Solutions for the <br/> <span className="text-blue-600 underline decoration-blue-50 decoration-8 underline-offset-8">Digital Era.</span>
         </motion.h3>

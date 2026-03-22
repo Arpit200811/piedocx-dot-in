@@ -24,14 +24,14 @@ const AdminContentManager = () => {
 
     const fetchBulletins = async () => {
         try {
-            const res = await api.get(`/api/admins/admin/bulletins`);
+            const res = await api.get(`/api/admin/bulletins`);
             setBulletins(res);
         } catch (err) { console.error(err); }
     };
 
     const fetchResources = async () => {
         try {
-            const res = await api.get(`/api/admins/admin/resources`);
+            const res = await api.get(`/api/admin/resources`);
             setResources(res);
         } catch (err) { console.error(err); }
     };
@@ -40,7 +40,7 @@ const AdminContentManager = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post(`/api/admins/admin/bulletins`, bulletinForm);
+            await api.post(`/api/admin/bulletins`, bulletinForm);
             Swal.fire('Success', 'Bulletin published', 'success');
             setBulletinForm({ text: '', type: 'info' });
             fetchBulletins();
@@ -52,7 +52,7 @@ const AdminContentManager = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post(`/api/admins/admin/resources`, resourceForm);
+            await api.post(`/api/admin/resources`, resourceForm);
             Swal.fire('Success', 'Resource added', 'success');
             setResourceForm({ title: '', type: 'PDF', link: '', size: '' });
             fetchResources();
@@ -71,7 +71,7 @@ const AdminContentManager = () => {
         if (!confirm.isConfirmed) return;
 
         try {
-            await api.delete(`/api/admins/admin/bulletins/${id}`);
+            await api.delete(`/api/admin/bulletins/${id}`);
             fetchBulletins();
         } catch (err) { Swal.fire('Error', 'Delete failed', 'error'); }
     };
@@ -86,7 +86,7 @@ const AdminContentManager = () => {
         if (!confirm.isConfirmed) return;
 
         try {
-            await api.delete(`/api/admins/admin/resources/${id}`);
+            await api.delete(`/api/admin/resources/${id}`);
             fetchResources();
         } catch (err) { Swal.fire('Error', 'Delete failed', 'error'); }
     };

@@ -84,7 +84,7 @@ const RiskFeedPanel = () => {
 
     if (result.isConfirmed) {
       try {
-        await api.post(`/api/admins/admin/reset-test`, { studentId });
+        await api.post(`/api/admin/reset-test`, { studentId });
         Swal.fire({ title: 'System Updated', text: 'Student may now restart the session.', icon: 'success' });
       } catch (err) {
         Swal.fire('Error', 'Failed to update system permissions.', 'error');

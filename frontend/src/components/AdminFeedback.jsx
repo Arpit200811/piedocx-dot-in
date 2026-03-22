@@ -17,7 +17,7 @@ const AdminFeedback = () => {
 
     const fetchFeedbacks = async () => {
         try {
-            const res = await api.get(`/api/admins/admin/feedbacks`);
+            const res = await api.get(`/api/admin/feedbacks`);
             setFeedbacks(res);
         } catch (error) {
             console.error('Error fetching feedbacks:', error);
@@ -40,7 +40,7 @@ const AdminFeedback = () => {
 
         if (result.isConfirmed) {
             try {
-                await api.delete(`/api/admins/admin/feedbacks/${id}`);
+                await api.delete(`/api/admin/feedbacks/${id}`);
                 setFeedbacks(feedbacks.filter(f => f._id !== id));
                 Swal.fire('Deleted!', 'Feedback has been deleted.', 'success');
             } catch (error) {

@@ -35,7 +35,7 @@ const AdminHome = () => {
 
     const fetchStats = async () => {
       try {
-        const res = await api.get(`/api/admins/admin/stats`);
+        const res = await api.get(`/api/admin/stats`);
         setStats(res);
       } catch (err) {
         console.error("Error fetching stats:", err);
@@ -44,7 +44,7 @@ const AdminHome = () => {
 
     const fetchMonitorData = async () => {
       try {
-        const res = await api.get(`/api/admins/admin/monitor`);
+        const res = await api.get(`/api/admin/monitor`);
         setMonitorData(res);
       } catch (err) {
         console.error("Error fetching monitor:", err);
@@ -65,7 +65,7 @@ const AdminHome = () => {
         if (!configId) return;
         setFetchingAnalytics(true);
         try {
-            const res = await api.get(`/api/admins/admin/question-analytics/${configId}`);
+            const res = await api.get(`/api/admin/question-analytics/${configId}`);
             setAnalyticsData(res);
             setShowAnalytics(true);
         } catch (err) {
@@ -201,7 +201,7 @@ const AdminHome = () => {
   const handleViewDetails = async (studentId) => {
     try {
       Swal.fire({ title: 'Loading details...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-      const res = await api.get(`/api/admins/admin/student-test-detail/${studentId}`);
+      const res = await api.get(`/api/admin/student-test-detail/${studentId}`);
       
       const questionsHtml = res.questions.map((q, idx) => `
         <div class="mb-6 p-4 rounded-2xl border ${q.isCorrect ? 'border-emerald-100 bg-emerald-50/30' : 'border-red-100 bg-red-50/30'} text-left">
@@ -270,7 +270,7 @@ const AdminHome = () => {
 
     if (result.isConfirmed) {
       try {
-        await api.post(`/api/admins/admin/reset-test`, { studentId });
+        await api.post(`/api/admin/reset-test`, { studentId });
         Swal.fire({ title: 'Reset Complete', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
         // Data will refresh on next poll
       } catch (err) {
@@ -483,9 +483,9 @@ const AdminHome = () => {
               <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>
               ONLINE NOW
             </div>
-            {filteredMonitorData.length > 0 && monitorData[0]?.testConfigId && (
+            {filteredMonitorData.length > 0 && monitorData[0]?.testId && (
                 <button
-                    onClick={() => window._fetchAnalytics(monitorData[0].testConfigId)}
+                    onClick={() => window._fetchAnalytics(monitorData[0].testId)}
                     className="px-4 py-1.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-500 transition-all shadow-lg"
                 >
                     <ArrowRight size={14} /> View Test Heatmap
