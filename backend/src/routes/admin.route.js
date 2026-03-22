@@ -22,7 +22,9 @@ import {
   registerAdmin,
   getFeedbacks,
   deleteFeedback,
-  getAuditLogs
+  getAuditLogs,
+  getStudentDetailedAnswers,
+  getQuestionAnalytics
 } from "../controllers/admin.controller.js";
 import { adminAuth } from "../middlewares/auth.middleware.js";
 
@@ -52,6 +54,8 @@ router.delete("/admin/resources/:id", adminAuth, deleteResource);
 router.get("/admin/feedbacks", adminAuth, getFeedbacks);
 router.delete("/admin/feedbacks/:id", adminAuth, deleteFeedback);
 router.get("/admin/audit-logs", adminAuth, getAuditLogs);
+router.get("/admin/student-test-detail/:id", adminAuth, getStudentDetailedAnswers);
+router.get("/admin/question-analytics/:testConfigId", adminAuth, getQuestionAnalytics);
 
 export default router;
 

@@ -2,6 +2,7 @@
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import ExamSession from '../models/ExamSession.js';
+import ExamStudent from '../models/ExamStudent.js';
 import { calculateRiskScore, RISK_THRESHOLDS } from '../utils/riskEngine.js';
 
 let io;
@@ -13,9 +14,13 @@ export const initSocket = (server) => {
       methods: ["GET", "POST"],
       credentials: true
     },
-    transports: ['polling', 'websocket'],
+    transports: ['websocket', 'polling'], // Prioritize websocket for stability and speed
     allowEIO3: true
   });
+
+  // SCALING DATA CACHE: In-memory mapping to avoid constant DB queries for high-speed sessions
+  const activeSessions = new Map(); // studentId -> { socketId, sessionId }
+  const progressBatch = new Map(); // studentId -> progressData
 
   io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token;
@@ -55,43 +60,27 @@ export const initSocket = (server) => {
   io.on('connection', (socket) => {
     console.log(`🔌 Student Connected: ${socket.email} (${socket.id})`);
 
-    // 1. Join Exam Room
+    // 1. Join Exam Room (OPTIMIZED: Using JWT info to avoid redundant DB call)
     socket.on('join_exam', async ({ testId, deviceInfo }) => {
       try {
-        const { getYearGroup } = await import('./branchMapping.js');
-        const StudentModel = (await import('../models/ExamStudent.js')).default;
+        const { getYearGroup, getBranchGroup } = await import('./branchMapping.js');
         
-        const student = await StudentModel.findById(socket.studentId);
-        const yearGroup = student ? getYearGroup(student.year) : 'unknown';
+        const yearGroup = getYearGroup(socket.user.year);
+        const branchGroup = getBranchGroup(socket.user.branch || 'CORE');
         const roomName = `${testId}_${yearGroup}`;
         
-        console.log(`[Socket] join_exam: ${socket.email} joining room ${roomName}`);
         socket.join(roomName);
         socket.testId = testId;
-        socket.yearGroup = yearGroup;
         socket.roomName = roomName;
-      try {
-        const existingSession = await ExamSession.findOne({ 
-            studentId: socket.studentId, 
-            testId, 
-            status: 'active' 
-        });
 
+        const existingSession = activeSessions.get(socket.studentId);
         if (existingSession && existingSession.socketId !== socket.id) {
-            console.log(`⚠️ Multiple login detected for ${socket.email}. Terminating old session.`);
-            
+            console.log(`⚠️ Conflict detected for ${socket.email}. Re-using session logic.`);
             io.to(existingSession.socketId).emit('force_terminate', { 
-                reason: 'New login detected on another device. Your session is closed here.' 
+                reason: 'Login detected on another device/tab. This session is now closed.' 
             });
-
             const oldSocket = io.sockets.sockets.get(existingSession.socketId);
             if (oldSocket) oldSocket.disconnect(true);
-
-            await ExamSession.findByIdAndUpdate(existingSession._id, { 
-                status: 'terminated', 
-                endTime: new Date(),
-                $push: { violationLog: { type: 'DEVICE_CONFLICT', timestamp: new Date() } }
-            });
         }
 
         const session = await ExamSession.create({
@@ -102,7 +91,17 @@ export const initSocket = (server) => {
             status: 'active',
             lastActive: new Date()
         });
+
+        // Update ExamStudent status for Live Monitor (Item 6)
+        await ExamStudent.findByIdAndUpdate(socket.studentId, {
+            isOnline: true,
+            lastSeen: new Date(),
+            deviceInfo // Store latest fingerprint
+        });
+
         socket.sessionId = session._id;
+        activeSessions.set(socket.studentId, { socketId: socket.id, sessionId: session._id });
+
         io.to('admin_monitor').emit('student_joined', { 
             studentId: socket.studentId, 
             email: socket.email,
@@ -110,20 +109,19 @@ export const initSocket = (server) => {
         });
 
       } catch (err) {
-        console.error("Session Tracking Error:", err);
+        console.error("[Socket] join_exam logic error:", err);
       }
-    } catch (err) {
-      console.error("[Socket] join_exam room logic error:", err);
-    }
-  });
-    socket.on('progress_update', async ({ attemptedCount, totalQuestions, currentQuestion, score }) => {
-        if (!socket.sessionId) return;
-        io.to('admin_monitor').emit('student_progress', { 
-            studentId: socket.studentId, 
-            attemptedCount, 
+    });
+
+    // OPTIMIZED: BATCHED PROGRESS UPDATES (TO FIX THE ADMIN DASHBOARD FREEZE)
+    socket.on('progress_update', ({ attemptedCount, totalQuestions, currentQuestion, score }) => {
+        if (!socket.studentId) return;
+        progressBatch.set(socket.studentId, {
+            studentId: socket.studentId,
+            attemptedCount,
             totalQuestions,
             currentQuestion,
-            score, // Pass the score to admin monitor
+            score,
             lastSeen: new Date()
         });
     });
@@ -191,6 +189,16 @@ export const initSocket = (server) => {
         }
     });
 
+    socket.on('admin_warn_student', async ({ studentId, message }) => {
+        if (socket.role !== 'admin') return;
+        
+        console.log(`⚠️ Admin sending warning to student ${studentId}: ${message}`);
+        const sessions = await ExamSession.find({ studentId, status: 'active' });
+        for (const session of sessions) {
+            io.to(session.socketId).emit('admin_warning', { message });
+        }
+    });
+
     socket.on('send_broadcast', ({ testId, yearGroup, message, type }) => {
         const payload = { 
             message, 
@@ -215,8 +223,25 @@ export const initSocket = (server) => {
               status: 'disconnected',
               endTime: new Date()
           });
+          // Update ExamStudent status to offline
+          await ExamStudent.findByIdAndUpdate(socket.studentId, {
+              isOnline: false,
+              lastSeen: new Date()
+          });
       }
     });
+
+    // ADMIN MONITOR REFRESH LOOP (EVERY 5 SECONDS)
+    // Scale up to 10s if admin dashboard still hangs
+    const adminFlushInterval = setInterval(() => {
+        if (progressBatch.size > 0) {
+            const updates = Array.from(progressBatch.values());
+            io.to('admin_monitor').emit('batch_progress_update', { updates });
+            progressBatch.clear();
+        }
+    }, 5000); 
+
+    socket.on('error', () => { /* Prevent crash */ });
   });
 
   return io;

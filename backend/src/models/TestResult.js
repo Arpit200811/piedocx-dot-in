@@ -23,6 +23,10 @@ const testResultSchema = new mongoose.Schema({
     wrongCount: Number,
     totalQuestions: Number,
     violationCount: { type: Number, default: 0 },
+    violationHistory: [{
+        reason: String,
+        timestamp: { type: Date, default: Date.now }
+    }],
     
     // Submission Context
     submissionType: { type: String, enum: ['normal', 'terminated', 'system_closed'], default: 'normal' },
@@ -35,6 +39,14 @@ const testResultSchema = new mongoose.Schema({
         studentAnswer: String,
         correctAnswer: String,
         isCorrect: Boolean
+    }],
+    
+    // Feature #1 Fix: AI-Powered Results Doctor analysis results
+    aiAnalysis: { type: String, default: '' },
+    recommendations: [{
+        title: String,
+        link: String,
+        type: { type: String, enum: ['PDF', 'VIDEO', 'ARTICLE', 'QUIZ'] }
     }],
     
     // Timing data

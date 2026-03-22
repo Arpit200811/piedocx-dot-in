@@ -1,0 +1,32 @@
+import { z } from 'zod';
+
+export const loginSchema = z.object({
+  token: z.string().min(1, 'Token is required')
+});
+
+export const updateProfileSchema = z.object({
+  fullName: z.string().min(2).max(100).optional(),
+  mobile: z.string().min(10).max(15).optional(),
+  college: z.string().optional(),
+  branch: z.string().optional(),
+  year: z.string().optional(),
+  profilePicture: z.string().optional()
+});
+
+export const syncProgressSchema = z.object({
+  // Limit to 200 answers using refine, because max() is only for strings/arrays
+  answers: z.record(z.string()).refine(obj => Object.keys(obj).length <= 200, 'Too many answers').default({}),
+  testId: z.string().optional(),
+  timeLeft: z.number().optional()
+});
+
+export const logViolationSchema = z.object({
+  reason: z.string().min(1, 'Reason is required').max(500, 'Reason too long')
+});
+
+export const submitTestSchema = z.object({
+  answers: z.record(z.string()).refine(obj => Object.keys(obj).length <= 200, 'Too many answers').default({}),
+  testId: z.string().optional(),
+  submissionType: z.enum(['normal', 'terminated', 'system_closed', 'timeout']).optional(),
+  reason: z.string().max(500, 'Reason too long').optional()
+});

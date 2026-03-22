@@ -25,6 +25,7 @@ import errorHandler from "./middlewares/error.middleware.js";
 
 import { initSocket } from "./utils/socketService.js";
 import { initRedis } from "./utils/cacheService.js";
+import "./workers/testSubmission.worker.js"; // START THE BACKGROUND WORKER
 
 const app = express();
 const httpServer = createServer(app);

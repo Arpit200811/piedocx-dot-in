@@ -120,3 +120,36 @@ export const sendWhatsAppMessage = async (number, message) => {
     await client.sendMessage(`${num}@c.us`, message);
     return true;
 };
+
+/**
+ * FEATURE #5: Automated Result Dispatch (WhatsApp)
+ */
+export const broadcastResultLink = async (students, testTitle) => {
+    if (status !== 'CONNECTED' || !client) return { success: false, message: 'WhatsApp Service is Offline.' };
+
+    let successCount = 0;
+    for (const student of students) {
+        try {
+            if (!student.mobile) continue;
+            
+            const message = `🎓 *Dear ${student.fullName}*,
+Congratulations! Your results for *${testTitle}* have been published.
+
+✅ *Score:* ${student.score}
+🏆 *Check Result & Certificate:* https://piedocx.in/student-dashboard/results
+
+_Best Regards,_
+*Piedocx Team*`;
+            
+            await sendWhatsAppMessage(student.mobile, message);
+            successCount++;
+            
+            // Anti-spam delay to prevent WhatsApp banning
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (err) {
+            console.error(`Failed to send WhatsApp to ${student.email}:`, err.message);
+        }
+    }
+    return { success: true, count: successCount };
+};
+

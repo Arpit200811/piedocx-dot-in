@@ -3,7 +3,9 @@ import mongoose from 'mongoose';
 
 const questionSchema = new mongoose.Schema({
   questionText: { type: String, required: true },
+  questionTextHindi: { type: String }, // For Bilingual Support
   options: [{ type: String, required: true }],
+  optionsHindi: [{ type: String }], // Optional Hindi translations
   correctAnswer: { type: String, required: true }
 });
 

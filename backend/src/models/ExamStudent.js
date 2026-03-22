@@ -24,14 +24,25 @@ const schema = new mongoose.Schema({
   wrongCount: { type: Number, default: 0 },
   feedbackSubmitted: { type: Boolean, default: false },
   violationCount: { type: Number, default: 0 },
+  violationHistory: [{
+      reason: String,
+      timestamp: { type: Date, default: Date.now }
+  }],
   assignedQuestions: [{
       questionId: String,
       questionText: String,
+      questionTextHindi: String, // Bilingual Persistence
       options: [String],
+      optionsHindi: [String], // Optional Hindi persistence
       correctAnswer: String
   }],
   savedAnswers: { type: Object, default: {} },
-  testId: { type: mongoose.Schema.Types.ObjectId, ref: 'TestConfig', index: true }
+  testId: { type: mongoose.Schema.Types.ObjectId, ref: 'TestConfig', index: true },
+  
+  // Real-time Status for Admin Dashboard (Item 6)
+  isOnline: { type: Boolean, default: false },
+  lastSeen: { type: Date, default: Date.now },
+  deviceInfo: { type: Object, default: {} }
 });
 
 // Compound index for search optimization in admin panel

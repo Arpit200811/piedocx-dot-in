@@ -47,8 +47,21 @@ export const getDeepAnalytics = async (req, res) => {
             medium: riskDistribution.find(r => r._id === 40)?.count || 0, // 40-79
             high: riskDistribution.find(r => r._id === 80)?.count || 0    // 80+
         };
+        
+        // 3. Score Distribution (Performance Aggregation)
+        const scoreDistribution = await TestResult.aggregate([
+            { $match: matchStageResults },
+            { 
+                $bucket: {
+                    groupBy: "$score",
+                    boundaries: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 101],
+                    default: "Unknown",
+                    output: { count: { $sum: 1 } }
+                }
+            }
+        ]);
 
-        // 3. Operational Metrics (Avg Time, Reconnects)
+        // 4. Operational Metrics (Avg Time, Reconnects)
         // Note: For avgTime, we use endTime - startTime from sessions that are 'completed'
         const opsMetrics = await ExamSession.aggregate([
             { $match: { ...matchStageSessions, status: 'completed', endTime: { $exists: true } } },
@@ -78,6 +91,7 @@ export const getDeepAnalytics = async (req, res) => {
                 dropOffRate: `${dropOffRate}%`
             },
             risk: riskStats,
+            scores: scoreDistribution.map(s => ({ range: `${s._id}-${s._id+10}`, count: s.count })),
             performance: {
                 avgTimeMinutes: opsMetrics[0]?.avgTimePerExam?.toFixed(1) || 0,
                 avgReconnects: opsMetrics[0]?.avgReconnects?.toFixed(1) || 0

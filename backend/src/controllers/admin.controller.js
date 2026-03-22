@@ -11,7 +11,7 @@ import Resource from "../models/Resource.js";
 import Feedback from "../models/Feedback.js";
 import TestConfig from "../models/TestConfig.js";
 import { getIO } from "../utils/socketService.js";
-import { delCache } from "../utils/cacheService.js";
+import { delCache, setCache, getCache } from "../utils/cacheService.js";
 
 import { sendAdminOTP } from "../utils/emailService.js";
 import { logAdminAction } from "../utils/auditLogger.js";
@@ -168,9 +168,35 @@ export const getAdminStats = async (req, res) => {
   }
 };
 
+export const getStudentDetailedAnswers = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const student = await ExamStudent.findById(id, 'fullName email studentId college branch year assignedQuestions savedAnswers violationCount violationHistory score');
+        if (!student) return res.status(404).json({ message: "Student record not found" });
+
+        const mappedQuestions = student.assignedQuestions.map(q => ({
+            ...q.toObject(),
+            studentAnswer: student.savedAnswers[q.questionId] || 'NOT_ANSWERED',
+            isCorrect: (student.savedAnswers[q.questionId] === q.correctAnswer)
+        }));
+
+        res.json({
+            fullName: student.fullName,
+            email: student.email,
+            studentId: student.studentId,
+            score: student.score,
+            violations: student.violationHistory,
+            questions: mappedQuestions
+        });
+    } catch (err) {
+        console.error("getStudentDetailedAnswers error:", err);
+        res.status(500).json({ message: "Error fetching student details" });
+    }
+};
+
 export const getLiveTestMonitor = async (req, res) => {
     try {
-        const examStudents = await ExamStudent.find({}, 'fullName email college branch year testAttempted testStartTime testEndTime attemptedCount score violationCount assignedQuestions')
+        const examStudents = await ExamStudent.find({}, 'fullName email college branch year testAttempted testStartTime testEndTime attemptedCount score violationCount violationHistory assignedQuestions isOnline lastSeen')
             .sort({ testAttempted: 1, testStartTime: -1 });
 
         const internStudents = await InternStudent.find({}, 'name registration college branch year technology startDate endDate');
@@ -676,3 +702,51 @@ export const getAuditLogs = async (req, res) => {
     }
 };
 
+export const getQuestionAnalytics = async (req, res) => {
+    try {
+        const { testConfigId } = req.params;
+        if (!testConfigId) return res.status(400).json({ message: "Test Config ID required" });
+
+        const cacheKey = `analytics_${testConfigId}`;
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
+        // Aggregate results for this test
+        const results = await TestResult.find({ testConfig: testConfigId });
+        if (results.length === 0) return res.json({ message: "No results yet for this test.", data: [] });
+
+        const statsMap = {};
+        
+        results.forEach(resItem => {
+            resItem.answers.forEach(ans => {
+                if (!statsMap[ans.questionId]) {
+                    statsMap[ans.questionId] = {
+                        questionText: ans.questionText,
+                        totalAnswers: 0,
+                        correct: 0,
+                        wrong: 0,
+                        difficulty: 0 // Will be calculated
+                    };
+                }
+                statsMap[ans.questionId].totalAnswers++;
+                if (ans.isCorrect) statsMap[ans.questionId].correct++;
+                else statsMap[ans.questionId].wrong++;
+            });
+        });
+
+        const analytics = Object.entries(statsMap).map(([id, s]) => ({
+            id,
+            text: s.questionText,
+            accuracy: Math.round((s.correct / s.totalAnswers) * 100),
+            errorRate: Math.round((s.wrong / s.totalAnswers) * 100),
+            totalAttempts: s.totalAnswers,
+            status: s.correct / s.totalAnswers > 0.7 ? "EASY" : s.correct / s.totalAnswers > 0.4 ? "MEDIUM" : "DIFFICULT"
+        })).sort((a, b) => a.accuracy - b.accuracy); // Hardest first
+
+        await setCache(cacheKey, analytics, 300); // 5 min cache
+        res.json(analytics);
+    } catch (err) {
+        console.error("getQuestionAnalytics error:", err);
+        res.status(500).json({ message: "Analytics engine failure" });
+    }
+};

@@ -2,6 +2,7 @@
 import TestConfig from '../models/TestConfig.js';
 import ExamStudent from '../models/ExamStudent.js';
 import { getIO } from '../utils/socketService.js';
+import { broadcastResultLink } from '../utils/whatsappService.js';
 
 export const getConfig = async (req, res) => {
     try {
@@ -157,7 +158,29 @@ export const toggleResults = async (req, res) => {
             });
         }
 
-        res.json({ message: `Results ${config.resultsPublished ? 'published' : 'hidden'}`, resultsPublished: config.resultsPublished });
+        // FEATURE #5: Automated Result Dispatch (Triggered when published)
+        let broadcastStats = null;
+        if (config.resultsPublished) {
+            try {
+                const students = await ExamStudent.find({ 
+                    testAttempted: true, 
+                    // Filter based on config groupings logic from upsertConfig
+                    branch: branchGroup === 'CS-IT' ? { $regex: /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS)\b/i } : { $not: { $regex: /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS)\b/i } }
+                });
+                
+                // Fire and forget so controller returns fast
+                broadcastResultLink(students, config.title).catch(e => console.error("Broadcast Fail:", e));
+                broadcastStats = { targetCount: students.length };
+            } catch (err) {
+                console.error("Broadcast Prep Fail:", err);
+            }
+        }
+
+        res.json({ 
+            message: `Results ${config.resultsPublished ? 'published' : 'hidden'}`, 
+            resultsPublished: config.resultsPublished,
+            broadcast: broadcastStats 
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error toggling results' });
     }
