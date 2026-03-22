@@ -30,32 +30,32 @@ import { adminAuth } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/admin/request-login", adminRequestLogin);
-router.post("/admin/register", adminAuth, registerAdmin); // Protected route for current admins to add new ones
-router.post("/admin/verify-otp", verifyAdminOTP);
-router.get("/admin/stats", adminAuth, getAdminStats);
-router.get("/admin/email-logs", adminAuth, getEmailLogs);
-router.get("/admin/monitor", adminAuth, getLiveTestMonitor);
-router.post("/admin/reset-test", adminAuth, resetStudentTest);
-router.post("/admin/resume-test", adminAuth, resumeStudentTest);
-router.post("/admin/close-session", adminAuth, closeGroupSession);
-router.get("/admin/get-historical-results", adminAuth, getHistoricalResults);
-router.get("/admin/result-metadata", adminAuth, getResultMetadata);
-router.get("/admin/result/:id", adminAuth, getTestResultDetail);
-router.post("/admin/forgot-password", forgotPassword);
-router.post("/admin/reset-password", resetPassword);
-router.get("/admin/bulletins", adminAuth, getBulletins);
-router.post("/admin/bulletins", adminAuth, createBulletin);
-router.delete("/admin/bulletins/:id", adminAuth, deleteBulletin);
+router.post("/request-login", adminRequestLogin);
+router.post("/register", adminAuth, registerAdmin); // Protected route for current admins to add new ones
+router.post("/verify-otp", verifyAdminOTP);
+router.get("/stats", adminAuth, getAdminStats);
+router.get("/email-logs", adminAuth, getEmailLogs);
+router.get("/monitor", adminAuth, getLiveTestMonitor);
+router.post("/reset-test", adminAuth, resetStudentTest);
+router.post("/resume-test", adminAuth, resumeStudentTest);
+router.post("/close-session", adminAuth, closeGroupSession);
+router.get("/get-historical-results", adminAuth, getHistoricalResults);
+router.get("/result-metadata", adminAuth, getResultMetadata);
+router.get("/result/:id", adminAuth, getTestResultDetail);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
+router.get("/bulletins", adminAuth, getBulletins);
+router.post("/bulletins", adminAuth, createBulletin);
+router.delete("/bulletins/:id", adminAuth, deleteBulletin);
 
-router.get("/admin/resources", adminAuth, getResources);
-router.post("/admin/resources", adminAuth, createResource);
-router.delete("/admin/resources/:id", adminAuth, deleteResource);
-router.get("/admin/feedbacks", adminAuth, getFeedbacks);
-router.delete("/admin/feedbacks/:id", adminAuth, deleteFeedback);
-router.get("/admin/audit-logs", adminAuth, getAuditLogs);
-router.get("/admin/student-test-detail/:id", adminAuth, getStudentDetailedAnswers);
-router.get("/admin/question-analytics/:testConfigId", adminAuth, getQuestionAnalytics);
+router.get("/resources", adminAuth, getResources);
+router.post("/resources", adminAuth, createResource);
+router.delete("/resources/:id", adminAuth, deleteResource);
+router.get("/feedbacks", adminAuth, getFeedbacks);
+router.delete("/feedbacks/:id", adminAuth, deleteFeedback);
+router.get("/audit-logs", adminAuth, getAuditLogs);
+router.get("/student-test-detail/:id", adminAuth, getStudentDetailedAnswers);
+router.get("/question-analytics/:testConfigId", adminAuth, getQuestionAnalytics);
 
 export default router;
 

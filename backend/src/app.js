@@ -124,7 +124,7 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use("/api/users", router);
 app.use("/api/employees", empRoutes);
-app.use("/api/admins", adminRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/certificate", registerRoutes);
 app.use("/api/student-auth", studentAuthRoutes);
