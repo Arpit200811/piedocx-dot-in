@@ -150,8 +150,15 @@ const StudentDashboard = () => {
         try {
             const data = await api.get('/api/student-auth/profile');
             if (data) {
-                setStudent(prev => ({ ...prev, ...data }));
-                localStorage.setItem('studentData', JSON.stringify({ ...student, ...data }));
+                // Feature #7 Fix: Ensure violationHistory, assignedQuestions, and all
+                // full profile fields are merged into context so child components get real data
+                const merged = {
+                    ...student,
+                    ...data,
+                    firstName: data.firstName || data.fullName?.split(' ')[0] || student?.firstName
+                };
+                setStudent(merged);
+                localStorage.setItem('studentData', JSON.stringify(merged));
             }
         } catch (err) { }
     };
@@ -260,7 +267,7 @@ const StudentDashboard = () => {
                     {activeTab === 'dashboard' && (
                         <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
                             <div className="flex flex-col lg:flex-row gap-8">
-                                <DashboardHero student={student} navigate={navigate} />
+                        <DashboardHero student={student} navigate={navigate} testInfo={testInfo} />
                                 <StatsScore student={student} />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
@@ -309,23 +316,61 @@ const StudentDashboard = () => {
                             {isExamsLoading ? (
                                 <ExamsSkeleton />
                             ) : testInfo ? (
-                                <div className="bg-white p-6 sm:p-10 md:p-12 rounded-3xl md:rounded-[3.5rem] border border-slate-200 shadow-2xl relative overflow-hidden group hover-lift text-center lg:text-left">
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
-                                    <div className="flex flex-col lg:flex-row justify-between items-center gap-8 md:gap-10 relative z-10">
-                                        <div className="flex-1 space-y-4">
-                                            <div className="flex items-center justify-center lg:justify-start gap-3">
-                                                <span className="px-3 py-1 bg-green-50 text-green-600 text-[8px] md:text-[9px] font-black uppercase tracking-widest rounded-full border border-green-100">Live Status</span>
-                                                <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest italic leading-none opacity-60 shrink-0">{testInfo.branchGroup} Group</span>
+                                <div className="bg-slate-900 p-8 sm:p-12 md:p-14 rounded-[3rem] md:rounded-[4rem] shadow-2xl relative overflow-hidden group hover:-translate-y-2 transition-transform duration-500 text-center lg:text-left">
+                                    <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/30 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:bg-blue-500/40 transition-colors duration-700"></div>
+                                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/4 pointer-events-none"></div>
+
+                                    <div className="flex flex-col lg:flex-row justify-between items-center gap-8 md:gap-12 relative z-10">
+                                        <div className="flex-1 space-y-6">
+                                            <div className="flex items-center justify-center lg:justify-start gap-4">
+                                                <span className="px-4 py-1.5 bg-emerald-500/10 text-emerald-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] rounded-full border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)] animate-pulse">Live Gateway</span>
+                                                <span className="px-3 py-1 bg-white/5 text-slate-300 text-[9px] md:text-[10px] font-bold uppercase tracking-widest rounded-md border border-white/10">{testInfo.branchGroup} Group</span>
                                             </div>
-                                            <h3 className="text-2xl md:text-3xl font-black text-slate-900 uppercase italic tracking-tighter leading-tight">{testInfo.title}</h3>
-                                            <div className="flex flex-wrap justify-center lg:justify-start items-center gap-6 md:gap-8 pt-2">
-                                                <div className="flex items-center gap-2"><Clock size={16} className="text-blue-600" /><span className="text-xs font-black text-slate-900 uppercase italic tracking-tight">{testInfo.duration} Min</span></div>
-                                                <div className="flex items-center gap-2"><Calendar size={16} className="text-purple-600" /><span className="text-xs font-black text-slate-900 uppercase italic tracking-tight">{new Date(testInfo.startDate).toLocaleDateString()}</span></div>
+
+                                            <div>
+                                                <h3 className="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tighter leading-none mb-2 drop-shadow-md group-hover:text-blue-100 transition-colors">{testInfo.title}</h3>
+                                                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-2 opacity-80">Secure Evaluator Engine v2.0</p>
+                                            </div>
+
+                                            <div className="flex flex-wrap justify-center lg:justify-start items-center gap-6 pt-4 border-t border-white/10">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-blue-400 backdrop-blur-sm"><Clock size={16} /></div>
+                                                    <div>
+                                                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Duration</p>
+                                                        <p className="text-sm font-black text-white uppercase italic tracking-tight">{testInfo.duration} Min</p>
+                                                    </div>
+                                                </div>
+                                                <div className="w-px h-10 bg-white/10 hidden sm:block"></div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-indigo-400 backdrop-blur-sm"><Calendar size={16} /></div>
+                                                    <div>
+                                                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Scheduled</p>
+                                                        <p className="text-sm font-black text-white uppercase italic tracking-tight">{new Date(testInfo.startDate).toLocaleDateString()}</p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <button onClick={() => navigate('/waiting-room', { state: { testId: testInfo.id, testTitle: testInfo.title, studentName: student.fullName, studentId: student.studentId, yearGroup: testInfo.yearGroup, branchGroup: testInfo.branchGroup, testInfo: testInfo }})} disabled={student.testAttempted} className={`w-full lg:w-auto px-10 py-5 rounded-2xl md:rounded-2.5xl font-black text-[10px] md:text-xs transition-all shadow-2xl uppercase italic tracking-[0.2em] flex items-center justify-center gap-3 ${student.testAttempted ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none border border-slate-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/30 active:scale-95'}`}>
-                                            {student.testAttempted ? 'Exam Already Given' : 'Start Exam Now'} <ChevronRight size={18} />
-                                        </button>
+
+                                        <div className="w-full lg:w-auto mt-6 lg:mt-0">
+                                            <button
+                                                onClick={() => navigate('/waiting-room', { state: { testId: testInfo.id, testTitle: testInfo.title, studentName: student.fullName, studentId: student.studentId, yearGroup: testInfo.yearGroup, branchGroup: testInfo.branchGroup, testInfo: testInfo } })}
+                                                disabled={student.testAttempted}
+                                                className={`w-full lg:w-[280px] h-20 rounded-[2rem] font-black text-xs transition-all flex items-center justify-center gap-4 relative overflow-hidden
+                                                ${student.testAttempted
+                                                        ? 'bg-white/5 text-slate-500 cursor-not-allowed border-2 border-dashed border-white/10'
+                                                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:scale-105 shadow-[0_0_40px_rgba(37,99,235,0.4)] hover:shadow-[0_0_60px_rgba(37,99,235,0.6)] group/btn'
+                                                    }`}
+                                            >
+                                                {!student.testAttempted && (
+                                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300 ease-out"></div>
+                                                )}
+                                                <span className="relative z-10 uppercase italic tracking-[0.2em]">{student.testAttempted ? 'Assessed' : 'Initialize Exam'}</span>
+                                                <ChevronRight size={20} className={`relative z-10 ${!student.testAttempted ? 'group-hover/btn:translate-x-2 transition-transform duration-300' : ''}`} />
+                                            </button>
+                                            {!student.testAttempted && (
+                                                <p className="text-[9px] text-center text-slate-400 font-medium mt-4 uppercase tracking-widest flex items-center justify-center gap-2"><ShieldCheck size={12} className="text-emerald-500" /> Secure Terminal</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
@@ -422,9 +467,9 @@ const StudentDashboard = () => {
                                     ) : (
                                         <div className="md:col-span-2 space-y-6">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div className="md:col-span-2 text-left"><label className="text-[9px] font-black uppercase text-slate-400 mb-2 block">Full Name</label><input type="text" value={editFormData.fullName} onChange={(e) => setEditFormData({...editFormData, fullName: e.target.value})} className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-sm focus:border-blue-600 outline-none uppercase italic" /></div>
-                                                <div className="text-left"><label className="text-[9px] font-black uppercase text-slate-400 mb-2 block">Phone Number</label><input type="text" value={editFormData.mobile} onChange={(e) => setEditFormData({...editFormData, mobile: e.target.value})} className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-sm focus:border-blue-600 outline-none" /></div>
-                                                <div className="text-left"><label className="text-[9px] font-black uppercase text-slate-400 mb-2 block">Current Year</label><select value={editFormData.year} onChange={(e) => setEditFormData({...editFormData, year: e.target.value})} className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-sm focus:border-blue-600 outline-none">{['1st Year', '2nd Year', '3rd Year', '4th Year', 'Graduated'].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
+                                                <div className="md:col-span-2 text-left"><label className="text-[9px] font-black uppercase text-slate-400 mb-2 block">Full Name</label><input type="text" value={editFormData.fullName} onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-sm focus:border-blue-600 outline-none uppercase italic" /></div>
+                                                <div className="text-left"><label className="text-[9px] font-black uppercase text-slate-400 mb-2 block">Phone Number</label><input type="text" value={editFormData.mobile} onChange={(e) => setEditFormData({ ...editFormData, mobile: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-sm focus:border-blue-600 outline-none" /></div>
+                                                <div className="text-left"><label className="text-[9px] font-black uppercase text-slate-400 mb-2 block">Current Year</label><select value={editFormData.year} onChange={(e) => setEditFormData({ ...editFormData, year: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-sm focus:border-blue-600 outline-none">{['1st Year', '2nd Year', '3rd Year', '4th Year', 'Graduated'].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
                                             </div>
                                             <div className="flex gap-4"><button onClick={handleSaveProfile} disabled={isSavingProfile} className="flex-1 h-14 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-600/20 active:scale-95">{isSavingProfile ? 'Saving...' : 'Update Records'}</button><button onClick={() => setIsEditingProfile(false)} className="px-8 h-14 bg-slate-50 text-slate-400 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all">Cancel</button></div>
                                         </div>
@@ -445,7 +490,12 @@ const StudentDashboard = () => {
                                                     <ChevronRight size={16} className="text-blue-500 group-hover:translate-x-1 transition-transform" />
                                                 </button>
                                             )}
-                                            <button onClick={() => window.open('https://api.whatsapp.com/send?phone=919572458428', '_blank')} className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group">
+                                            <button onClick={() => window.open(
+                                                testInfo?.supportWhatsApp
+                                                    ? `https://api.whatsapp.com/send?phone=${testInfo.supportWhatsApp}`
+                                                    : 'https://api.whatsapp.com/send?phone=916386373577',
+                                                '_blank'
+                                            )} className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group">
                                                 <span className="text-[9px] font-black uppercase tracking-widest">Contact Help</span>
                                                 <ChevronRight size={16} className="text-blue-500 group-hover:translate-x-1 transition-transform" />
                                             </button>
@@ -458,7 +508,7 @@ const StudentDashboard = () => {
                     )}
                 </AnimatePresence>
             </main>
-            
+
             {/* Full-Screen Certificate View Modal */}
             <AnimatePresence>
                 {showCertificate && (

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Trophy, ChevronRight } from 'lucide-react';
 
-const DashboardHero = ({ student, navigate }) => {
+const DashboardHero = ({ student, navigate, testInfo }) => {
+    const displayName = student.firstName || student.fullName?.split(' ')[0] || 'Student';
     return (
         <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] p-5 sm:p-10 md:p-16 relative overflow-hidden group shadow-2xl border border-blue-50">
             <div className="absolute top-0 right-0 w-full sm:w-[40%] h-full bg-gradient-to-l from-blue-100/40 to-transparent"></div>
@@ -14,7 +15,7 @@ const DashboardHero = ({ student, navigate }) => {
                         <span className="text-[10px] md:text-xs font-black text-blue-400 uppercase tracking-[0.4em]">Student Dashboard</span>
                     </div>
                     <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 italic uppercase tracking-tighter leading-tight">
-                        Welcome Back, <span className="text-blue-600 underline decoration-blue-100 underline-offset-4">{student.firstName}</span>.
+                        Welcome Back, <span className="text-blue-600 underline decoration-blue-100 underline-offset-4">{displayName}</span>.
                     </h1>
                     <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium opacity-80">
                         {student.testAttempted
@@ -24,13 +25,17 @@ const DashboardHero = ({ student, navigate }) => {
                     </p>
 
                     <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-4">
-                        {student.testAttempted ? (
+                        {student.testAttempted && testInfo?.resultsPublished ? (
                             <button
                                 onClick={() => navigate('/student-results')}
                                 className="px-8 md:px-10 py-4 md:py-5 bg-slate-900 text-white rounded-2xl md:rounded-[2rem] font-black text-[10px] md:text-xs uppercase italic tracking-[0.2em] shadow-xl hover:bg-blue-600 transition-all flex items-center gap-3 group border-none"
                             >
                                 View My Result <Trophy size={18} className="group-hover:scale-125 transition-transform" />
                             </button>
+                        ) : student.testAttempted ? (
+                            <div className="px-8 md:px-10 py-4 md:py-5 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl md:rounded-[2rem] font-black text-[10px] md:text-xs uppercase italic tracking-[0.2em] flex items-center gap-3">
+                                <Trophy size={18} className="opacity-60" /> Result Pending Publication
+                            </div>
                         ) : (
                             <button
                                 onClick={() => navigate('/student-dashboard/exams')}

@@ -99,9 +99,6 @@ const Leaderboard = () => {
                 ))}
             </div>
 
-            <button className="w-full py-4 mt-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] border-t border-slate-50 hover:text-amber-600 transition-all italic">
-                View Global Rankings
-            </button>
         </div>
     );
 };

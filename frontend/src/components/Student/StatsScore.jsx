@@ -50,8 +50,8 @@ const StatsScore = ({ student }) => {
     if (!student) return null;
 
     const score = student.score || 0;
-    const total = 30;
-    const percentage = Math.round((score / total) * 100);
+    const total = student.assignedQuestions?.length || student.totalQuestions || 30;
+    const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
 
     return (
         <div className="w-full lg:w-96 bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.04)] relative overflow-hidden group hover:shadow-xl transition-all duration-500">

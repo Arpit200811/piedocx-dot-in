@@ -136,7 +136,6 @@ const DashboardLayout = () => {
                         <div className="flex items-center gap-5 pl-8 border-l border-slate-200">
                             <button className="relative w-12 h-12 flex items-center justify-center bg-white rounded-2xl shadow-sm hover:shadow-md transition-all text-slate-400 hover:text-blue-600 group">
                                 <Bell size={20} className="group-hover:animate-swing" />
-                                <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-[0_0_10px_rgba(239,68,68,0.5)]"></span>
                             </button>
                             <div className="flex items-center gap-2 md:gap-4 bg-white/80 backdrop-blur-md p-1 md:p-1.5 pr-2 md:pr-5 rounded-2.5xl border border-white/50 shadow-sm hover:shadow-xl transition-all group cursor-pointer overflow-hidden max-w-[140px] sm:max-w-none">
                                 <div className="h-9 w-9 md:h-11 md:w-11 bg-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg overflow-hidden border-2 border-white ring-2 md:ring-4 ring-slate-100 group-hover:ring-blue-100 transition-all shrink-0">

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Calendar, ChevronRight, Zap, Clock } from 'lucide-react';
+import { Calendar, ChevronRight, Zap, Clock, Ghost } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const TestScheduler = ({ testInfo, student, onAction }) => {
     return (
@@ -31,11 +32,11 @@ const TestScheduler = ({ testInfo, student, onAction }) => {
                         <div className="flex items-center gap-4 pt-2">
                             <div className="flex items-center gap-1.5">
                                 <Clock size={12} className="text-blue-400" />
-                                <span className="text-[10px] font-bold text-slate-300">45 Minutes</span>
+                                <span className="text-[10px] font-bold text-slate-300">{testInfo?.duration || '—'} Minutes</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Zap size={12} className="text-amber-400" />
-                                <span className="text-[10px] font-bold text-slate-300">30 Questions</span>
+                                <span className="text-[10px] font-bold text-slate-300">{testInfo?.totalQuestions || '—'} Questions</span>
                             </div>
                         </div>
                     </div>
@@ -53,9 +54,22 @@ const TestScheduler = ({ testInfo, student, onAction }) => {
                     </button>
                     
                     {!testInfo?.isActive && !student.testAttempted && (
-                        <p className="text-[9px] text-center font-bold text-slate-500 px-4 uppercase tracking-tighter leading-relaxed">
-                            Waiting for the exam to start. It will show up here automatically when it's time.
-                        </p>
+                        <div className="flex flex-col items-center justify-center py-6 gap-6">
+                            <motion.div
+                                animate={{ 
+                                    y: [0, -10, 0],
+                                    rotate: [0, 5, -5, 0]
+                                }}
+                                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                                className="w-20 h-20 bg-blue-600/10 rounded-full flex items-center justify-center border border-blue-500/20"
+                            >
+                                <Ghost size={32} className="text-blue-400 opacity-60" />
+                            </motion.div>
+                            <p className="text-[10px] text-center font-black text-slate-500 px-8 uppercase tracking-[0.2em] leading-relaxed">
+                                System is Idle. <br />
+                                <span className="text-blue-400/50">Waiting for mission start signal...</span>
+                            </p>
+                        </div>
                     )}
                 </div>
             </div>

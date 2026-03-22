@@ -1,16 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-    Award, CheckCircle, Target, TrendingUp,
+    CheckCircle, Target,
     ChevronRight, Download, Share2, Info,
-    AlertCircle, Sparkles, Trophy, Star,
-    TrendingDown, BarChart3
+    Trophy, Sparkles, Youtube, BookOpen, GraduationCap, 
+    Linkedin
 } from 'lucide-react';
 import api from '../../utils/api';
-import { base_url } from '../../utils/info';
 import Swal from 'sweetalert2';
 
 const ExamResults = () => {
@@ -18,6 +16,22 @@ const ExamResults = () => {
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const handleShare = async () => {
+        const shareText = `🎓 I just completed my exam on PIEDOCX!
+📊 Score: ${results.score}/${results.total} (${Math.round((results.score / results.total) * 100)}%)
+🏆 Rank: #${results.rank}
+\nJoin at piedocx.in`;
+        
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'My PIEDOCX Result', text: shareText, url: 'https://piedocx.in' });
+            } catch (e) { /* User cancelled */ }
+        } else {
+            await navigator.clipboard.writeText(shareText);
+            Swal.fire({ icon: 'success', title: 'Copied!', text: 'Result text copied to clipboard.', timer: 2000, showConfirmButton: false });
+        }
+    };
 
     useEffect(() => {
         fetchResults();
@@ -188,6 +202,59 @@ const ExamResults = () => {
                         </div>
                     </div>
                 </motion.div>
+                
+                {/* FEATURE #1: AI Results Doctor Analysis */}
+                {results.aiAnalysis && (
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 rounded-[3rem] p-8 sm:p-12 text-white relative overflow-hidden shadow-2xl border border-blue-500/20"
+                    >
+                        {/* Decorative Animated Glows */}
+                        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/20 rounded-full blur-[100px] animate-pulse"></div>
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-[80px]"></div>
+                        
+                        <div className="relative z-10 flex flex-col lg:flex-row gap-10 items-start">
+                            <div className="flex-1 space-y-6">
+                                <div className="inline-flex items-center gap-3 px-6 py-2 bg-blue-600/20 border border-blue-400/30 rounded-full backdrop-blur-xl">
+                                    <Sparkles size={16} className="text-blue-400" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-200">AI Results Doctor</span>
+                                </div>
+                                <h3 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter leading-tight">
+                                    Deep <span className="text-blue-400">Analysis</span> & Recommendations
+                                </h3>
+                                <p className="text-blue-100/70 text-base font-medium leading-relaxed italic border-l-4 border-blue-600 pl-6 py-2">
+                                    "{results.aiAnalysis}"
+                                </p>
+                            </div>
+
+                            <div className="w-full lg:w-80 space-y-4">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-300 opacity-60 px-2 italic">Curated Resources</h4>
+                                {results.recommendations?.map((rec, i) => (
+                                    <a 
+                                        key={rec._id || i}
+                                        href={rec.link} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl transition-all group"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                                                {rec.type === 'VIDEO' ? <Youtube size={18} /> : rec.type === 'ARTICLE' ? <BookOpen size={18} /> : <GraduationCap size={18} />}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] font-black uppercase tracking-widest group-hover:text-white transition-colors truncate">{rec.title}</p>
+                                                <p className="text-[8px] font-bold text-blue-300 opacity-40 uppercase tracking-tighter mt-1">{rec.type} Guide</p>
+                                            </div>
+                                        </div>
+                                        <ChevronRight size={14} className="text-blue-500 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Footer Actions */}
                 <div className="grid md:grid-cols-2 gap-6 pb-12">
@@ -197,14 +264,35 @@ const ExamResults = () => {
                         transition={{ delay: 1 }}
                         className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between group hover:border-blue-600 transition-all"
                     >
-                        <div className="flex items-center gap-6">
-                            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                        <div className="flex items-center gap-4 sm:gap-6 w-full">
+                            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
                                 <Download size={24} />
                             </div>
-                            <div>
-                                <h4 className="font-black text-slate-900 uppercase italic tracking-tight">My Certificate</h4>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-black text-slate-900 uppercase italic tracking-tight truncate">My Certificate</h4>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Ready for download</p>
                             </div>
+                            
+                            {/* FEATURE #7: LinkedIn Add to Profile */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const baseUrl = "https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME";
+                                    const params = new URLSearchParams({
+                                        name: results.title,
+                                        organizationName: "Piedocx Assessment Platform",
+                                        issueYear: new Date().getFullYear(),
+                                        issueMonth: new Date().getMonth() + 1,
+                                        certUrl: "https://piedocx.in",
+                                        certId: results.studentId
+                                    });
+                                    window.open(`${baseUrl}&${params.toString()}`, "_blank");
+                                }}
+                                className="px-5 py-3 bg-[#0a66c2]/10 text-[#0a66c2] border border-[#0a66c2]/20 rounded-xl flex items-center gap-2 hover:bg-[#0a66c2] hover:text-white transition-all scale-90 sm:scale-100"
+                            >
+                                <Linkedin size={14} fill="currentColor" />
+                                <span className="text-[9px] font-black uppercase tracking-widest">Add to Profile</span>
+                            </button>
                         </div>
                         <button
                             onClick={() => navigate('/student-dashboard/certificates')}
@@ -218,7 +306,8 @@ const ExamResults = () => {
                         initial={{ x: 20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         transition={{ delay: 1.1 }}
-                        className="bg-slate-900 p-8 rounded-3xl text-white shadow-2xl shadow-slate-900/20 flex items-center justify-between group hover:bg-blue-600 transition-all"
+                        onClick={handleShare}
+                        className="bg-slate-900 p-8 rounded-3xl text-white shadow-2xl shadow-slate-900/20 flex items-center justify-between group hover:bg-blue-600 transition-all cursor-pointer"
                     >
                         <div className="flex items-center gap-6">
                             <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/10 group-hover:bg-white group-hover:text-blue-600 transition-all">
@@ -226,12 +315,12 @@ const ExamResults = () => {
                             </div>
                             <div>
                                 <h4 className="font-black uppercase italic tracking-tight">Share My Result</h4>
-                                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">Share with others</p>
+                                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">Tap to share or copy link</p>
                             </div>
                         </div>
-                        <button className="p-3 bg-white/5 rounded-xl text-white/40 group-hover:text-white transition-all">
+                        <div className="p-3 bg-white/5 rounded-xl text-white/40 group-hover:text-white transition-all">
                             <ChevronRight size={20} />
-                        </button>
+                        </div>
                     </motion.div>
                 </div>
 

@@ -1,18 +1,89 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Zap, Target, ChevronRight, KeyRound, Megaphone, X, ShieldAlert, Check } from 'lucide-react';
+import { Lock, Zap, Target, ChevronRight, KeyRound, Megaphone, X, ShieldAlert, Check, Languages } from 'lucide-react';
+import { localDB } from '../../utils/localDB';
 import Swal from 'sweetalert2';
 import api from '../../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
 import { base_url, getSocketUrl } from '../../utils/info';
 
+const ConfettiLayer = () => {
+    return (
+        <div className="fixed inset-0 pointer-events-none z-[100000] overflow-hidden">
+            {Array.from({ length: 50 }).map((_, i) => (
+                <motion.div
+                    key={i}
+                    initial={{ 
+                        opacity: 1, 
+                        y: -20, 
+                        x: Math.random() * window.innerWidth,
+                        rotate: 0,
+                        scale: Math.random() * 0.5 + 0.5
+                    }}
+                    animate={{ 
+                        opacity: 0, 
+                        y: window.innerHeight, 
+                        x: (Math.random() - 0.5) * 200 + (Math.random() * window.innerWidth),
+                        rotate: 360,
+                        scale: 0.2
+                    }}
+                    transition={{ 
+                        duration: Math.random() * 2 + 1, 
+                        ease: "easeOut",
+                        delay: Math.random() * 0.5
+                    }}
+                    className="absolute w-2 h-2 rounded-full"
+                    style={{ 
+                        backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'][Math.floor(Math.random() * 5)],
+                    }}
+                />
+            ))}
+        </div>
+    );
+};
 
 const TestInterface = () => {
+    // Spatial Sound & Haptic Engine
+    const playSound = (type) => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start(); osc.stop(ctx.currentTime + 0.1);
+                if (navigator.vibrate) navigator.vibrate(10);
+            } else if (type === 'warn') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(100, ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc.start(); osc.stop(ctx.currentTime + 0.5);
+                if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            } else if (type === 'success') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.5); // C6
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+                osc.start(); osc.stop(ctx.currentTime + 0.8);
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            }
+        } catch (e) { console.warn('Audio bypass:', e); }
+    };
+
     const navigate = useNavigate();
     const [questions, setQuestions] = useState([]);
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState({});
+    const [flagged, setFlagged] = useState({});
     const [timeLeft, setTimeLeft] = useState(0);
     const hasAutoStarted = useRef(false);
     const [testInfo, setTestInfo] = useState(null);
@@ -33,8 +104,11 @@ const TestInterface = () => {
     const [studentProfile, setStudentProfile] = useState(null);
 
     const [broadcastMessage, setBroadcastMessage] = useState(null);
-    const [isSyncing, setIsSyncing] = useState(false);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [language, setLanguage] = useState('en'); // 'en' or 'hi'
+    const [theme, setTheme] = useState('dark'); // 'dark' or 'light'
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [celebrate, setCelebrate] = useState(false);
     const timerRef = useRef(null);
     const saveLockRef = useRef(false);
     const videoRef = useRef(null);
@@ -100,6 +174,11 @@ const TestInterface = () => {
         };
 
         fetchInitialData();
+
+        return () => {
+            window.removeEventListener('online', setOnline);
+            window.removeEventListener('offline', setOffline);
+        };
     }, [navigate]);
 
     useEffect(() => {
@@ -140,6 +219,15 @@ const TestInterface = () => {
             // Try to recover from localStorage first (for this specific specific student + test)
             const localKey = `answers_${studentProfile?.studentId}_${testInfo?.id}`;
             const localAnswers = JSON.parse(localStorage.getItem(localKey) || "{}");
+
+            // FEATURE #2: Backup to IndexedDB for "Unbreakable" Offline Support
+            if (qData.questions?.length > 0) {
+                await localDB.save('questions', {
+                    id: `${studentProfile?.studentId}_${testInfo?.id}`,
+                    data: qData.questions,
+                    timestamp: Date.now()
+                });
+            }
 
             // Merge server saved answers with local cache (server wins if conflict)
             const combinedAnswers = { ...localAnswers, ...(qData.savedAnswers || {}) };
@@ -260,6 +348,20 @@ const TestInterface = () => {
                 });
             });
 
+            newSocket.on('admin_warning', (data) => {
+                Swal.fire({
+                    title: '🚨 OFFICIAL WARNING 🚨',
+                    text: data.message,
+                    icon: 'warning',
+                    confirmButtonText: 'I Understand',
+                    confirmButtonColor: '#2563eb',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+            });
+
             socketRef.current = newSocket;
 
             return () => {
@@ -275,15 +377,14 @@ const TestInterface = () => {
     const reportViolationSocket = (type) => {
         if (socketRef.current) socketRef.current.emit('violation', { type });
     };
-    // Risk Engine Heartbeat - Decoupled from countdown to avoid timer churn
     useEffect(() => {
         if (!isStarted || submitting) return;
         const interval = setInterval(() => {
             if (socketRef.current) {
-                // Heartbeat to the server to maintain presence - throttled to 30s for performance
+                // Heartbeat to the server to maintain presence - throttled to 60s for high concurrency
                 socketRef.current.emit('heartbeat', { ts: Date.now() });
             }
-        }, 30000); // 30s instead of 15s (Better for 200+ students)
+        }, 60000); 
         return () => clearInterval(interval);
     }, [isStarted, submitting]);
     const [isFocused, setIsFocused] = useState(true);
@@ -516,6 +617,15 @@ const TestInterface = () => {
         window.addEventListener("blur", handleBlur);
         window.addEventListener("focus", handleFocus);
         window.addEventListener("resize", handleResize);
+        const checkDevToolsDetail = () => {
+            const widthDiff = window.outerWidth - window.innerWidth;
+            const heightDiff = window.outerHeight - window.innerHeight;
+            if (widthDiff > 200 || heightDiff > 200) {
+                if (!isMobile) handleViolation("Developer Tools Opened");
+            }
+        };
+        const dtInterval = setInterval(checkDevToolsDetail, 2000);
+        
         // Multi-touch detection for screenshots on mobile
         window.addEventListener("touchstart", handleTouchStart, { passive: false });
         window.addEventListener("touchmove", (e) => {
@@ -523,25 +633,28 @@ const TestInterface = () => {
                 e.preventDefault(); // Block 3+ finger gestures (screenshot gestures)
             }
         }, { passive: false });
+
         window.addEventListener("orientationchange", handleOrientationChange);
         document.addEventListener("fullscreenchange", handleFullScreenChange);
         document.addEventListener("copy", preventCopyPaste);
         document.addEventListener("cut", preventCopyPaste);
         document.addEventListener("paste", preventCopyPaste);
         document.addEventListener("keydown", blockKeys);
+        
         window.addEventListener("mouseleave", () => {
             if (isMobile) return;
             setIsFocused(false);
-            // Slightly shorter delay for mouse exit
             if (mouseLeaveTimeoutRef.current) clearTimeout(mouseLeaveTimeoutRef.current);
             mouseLeaveTimeoutRef.current = setTimeout(() => {
                 handleViolation("Prolonged Mouse Exit (Desktop)");
             }, 800); 
         });
+        
         window.addEventListener("mouseenter", () => {
             if (mouseLeaveTimeoutRef.current) clearTimeout(mouseLeaveTimeoutRef.current);
             setIsFocused(true);
         });
+
         document.addEventListener("keyup", (e) => {
             if (e.key === 'PrintScreen') {
                 triggerScreenshotFlash("PrintScreen Released");
@@ -550,31 +663,19 @@ const TestInterface = () => {
         document.addEventListener("contextmenu", (e) => e.preventDefault());
 
         return () => {
+            clearInterval(dtInterval);
             if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
             if (mouseLeaveTimeoutRef.current) clearTimeout(mouseLeaveTimeoutRef.current);
             clearTimeout(resizeTimeout);
-            clearTimeout(orientationViolationTimer);
             if (broadcastChannelRef.current) {
                 broadcastChannelRef.current.close();
                 broadcastChannelRef.current = null;
-            }
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-                audioContextRef.current = null;
-            }
-            if (noiseTimerRef.current) {
-                cancelAnimationFrame(noiseTimerRef.current);
-            }
-            if (cameraStreamRef.current) {
-                cameraStreamRef.current.getTracks().forEach(track => track.stop());
-                cameraStreamRef.current = null;
             }
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);
             window.removeEventListener("focus", handleFocus);
             window.removeEventListener("resize", handleResize);
             window.removeEventListener("touchstart", handleTouchStart);
-            window.removeEventListener("touchmove", () => {});
             window.removeEventListener("orientationchange", handleOrientationChange);
             document.removeEventListener("fullscreenchange", handleFullScreenChange);
             document.removeEventListener("copy", preventCopyPaste);
@@ -583,12 +684,11 @@ const TestInterface = () => {
             document.removeEventListener("keydown", blockKeys);
             window.removeEventListener("mouseleave", () => {});
             window.removeEventListener("mouseenter", () => {});
-            document.removeEventListener("keyup", () => {});
             document.removeEventListener("contextmenu", (e) => e.preventDefault());
         };
     }, [isStarted, submitting, navigate]);
 
-    // FRAME-LAG ENGINE: Detects when the OS "freezes" the browser for a screenshot (Android/iOS pattern)
+    // FRAME-LAG ENGINE
     useEffect(() => {
         if (!isStarted || submitting) return;
         let lastTime = performance.now();
@@ -597,10 +697,9 @@ const TestInterface = () => {
         const checkFrameLag = (now) => {
             if (submitting) return;
             const diff = now - lastTime;
-            // Most OS screenshots cause a CPU stall of 350ms - 800ms
             if (diff > 850) {
                 setIsFocused(false);
-                setTimeout(() => setIsFocused(true), 1500); // Auto-recover after blackout
+                setTimeout(() => setIsFocused(true), 1500);
             }
             lastTime = now;
             frameHandle = requestAnimationFrame(checkFrameLag);
@@ -684,13 +783,13 @@ const TestInterface = () => {
         return () => clearInterval(timerRef.current);
     }, [isStarted, submitting, timeLeft]);
 
-    // 5. Automatic Background Sync (High Frequency — every 15 Seconds)
+    // 5. Automatic Background Sync (Lower frequency - 60 Seconds - for 300+ users scaling)
     useEffect(() => {
         if (!isStarted || submitting) return;
 
         const autoSync = setInterval(() => {
             syncProgress(stateRef.current.answers, stateRef.current.timeLeft, true);
-        }, 15000); // 15s stable sync
+        }, 60000); 
 
         const handleBeforeUnload = (e) => {
             if (isStarted && !submitting) {
@@ -706,14 +805,18 @@ const TestInterface = () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
     }, [isStarted, submitting]);
-    const handleAnswerSelect = (questionId, option) => {
-        const newAnswers = { ...answers, [questionId]: option };
-        setAnswers(newAnswers);
+
+    const lastSocketUpdate = useRef(0);
+    const syncProgressToServer = (newAnswers) => {
         if (studentProfile && testInfo) {
             const localKey = `answers_${studentProfile.studentId}_${testInfo.id}`;
             localStorage.setItem(localKey, JSON.stringify(newAnswers));
         }
-        if (socketRef.current) {
+
+        // DEBOUNCED SOCKET EMIT: Throttle to once every 5 seconds per student to scale
+        const now = Date.now();
+        if (socketRef.current && (now - lastSocketUpdate.current > 5000)) {
+            lastSocketUpdate.current = now;
             socketRef.current.emit('progress_update', {
                 attemptedCount: Object.keys(newAnswers).length,
                 totalQuestions: questions.length,
@@ -721,8 +824,31 @@ const TestInterface = () => {
             });
         }
     };
+
+    const handleAnswerSelect = (questionId, option) => {
+        if (!isStarted || submitting || isOutOfSync || timeLeft <= 0) return;
+        setAnswers(prev => {
+            const newAnswers = { ...prev, [questionId]: option };
+            syncProgressToServer(newAnswers);
+
+            // FEATURE #2: Immediate local persistence in IndexedDB
+            localDB.updateAnswers(studentProfile.studentId, testInfo.id, newAnswers, timeLeft)
+                .catch(err => console.error("Local Save Error:", err));
+
+            return newAnswers;
+        });
+    };
+
+    const toggleFlag = (questionId) => {
+        setFlagged(prev => ({
+            ...prev,
+            [questionId]: !prev[questionId]
+        }));
+    };
+
     const handleViolation = (type) => {
         if (!isStarted || submitting) return;
+        playSound('warn');
         setViolationCount(prev => prev + 1);
         setIsOutOfSync(true);
         setIsFocused(false);  
@@ -747,7 +873,7 @@ const TestInterface = () => {
             lastApiViolationTime.current = now;
             const token = localStorage.getItem('studentToken');
             if (token) {
-                api.post('/api/student-auth/log-violation', { type }).then(res => {
+                api.post('/api/student-auth/log-violation', { reason: type }).then(res => {
                     if (res && res.shouldTerminate) {
                         Swal.fire({
                             title: 'TEST TERMINATED',
@@ -799,24 +925,37 @@ const TestInterface = () => {
         saveLockRef.current = true;
         setSubmitting(true);
         try {
-            await api.post('/api/student-auth/submit-test', { 
+            const res = await api.post('/api/student-auth/submit-test', { 
                 testId: testInfo?.id,
                 answers, 
                 submissionType, 
                 reason 
-            });
+            }, { timeout: 30000 }); // 30s timeout for peace of mind under load
+
             const localKey = `answers_${studentProfile?.studentId}_${testInfo?.id}`;
             localStorage.removeItem(localKey);
-            Swal.fire({
-                title: 'Test Submitted!',
-                text: 'Taking you to feedback...',
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false,
-                willClose: () => {
-                    navigate('/feedback');
-                }
-            });
+            setCelebrate(true);
+            playSound('success');
+
+            if (res.status === 'processing' || res.message?.includes('received')) {
+                Swal.fire({
+                    title: 'Submission Received!',
+                    text: 'Your test is being processed securely. You can safely close the window.',
+                    icon: 'success',
+                    timer: 3000,
+                    showConfirmButton: false,
+                    willClose: () => navigate('/feedback')
+                });
+            } else {
+                Swal.fire({
+                    title: 'Test Submitted!',
+                    text: 'Redirecting to feedback...',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    willClose: () => navigate('/feedback')
+                });
+            }
         } catch (err) {
             const errorMsg = err.response?.data?.message || 'Submission failed. Please check internet and try again.';
             Swal.fire('Submission Error', errorMsg, 'error');
@@ -993,7 +1132,7 @@ const TestInterface = () => {
     );
     return (
         <div
-            className={`min-h-screen dark-mesh text-white p-3 md:p-6 lg:p-8 font-sans select-none relative overflow-hidden ${!isFocused ? 'blur-3xl grayscale brightness-0 pointer-events-none' : ''}`}
+            className={`min-h-screen transition-colors duration-700 ${theme === 'dark' ? 'dark-mesh text-white' : 'bg-[#f8fafc] text-slate-900'} p-3 md:p-6 lg:p-8 font-sans select-none relative overflow-hidden ${!isFocused ? 'blur-3xl grayscale brightness-0 pointer-events-none' : ''}`}
             onContextMenu={e => e.preventDefault()}
             style={{
                 WebkitUserSelect: 'none',
@@ -1002,6 +1141,16 @@ const TestInterface = () => {
                 msUserSelect: 'none'
             }}
         >
+            {/* Theme Toggle Floating Button */}
+            <div className="fixed top-24 right-4 z-[9000] flex flex-col gap-3">
+                <button 
+                    onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-2xl border transition-all ${theme === 'dark' ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800'}`}
+                >
+                    {theme === 'dark' ? '☀️' : '🌙'}
+                </button>
+            </div>
+
             {(!isOnline || syncError) && (
                 <div className="fixed top-0 left-0 right-0 z-[100001] bg-red-600 px-6 py-2.5 flex items-center justify-between text-white shadow-lg animate-in slide-in-from-top duration-500">
                     <div className="flex items-center gap-4">
@@ -1164,6 +1313,8 @@ const TestInterface = () => {
                 )}
             </AnimatePresence>
 
+            {celebrate && <ConfettiLayer />}
+
             <div className={`max-w-7xl mx-auto flex flex-col gap-6 h-full min-h-[92vh] transition-all duration-300 ${isOutOfSync || !isFocused ? 'blur-[80px] scale-95 opacity-20 grayscale pointer-events-none' : ''}`}>
 
                 {/* Global Notification Hub */}
@@ -1192,7 +1343,8 @@ const TestInterface = () => {
                 </AnimatePresence>
 
                 {/* Header */}
-                <header className="flex flex-col md:flex-row justify-between items-stretch bg-white/5 p-3 sm:p-5 md:p-6 lg:p-7 rounded-[2rem] md:rounded-[2.5rem] border border-white/10 shadow-2xl glass-dark gap-4 md:gap-6 relative overflow-hidden premium-border">
+                <header className={`flex flex-col md:flex-row justify-between items-stretch ${theme === 'dark' ? 'bg-white/5 border-white/10 glass-dark' : 'bg-white border-slate-100 shadow-xl'} p-3 sm:p-5 md:p-6 lg:p-7 rounded-[2rem] md:rounded-[2.5rem] border shadow-2xl gap-4 md:gap-6 relative overflow-hidden premium-border`}>
+
                     <div className="flex items-center gap-6 relative z-10">
                         <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-800 rounded-2xl md:rounded-[1.5rem] flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.3)] shrink-0 border border-white/20">
                             <Zap size={28} className="text-white" />
@@ -1234,7 +1386,8 @@ const TestInterface = () => {
 
                 <div className="grid lg:grid-cols-4 gap-8 flex-1 items-start">
                     {/* Navigator - Redesigned Sidebar */}
-                    <aside className="hidden lg:flex flex-col bg-white/5 p-7 rounded-[3rem] border border-white/10 h-[calc(100vh-240px)] sticky top-8 glass-dark">
+                    <aside className={`hidden lg:flex flex-col ${theme === 'dark' ? 'bg-white/5 border-white/10 glass-dark' : 'bg-white border-slate-100 shadow-lg'} p-7 rounded-[3rem] border h-[calc(100vh-240px)] sticky top-8`}>
+
                         <div className="flex items-center justify-between mb-8">
                             <div>
                                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Questions</h3>
@@ -1257,9 +1410,11 @@ const TestInterface = () => {
                                         onClick={() => setCurrentQuestion(i)}
                                         className={`aspect-square rounded-2xl text-[11px] font-black transition-all flex items-center justify-center border-2 ${isActive
                                             ? 'bg-blue-600 border-white/30 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] scale-110 z-10'
-                                            : isAnswered
-                                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                                                : 'bg-white/5 border-transparent text-slate-600 hover:border-white/20 hover:text-white'
+                                            : flagged[questions[i]._id] 
+                                                ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' 
+                                                : isAnswered
+                                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                                    : 'bg-white/5 border-transparent text-slate-600 hover:border-white/20 hover:text-white'
                                             }`}
                                     >
                                         {i + 1}
@@ -1286,19 +1441,34 @@ const TestInterface = () => {
                             key={currentQuestion}
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="bg-white/5 p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-white/10 flex-1 relative overflow-hidden min-h-[400px] md:min-h-[480px] glass-dark shadow-2xl"
+                            className={`${theme === 'dark' ? 'bg-white/5 border-white/10 glass-dark' : 'bg-white border-slate-100 shadow-xl'} p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border flex-1 relative overflow-hidden min-h-[400px] md:min-h-[480px] shadow-2xl`}
                         >
                             {/* Decorative glow inside card */}
-                            <div className="absolute -top-20 -right-20 w-80 h-80 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"></div>
+                            <div className={`absolute -top-20 -right-20 w-80 h-80 ${theme === 'dark' ? 'bg-blue-600/5' : 'bg-blue-600/10'} rounded-full blur-[100px] pointer-events-none`}></div>
 
                             <div className="relative z-10 h-full flex flex-col">
-                                <div className="flex items-center gap-4 mb-10">
-                                    <span className="w-12 h-1 bg-blue-600 rounded-full"></span>
-                                    <span className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">Question {currentQuestion + 1} of {questions.length}</span>
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+                                    <div className="flex items-center gap-4">
+                                        <span className="w-12 h-1 bg-blue-600 rounded-full"></span>
+                                        <span className={`text-xs font-black uppercase tracking-[0.3em] ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>Question {currentQuestion + 1} of {questions.length}</span>
+                                    </div>
+                                    
+                                    <button 
+                                        type="button"
+                                        onClick={() => setLanguage(l => l === 'en' ? 'hi' : 'en')}
+                                        className={`flex items-center gap-2 px-4 py-2 ${theme === 'dark' ? 'bg-white/5 hover:bg-white/10 border-white/10' : 'bg-slate-50 hover:bg-slate-100 border-slate-200'} border rounded-xl transition-all group self-start sm:self-auto`}
+                                    >
+                                        <Languages size={14} className="text-blue-400 group-hover:rotate-12 transition-transform" />
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            {language === 'en' ? 'Switch to Hindi' : 'English में देखें'}
+                                        </span>
+                                    </button>
                                 </div>
 
-                                <h3 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black mb-8 lg:mb-16 leading-[1.2] text-white tracking-tight">
-                                    {questions[currentQuestion]?.questionText}
+                                <h3 className={`text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black mb-8 lg:mb-16 leading-[1.2] tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                    {language === 'hi' && questions[currentQuestion]?.questionTextHindi 
+                                        ? questions[currentQuestion].questionTextHindi 
+                                        : questions[currentQuestion]?.questionText}
                                 </h3>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-auto">
@@ -1309,24 +1479,31 @@ const TestInterface = () => {
                                                 type="button"
                                                 key={i}
                                                 disabled={submitting || timeLeft <= 0}
-                                                onClick={() => handleAnswerSelect(questions[currentQuestion]._id, opt)}
+                                                onClick={() => {
+                                                    playSound('click');
+                                                    handleAnswerSelect(questions[currentQuestion]._id, opt);
+                                                }}
                                                 className={`group relative text-left p-5 sm:p-6 rounded-[2rem] border-2 transition-all flex items-center gap-5 disabled:opacity-50 disabled:cursor-not-allowed group shadow-sm ${isSelected
-                                                    ? 'border-blue-500 bg-blue-600/20 shadow-[0_0_40px_rgba(37,99,235,0.15)]'
-                                                    : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
+                                                    ? (theme === 'dark' ? 'border-blue-500 bg-blue-600/20 shadow-[0_0_40px_rgba(37,99,235,0.15)]' : 'border-blue-600 bg-blue-50 shadow-[0_10px_30px_rgba(37,99,235,0.1)]')
+                                                    : (theme === 'dark' ? 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10' : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:bg-slate-100')
                                                     }`}
                                             >
                                                 {isSelected && (
-                                                    <motion.div layoutId="selection" className="absolute inset-0 bg-blue-600/10 rounded-[2rem] pointer-events-none" />
+                                                    <motion.div layoutId="selection" className={`absolute inset-0 ${theme === 'dark' ? 'bg-blue-600/10' : 'bg-blue-600/5'} rounded-[2rem] pointer-events-none`} />
                                                 )}
                                                 <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center font-black text-lg transition-all shrink-0 ${isSelected
                                                     ? 'bg-blue-600 text-white shadow-lg'
-                                                    : 'bg-white/10 text-slate-600 group-hover:bg-white/20 group-hover:text-white'
+                                                    : (theme === 'dark' ? 'bg-white/10 text-slate-600 group-hover:bg-white/20 group-hover:text-white' : 'bg-white text-slate-400 border border-slate-100 group-hover:border-blue-200')
                                                     }`}>
                                                     {String.fromCharCode(65 + i)}
                                                 </div>
-                                                <span className={`font-bold text-base sm:text-lg md:text-xl transition-colors leading-snug flex-1 ${isSelected ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
+                                                <span className={`font-bold text-base sm:text-lg md:text-xl transition-colors leading-snug flex-1 ${isSelected 
+                                                    ? (theme === 'dark' ? 'text-white' : 'text-blue-700') 
+                                                    : (theme === 'dark' ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-600 group-hover:text-slate-900')
                                                     }`}>
-                                                    {opt}
+                                                    {language === 'hi' && questions[currentQuestion]?.optionsHindi?.[i] 
+                                                        ? questions[currentQuestion].optionsHindi[i] 
+                                                        : opt}
                                                 </span>
                                                 {isSelected && (
                                                     <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(59,130,246,1)]"></div>
@@ -1339,15 +1516,29 @@ const TestInterface = () => {
                         </motion.div>
 
                         {/* Control Interface */}
-                        <div className="flex flex-col sm:flex-row justify-between items-center p-3 bg-white/5 rounded-[2.5rem] border border-white/10 glass-dark backdrop-blur-3xl gap-4 shadow-2xl">
+                        <div className={`flex flex-col sm:flex-row justify-between items-center p-3 ${theme === 'dark' ? 'bg-white/5 border-white/10 glass-dark' : 'bg-white border-slate-100 shadow-lg'} rounded-[2.5rem] border backdrop-blur-3xl gap-4 shadow-2xl`}>
+
                             <div className="flex gap-4 w-full sm:w-auto">
                                 <button
                                     type="button"
                                     disabled={submitting || timeLeft <= 0 || currentQuestion === 0}
-                                    onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
+                                    onClick={() => {
+                                        playSound('click');
+                                        setCurrentQuestion(Math.max(0, currentQuestion - 1));
+                                    }}
                                     className="px-6 py-5 rounded-2xl text-slate-500 font-black hover:text-white hover:bg-white/5 transition-all disabled:opacity-5 disabled:cursor-not-allowed text-[10px] uppercase tracking-[0.2em] italic"
                                 >
                                     [ Back ]
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        playSound('click');
+                                        toggleFlag(questions[currentQuestion]?._id);
+                                    }}
+                                    className={`px-6 py-5 rounded-2xl font-black transition-all text-[10px] uppercase tracking-[0.2em] italic ${flagged[questions[currentQuestion]?._id] ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 border border-amber-500/30' : 'text-slate-500 hover:text-white hover:bg-white/5 border border-transparent'}`}
+                                >
+                                    {flagged[questions[currentQuestion]?._id] ? 'Unflag' : 'Flag For Review'}
                                 </button>
                             </div>
 

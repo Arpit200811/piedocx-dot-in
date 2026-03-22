@@ -84,14 +84,24 @@ const AdminTestManager = () => {
             const currentYear = watch('yearGroup');
             const currentBranch = watch('branchGroup');
 
+            Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const data = await api.patch('/api/admin/test-config/toggle-results', {
                 yearGroup: currentYear,
                 branchGroup: currentBranch
             });
             setResultsPublished(data.resultsPublished);
-            Swal.fire('Success', data.message, 'success');
+            
+            if (data.resultsPublished && data.broadcast) {
+                Swal.fire({
+                    title: 'Success',
+                    text: `${data.message}. Starting WhatsApp broadcast to ${data.broadcast.targetCount} students.`,
+                    icon: 'success'
+                });
+            } else {
+                Swal.fire('Success', data.message, 'success');
+            }
         } catch (err) {
-            // Global handler deals with logic errors
+            Swal.fire('Error', 'Failed to toggle results.', 'error');
         }
     };
 
@@ -358,66 +368,51 @@ const AdminTestManager = () => {
                                     </label>
                                     <input
                                         {...register(`questions.${index}.questionText`, { required: true })}
-                                        placeholder="Enter question text..."
-                                        value={watch(`questions.${index}.questionText`) || ""}
-                                        className={`w-full bg-white border rounded-xl px-4 py-3 font-bold text-slate-800 outline-none focus:border-blue-500 ${watch(`questions`)?.filter((q, i) => q.questionText?.trim() === watch(`questions.${index}.questionText`)?.trim() && i !== index && q.questionText !== "").length > 0 ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
+                                        placeholder="Enter question text (English)..."
+                                        className={`w-full bg-white border rounded-xl px-4 py-3 font-bold text-slate-800 outline-none focus:border-blue-500 mb-2 ${watch(`questions`)?.filter((q, i) => q.questionText?.trim() === watch(`questions.${index}.questionText`)?.trim() && i !== index && q.questionText !== "").length > 0 ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
+                                    />
+                                    <input
+                                        {...register(`questions.${index}.questionTextHindi`)}
+                                        placeholder="प्रश्न पाठ दर्ज करें (Optional Hindi)..."
+                                        className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-600 outline-none focus:border-blue-500 text-sm italic"
                                     />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     {[0, 1, 2, 3].map((optIndex) => (
-                                        <div key={optIndex} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 focus-within:border-blue-500 transition-all">
-                                            <div className="flex-grow flex items-center gap-3">
+                                        <div key={optIndex} className="bg-white p-3 rounded-2xl border border-slate-200 focus-within:border-blue-500 transition-all flex flex-col gap-2">
+                                            <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-black text-[10px] text-slate-500 shrink-0">
                                                     {String.fromCharCode(65 + optIndex)}
                                                 </div>
-                                                {/* Duplicate Option Check */}
-                                                {(watch(`questions.${index}.options`) || []).filter((x, i) => x === watch(`questions.${index}.options.${optIndex}`) && x !== "").length > 1 && (
-                                                    <div className="absolute -top-2 left-2 bg-amber-500 text-white text-[8px] px-1 rounded font-bold animate-bounce">DUP</div>
-                                                )}
                                                 <input
                                                     {...register(`questions.${index}.options.${optIndex}`, {
                                                         required: true,
                                                         onChange: (e) => {
                                                             const newOptionValue = e.target.value;
                                                             const currentCorrectAnswer = watch(`questions.${index}.correctAnswer`);
-                                                            const allCurrentOptions = getValues(`questions.${index}.options`) || [];
-                                                            const previousOptionValue = allCurrentOptions[optIndex];
-
-                                                            if (currentCorrectAnswer === previousOptionValue && previousOptionValue !== "") {
-                                                                setValue(`questions.${index}.correctAnswer`, newOptionValue, { shouldValidate: true });
+                                                            if (currentCorrectAnswer === watch(`questions.${index}.options.${optIndex}`)) {
+                                                                setValue(`questions.${index}.correctAnswer`, newOptionValue);
                                                             }
                                                         }
                                                     })}
-                                                    value={watch(`questions.${index}.options.${optIndex}`) || ""}
-                                                    className={`w-full bg-transparent font-bold outline-none text-sm ${(watch(`questions.${index}.options`) || []).filter(x => x === watch(`questions.${index}.options.${optIndex}`) && x !== "").length > 1 ? 'text-amber-600' : 'text-slate-700'}`}
+                                                    placeholder={`Option ${String.fromCharCode(65 + optIndex)} (English)`}
+                                                    className="w-full bg-transparent font-bold outline-none text-sm text-slate-700"
                                                 />
+                                                <label className="flex items-center gap-1 cursor-pointer shrink-0">
+                                                    <input
+                                                        type="radio"
+                                                        value={watch(`questions.${index}.options.${optIndex}`)}
+                                                        {...register(`questions.${index}.correctAnswer`, { required: true })}
+                                                        checked={watch(`questions.${index}.correctAnswer`) === watch(`questions.${index}.options.${optIndex}`) && watch(`questions.${index}.correctAnswer`) !== ""}
+                                                        className="w-3 h-3 text-blue-600"
+                                                    />
+                                                </label>
                                             </div>
-                                            <label className="flex items-center gap-2 cursor-pointer group/radio">
-                                                <input
-                                                    type="radio"
-                                                    value={watch(`questions.${index}.options.${optIndex}`)}
-                                                    {...register(`questions.${index}.correctAnswer`, { required: true })}
-                                                    checked={watch(`questions.${index}.correctAnswer`) === watch(`questions.${index}.options.${optIndex}`) && watch(`questions.${index}.correctAnswer`) !== ""}
-                                                    onChange={() => {
-                                                        const val = getValues(`questions.${index}.options.${optIndex}`);
-                                                        if (!val) {
-                                                            Swal.fire({
-                                                                title: 'Empty Option!',
-                                                                text: 'Please write some text in the option before selecting it as correct.',
-                                                                icon: 'warning',
-                                                                toast: true,
-                                                                position: 'top-end',
-                                                                timer: 3000,
-                                                                showConfirmButton: false
-                                                            });
-                                                            return;
-                                                        }
-                                                        setValue(`questions.${index}.correctAnswer`, val);
-                                                    }}
-                                                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300"
-                                                />
-                                                <span className="text-[9px] font-black uppercase text-slate-400 group-hover/radio:text-blue-600 transition-colors">Correct</span>
-                                            </label>
+                                            <input
+                                                {...register(`questions.${index}.optionsHindi.${optIndex}`)}
+                                                placeholder={`विकल्प ${String.fromCharCode(65 + optIndex)} (Hindi)`}
+                                                className="w-full bg-transparent font-medium border-t border-slate-50 pt-2 outline-none text-[11px] text-slate-400 italic"
+                                            />
                                         </div>
                                     ))}
                                 </div>
