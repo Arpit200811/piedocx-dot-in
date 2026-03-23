@@ -76,24 +76,29 @@ const NavBar = () => {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (isLocked) return;
+      if (isLocked) {
+        setLastScrollY(currentScrollY);
+        return;
+      }
+      const scrollDiff = currentScrollY - lastScrollY;
+
       if (currentScrollY <= 5) {
         setShowNav(true);
         setHasBeenHidden(false);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 5) {
+      } else if (scrollDiff > 15 && currentScrollY > 5 && !isOpen) {
         setShowNav(false);
         setHasBeenHidden(true);
-        setIsOpen(false); // Close mobile menu if we scroll down and hide nav
-      } else if (currentScrollY < lastScrollY && currentScrollY >= 40 && hasBeenHidden) {
+        setIsOpen(false); 
+      } else if (scrollDiff < -15 && currentScrollY >= 40 && hasBeenHidden) {
         setShowNav(true);
         setIsLocked(true);
       }
       setLastScrollY(currentScrollY);
     };
     
-    // Optimized: Only close menu on significant scroll to avoid accidental closures on tap
+    // Increased tolerance to 50px to prevent accidental closures on mobile touch movements
     const handleMenuCloseOnScroll = () => { 
-      if (isOpen && Math.abs(window.scrollY - lastScrollY) > 20) {
+      if (isOpen && Math.abs(window.scrollY - lastScrollY) > 50) {
         setIsOpen(false); 
       }
     };
@@ -109,181 +114,184 @@ const NavBar = () => {
   useEffect(() => { setIsOpen(false); setIsMegaMenuOpen(false); }, [location.pathname]);
 
   return (
-    <nav
-      className={`fixed top-0 w-full z-[100] border-b transition-all duration-500 ease-in-out ${
-        isDarkMode 
-          ? "bg-slate-900/80 border-white/10" 
-          : "bg-white/80 border-gray-200"
-      } backdrop-blur-xl ${showNav ? "translate-y-0" : "-translate-y-full"}`}
-    >
-      <div className="max-w-screen-2xl mx-auto px-4 md:px-8 h-14 md:h-20 flex items-center justify-between font-sans relative">
-        <Link to="/" className="flex items-center gap-2 flex-shrink-0 group">
-          <div className="relative">
-             <div className="absolute inset-0 bg-blue-600/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform"></div>
-             <img src="/pie_logo.png" alt="Logo" className={`h-10 sm:h-12 md:h-16 lg:h-20 w-auto object-contain relative z-10 ${isDarkMode ? "brightness-110 contrast-125" : "mix-blend-multiply"}`} />
-          </div>
-         
-        </Link>
+    <>
+      <nav
+        className={`fixed top-0 w-full z-[100] border-b transition-all duration-500 ease-in-out ${
+          isDarkMode 
+            ? "bg-slate-900/80 border-white/10" 
+            : "bg-white/80 border-gray-200"
+        } backdrop-blur-xl ${showNav ? "translate-y-0" : "-translate-y-full"}`}
+      >
+        <div className="max-w-screen-2xl mx-auto px-4 md:px-8 h-14 md:h-20 flex items-center justify-between font-sans relative">
+          <Link to="/" className="flex items-center gap-2 flex-shrink-0 group">
+            <div className="relative">
+               <div className="absolute inset-0 bg-blue-600/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform"></div>
+               <img src="/pie_logo.png" alt="Logo" className={`h-10 sm:h-12 md:h-16 lg:h-20 w-auto object-contain relative z-10 ${isDarkMode ? "brightness-110 contrast-125" : "mix-blend-multiply"}`} />
+            </div>
+           
+          </Link>
 
-        {/* Desktop Nav */}
-        <ul className="hidden lg:flex gap-8 items-center justify-center flex-1 px-8">
-          {navLinks.map(({ name, path, hasMega }) => (
-            <li 
-              key={path} 
-              className="relative group py-6"
-              onMouseEnter={() => hasMega && setIsMegaMenuOpen(true)}
-              onMouseLeave={() => hasMega && setIsMegaMenuOpen(false)}
+          {/* Desktop Nav */}
+          <ul className="hidden lg:flex gap-8 items-center justify-center flex-1 px-8">
+            {navLinks.map(({ name, path, hasMega }) => (
+              <li 
+                key={path} 
+                className="relative group py-6"
+                onMouseEnter={() => hasMega && setIsMegaMenuOpen(true)}
+                onMouseLeave={() => hasMega && setIsMegaMenuOpen(false)}
+              >
+                <Link
+                  to={path}
+                  className={`text-sm font-black uppercase tracking-widest transition-all ${
+                    isActive(path) 
+                      ? "text-blue-600" 
+                      : isDarkMode ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-blue-600"
+                  } flex items-center gap-1.5`}
+                >
+                  {name}
+                  {hasMega && <ChevronDown size={14} className={`transition-transform duration-300 ${isMegaMenuOpen ? "rotate-180" : ""}`} />}
+                </Link>
+                <span className={`absolute left-0 bottom-6 h-0.5 bg-blue-600 transition-all duration-300 ${isActive(path) ? "w-full" : "w-0 group-hover:w-full"}`}></span>
+                
+                {/* Mega Menu Portal */}
+                {hasMega && (
+                  <AnimatePresence>
+                    {isMegaMenuOpen && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className={`absolute top-full left-1/2 -translate-x-1/2 w-[600px] p-8 rounded-[2.5rem] shadow-2xl border ${
+                          isDarkMode ? "bg-slate-900 border-white/10" : "bg-white border-slate-100"
+                        }`}
+                      >
+                         <div className="grid grid-cols-2 gap-4">
+                            {serviceNodes.map((node, i) => (
+                              <Link 
+                                key={i} 
+                                to={node.path} 
+                                className={`p-4 rounded-3xl flex items-start gap-4 transition-all ${
+                                  isDarkMode ? "hover:bg-white/5" : "hover:bg-blue-50"
+                                } group/node`}
+                              >
+                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                                    isDarkMode ? "bg-slate-800 text-blue-400 group-hover/node:bg-blue-600 group-hover/node:text-white" : "bg-blue-50 text-blue-600 group-hover/node:bg-blue-600 group-hover/node:text-white"
+                                 }`}>
+                                    {node.icon}
+                                 </div>
+                                 <div>
+                                    <h4 className={`text-xs font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{node.name}</h4>
+                                    <p className="text-[10px] font-medium text-slate-500">{node.desc}</p>
+                                 </div>
+                              </Link>
+                            ))}
+                         </div>
+                         <div className={`mt-6 pt-6 border-t ${isDarkMode ? "border-white/5" : "border-slate-50"} flex justify-between items-center`}>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 italic">Ready to scale your architecture?</p>
+                            <Link to="/contact" className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:underline">Consult an Architect →</Link>
+                         </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3">
+            {/* Theme Toggle */}
+            <button 
+              onClick={toggleTheme}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border ${
+                  isDarkMode 
+                  ? "bg-slate-800 border-white/10 text-yellow-500 hover:bg-slate-700" 
+                  : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+              }`}
             >
-              <Link
-                to={path}
-                className={`text-sm font-black uppercase tracking-widest transition-all ${
-                  isActive(path) 
-                    ? "text-blue-600" 
-                    : isDarkMode ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-blue-600"
-                } flex items-center gap-1.5`}
-              >
-                {name}
-                {hasMega && <ChevronDown size={14} className={`transition-transform duration-300 ${isMegaMenuOpen ? "rotate-180" : ""}`} />}
-              </Link>
-              <span className={`absolute left-0 bottom-6 h-0.5 bg-blue-600 transition-all duration-300 ${isActive(path) ? "w-full" : "w-0 group-hover:w-full"}`}></span>
-              
-              {/* Mega Menu Portal */}
-              {hasMega && (
-                <AnimatePresence>
-                  {isMegaMenuOpen && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className={`absolute top-full left-1/2 -translate-x-1/2 w-[600px] p-8 rounded-[2.5rem] shadow-2xl border ${
-                        isDarkMode ? "bg-slate-900 border-white/10" : "bg-white border-slate-100"
-                      }`}
-                    >
-                       <div className="grid grid-cols-2 gap-4">
-                          {serviceNodes.map((node, i) => (
-                            <Link 
-                              key={i} 
-                              to={node.path} 
-                              className={`p-4 rounded-3xl flex items-start gap-4 transition-all ${
-                                isDarkMode ? "hover:bg-white/5" : "hover:bg-blue-50"
-                              } group/node`}
-                            >
-                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                                  isDarkMode ? "bg-slate-800 text-blue-400 group-hover/node:bg-blue-600 group-hover/node:text-white" : "bg-blue-50 text-blue-600 group-hover/node:bg-blue-600 group-hover/node:text-white"
-                               }`}>
-                                  {node.icon}
-                               </div>
-                               <div>
-                                  <h4 className={`text-xs font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{node.name}</h4>
-                                  <p className="text-[10px] font-medium text-slate-500">{node.desc}</p>
-                               </div>
-                            </Link>
-                          ))}
-                       </div>
-                       <div className={`mt-6 pt-6 border-t ${isDarkMode ? "border-white/5" : "border-slate-50"} flex justify-between items-center`}>
-                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 italic">Ready to scale your architecture?</p>
-                          <Link to="/contact" className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:underline">Consult an Architect →</Link>
-                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              )}
-            </li>
-          ))}
-        </ul>
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
-          {/* Theme Toggle */}
-          <button 
-            onClick={toggleTheme}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border ${
-                isDarkMode 
-                ? "bg-slate-800 border-white/10 text-yellow-500 hover:bg-slate-700" 
-                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
+            {/* Search */}
+            <button
+              onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+              className={`hidden sm:flex items-center gap-2 px-4 h-10 rounded-full border transition-all text-sm font-black uppercase tracking-widest ${
+                  isDarkMode 
+                  ? "bg-slate-800 border-white/10 text-slate-400 hover:text-white" 
+                  : "bg-slate-50 border-slate-200 text-slate-500 hover:text-blue-600"
+              }`}
+            >
+              <Search size={16} /> <span className="text-[10px]">Matrix Search</span>
+            </button>
 
-          {/* Search */}
-          <button
-            onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
-            className={`hidden sm:flex items-center gap-2 px-4 h-10 rounded-full border transition-all text-sm font-black uppercase tracking-widest ${
-                isDarkMode 
-                ? "bg-slate-800 border-white/10 text-slate-400 hover:text-white" 
-                : "bg-slate-50 border-slate-200 text-slate-500 hover:text-blue-600"
-            }`}
-          >
-            <Search size={16} /> <span className="text-[10px]">Matrix Search</span>
-          </button>
-
-          {studentUser ? (
-            <div className={`flex items-center gap-3 p-1 rounded-full border ${isDarkMode ? "bg-slate-800 border-white/10" : "bg-blue-50 border-blue-100"}`}>
-              <Link to="/student-dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-600/20">
-                  {studentUser.firstName?.[0] || 'S'}
-                </div>
-                <span className={`hidden md:block text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-700"}`}>
-                  {studentUser.firstName}
-                </span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-red-500 hover:bg-red-500/10 transition-colors"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
-          ) : (
-            <div className="hidden md:flex items-center gap-3">
-              <Link
-                to="/student-login"
-                className={`px-6 h-10 flex items-center rounded-full border text-[10px] font-black uppercase tracking-widest transition-all ${
-                    isDarkMode 
-                    ? "border-white/10 text-white hover:bg-white/5" 
-                    : "border-blue-600 text-blue-600 hover:bg-blue-50"
-                }`}
-              >
-                Access Hub
-              </Link>
-              <Link
-                to="/student-registration"
-                className="px-6 h-10 flex items-center rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all"
-              >
-                Register Node
-              </Link>
-            </div>
-          )}
-
-          {/* Hamburger Mobile */}
-          <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className={`lg:hidden w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full transition-colors ${
-              isOpen 
-                ? "bg-red-500/10 text-red-500" 
-                : isDarkMode ? "text-white hover:bg-white/5" : "text-slate-900 hover:bg-slate-100"
-            }`}
-            aria-label="Toggle Menu"
-          >
-            {isOpen ? (
-              <motion.div
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-              >
-                <LogOut className="rotate-45" size={24} />
-              </motion.div>
+            {studentUser ? (
+              <div className={`flex items-center gap-3 p-1 rounded-full border ${isDarkMode ? "bg-slate-800 border-white/10" : "bg-blue-50 border-blue-100"}`}>
+                <Link to="/student-dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-600/20">
+                    {studentUser.firstName?.[0] || 'S'}
+                  </div>
+                  <span className={`hidden md:block text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-700"}`}>
+                    {studentUser.firstName}
+                  </span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-red-500 hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
             ) : (
-              <div className="space-y-1.5">
-                <div className="w-6 h-0.5 bg-current"></div>
-                <div className="w-4 h-0.5 bg-current ml-auto"></div>
+              <div className="hidden md:flex items-center gap-3">
+                <Link
+                  to="/student-login"
+                  className={`px-6 h-10 flex items-center rounded-full border text-[10px] font-black uppercase tracking-widest transition-all ${
+                      isDarkMode 
+                      ? "border-white/10 text-white hover:bg-white/5" 
+                      : "border-blue-600 text-blue-600 hover:bg-blue-50"
+                  }`}
+                >
+                  Access Hub
+                </Link>
+                <Link
+                  to="/student-registration"
+                  className="px-6 h-10 flex items-center rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all"
+                >
+                  Register Node
+                </Link>
               </div>
             )}
-          </button>
-        </div>
-      </div>
 
-      {/* Mobile Nav Overlay */}
+            {/* Hamburger Mobile */}
+            <button 
+              onClick={() => setIsOpen(!isOpen)}
+              className={`lg:hidden w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full transition-colors ${
+                isOpen 
+                  ? "bg-red-500/10 text-red-500" 
+                  : isDarkMode ? "text-white hover:bg-white/5" : "text-slate-900 hover:bg-slate-100"
+              }`}
+              aria-label="Toggle Menu"
+            >
+              {isOpen ? (
+                <motion.div
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  className="relative z-50"
+                >
+                  <LogOut className="rotate-45" size={24} />
+                </motion.div>
+              ) : (
+                <div className="space-y-1.5 relative z-50">
+                  <div className="w-6 h-0.5 bg-current transition-all"></div>
+                  <div className="w-4 h-0.5 bg-current ml-auto transition-all"></div>
+                </div>
+              )}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Nav Overlay moved outside nav but inside fragment to avoid filter conflicts */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
@@ -291,7 +299,7 @@ const NavBar = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className={`lg:hidden fixed inset-0 top-14 z-[90] overflow-y-auto ${isDarkMode ? "bg-slate-950/95" : "bg-white/95"} backdrop-blur-xl border-t ${isDarkMode ? "border-white/10" : "border-slate-100"}`}
+            className={`lg:hidden fixed inset-0 top-14 z-[1000] overflow-y-auto ${isDarkMode ? "bg-slate-950/98" : "bg-white/98"} backdrop-blur-xl border-t ${isDarkMode ? "border-white/10" : "border-slate-100"}`}
           >
              <div className="p-6 space-y-4">
                 {navLinks.map(({ name, path }) => (
@@ -318,7 +326,7 @@ const NavBar = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 };
 
