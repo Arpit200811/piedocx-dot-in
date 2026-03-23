@@ -83,13 +83,21 @@ const NavBar = () => {
       } else if (currentScrollY > lastScrollY && currentScrollY > 5) {
         setShowNav(false);
         setHasBeenHidden(true);
+        setIsOpen(false); // Close mobile menu if we scroll down and hide nav
       } else if (currentScrollY < lastScrollY && currentScrollY >= 40 && hasBeenHidden) {
         setShowNav(true);
         setIsLocked(true);
       }
       setLastScrollY(currentScrollY);
     };
-    const handleMenuCloseOnScroll = () => { if (isOpen) setIsOpen(false); };
+    
+    // Optimized: Only close menu on significant scroll to avoid accidental closures on tap
+    const handleMenuCloseOnScroll = () => { 
+      if (isOpen && Math.abs(window.scrollY - lastScrollY) > 20) {
+        setIsOpen(false); 
+      }
+    };
+
     window.addEventListener("scroll", handleScroll);
     window.addEventListener("scroll", handleMenuCloseOnScroll);
     return () => {
@@ -251,9 +259,26 @@ const NavBar = () => {
           {/* Hamburger Mobile */}
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className={`lg:hidden w-10 h-10 flex items-center justify-center rounded-full ${isDarkMode ? "text-white" : "text-slate-900"}`}
+            className={`lg:hidden w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full transition-colors ${
+              isOpen 
+                ? "bg-red-500/10 text-red-500" 
+                : isDarkMode ? "text-white hover:bg-white/5" : "text-slate-900 hover:bg-slate-100"
+            }`}
+            aria-label="Toggle Menu"
           >
-            {isOpen ? <LogOut className="rotate-45" size={24} /> : <div className="space-y-1.5"><div className="w-6 h-0.5 bg-current"></div><div className="w-4 h-0.5 bg-current ml-auto"></div></div>}
+            {isOpen ? (
+              <motion.div
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+              >
+                <LogOut className="rotate-45" size={24} />
+              </motion.div>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="w-6 h-0.5 bg-current"></div>
+                <div className="w-4 h-0.5 bg-current ml-auto"></div>
+              </div>
+            )}
           </button>
         </div>
       </div>
