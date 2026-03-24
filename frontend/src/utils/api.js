@@ -54,6 +54,7 @@ api.interceptors.response.use(
     (response) => response.data,
     (error) => {
         const message = error.response?.data?.message || error.message || 'Network Error';
+        const statusCode = error.response?.status;
         
         // Don't show modal for specific errors that components handle locally
         const silentErrors = [
@@ -62,38 +63,42 @@ api.interceptors.response.use(
             'No active test', 
             'Test not found', 
             'published',
-            '404'
+            '404',
+            '401', // Silent redirect handles this
+            '403'  // Silent redirect handles this
         ];
         
         const isSilent = silentErrors.some(s => 
             (message && message.toLowerCase().includes(s.toLowerCase())) || 
-            (error.response?.status.toString() === s)
+            (statusCode?.toString() === s)
         );
+
+        // Handle Session Expiry (401/403) - Forces a clean login
+        if (statusCode === 401 || statusCode === 403) {
+            const isStudentDashboard = window.location.hash.toLowerCase().includes('student') || 
+                                       window.location.hash.toLowerCase().includes('dashboard');
+            
+            if (isStudentDashboard) {
+                localStorage.clear(); // Clear all to avoid stale tokens
+                window.location.href = '#/student-login'; // Use relative hash for stability
+                return new Promise(() => {}); // Stop error propagation to avoid further UI breaks
+            }
+        }
 
         // Enhanced Network Error Reporting
         let finalMessage = message;
         if (message === 'Network Error' || !error.response) {
-            finalMessage = "Network Connection Issue: Please check your internet or retry in a moment.";
-            console.error(" [NETWORK_CRITICAL] ", error);
+            finalMessage = "Connection Issues: Please check your internet or retry.";
+            console.warn(" [NETWORK_ISSUE] ", error);
         }
 
         if (!isSilent) {
             Swal.fire({
                 icon: 'error',
-                title: 'Operation Failed',
+                title: 'Access Denied',
                 text: finalMessage,
                 confirmButtonColor: '#2563eb'
             });
-        }
-
-        // Handle Session Expiry or Role Mismatch - Forces a clean login to prevent stale states
-        if (error.response?.status === 401 || error.response?.status === 403) {
-            localStorage.removeItem('studentToken');
-            localStorage.removeItem('studentData');
-            // Check if we were on a student-prefixed route
-            if (window.location.hash.includes('student-') || window.location.hash.includes('dashboard')) {
-                window.location.href = '/#/student-login';
-            }
         }
 
         return Promise.reject(error);
