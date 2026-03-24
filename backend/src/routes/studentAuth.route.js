@@ -42,21 +42,21 @@ const router = express.Router();
 
 // 🛑 RATE LIMITERS FOR WORLD-CLASS RELIABILITY (300+ students)
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 10, // 10 logins per 15 mins (Prevents brute force)
-    message: { message: "Too many login attempts. Please try again after 15 minutes." }
+    windowMs: 5 * 60 * 1000, // 5 mins
+    max: 1000, // Safe for 1000 simultaneous students behind a single campus NAT
+    message: { message: "Too many login attempts. Please try again later." }
 });
 
 const syncLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 3, // Max 3 syncs per minute (Frontend is set to 60s, so 3 is generous but safe)
+    max: 100, // Max 100 syncs per minute per IP
     message: { message: "Sync frequency limit exceeded." }
 });
 
 const violationLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 5, // Prevent cheating scripts from spamming violations
-    message: { message: "Violation logging error: Too many requests." }
+    max: 50, // Allow more activity before rate-limiting
+    message: { message: "Violation logging error: Request threshold exceeded." }
 });
 
 // Public Routes
