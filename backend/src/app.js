@@ -33,48 +33,34 @@ initSocket(httpServer);
 initRedis();
 app.set("trust proxy", 1);
 
+/* Restricted CORS List (Commented for now)
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
-  "http://localhost:5174",
   "https://piedocx.in",
   "https://www.piedocx.in",
   "https://api.piedocx.in",
   process.env.FRONTEND_URL
 ].filter(Boolean);
+*/
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow non-browser requests (Postman, etc)
-    if (!origin) return callback(null, true);
-    
-    const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
-    
-    // Safety check: Allow any subdomain of piedocx.in
-    const isDomainMatch = normalizedOrigin.endsWith("piedocx.in");
-
-    // Check if origin is in allowed list
-    const isAllowed = allowedOrigins.some(ao => ao?.toLowerCase() === normalizedOrigin);
-    
-    if (isAllowed || isDomainMatch) {
-      return callback(null, true);
-    } else {
-      console.error(`[CORS REJECTED] Origin: "${origin}" | Normalized: "${normalizedOrigin}"`);
-      return callback(new Error("CORS Policy: This origin is not allowed"), false);
-    }
-  },
+  origin: true, // Temporarily Allow All for Debugging
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+  optionsSuccessStatus: 204 // 204 is recommended for legacy browsers
 };
-
-app.use((req, res, next) => {
-  // console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.get('origin') || 'no-origin'}`);
-  next();
-});
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
+
+app.use((req, res, next) => {
+  if (req.method !== 'OPTIONS') {
+    console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.get('origin') || 'no-origin'} | IP: ${req.ip}`);
+  }
+  next();
+});
 
 app.use(
   helmet({
