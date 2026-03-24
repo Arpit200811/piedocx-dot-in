@@ -231,18 +231,18 @@ export const initSocket = (server) => {
       }
     });
 
-    // ADMIN MONITOR REFRESH LOOP (EVERY 5 SECONDS)
-    // Scale up to 10s if admin dashboard still hangs
-    const adminFlushInterval = setInterval(() => {
-        if (progressBatch.size > 0) {
-            const updates = Array.from(progressBatch.values());
-            io.to('admin_monitor').emit('batch_progress_update', { updates });
-            progressBatch.clear();
-        }
-    }, 5000); 
-
     socket.on('error', () => { /* Prevent crash */ });
   });
+
+  // ADMIN MONITOR REFRESH LOOP (EVERY 5 SECONDS) - Moved outside connection for scalability
+  // This ensures only ONE global timer exists rather than one per student
+  const adminFlushInterval = setInterval(() => {
+    if (progressBatch.size > 0) {
+      const updates = Array.from(progressBatch.values());
+      io.to('admin_monitor').emit('batch_progress_update', { updates });
+      progressBatch.clear();
+    }
+  }, 5000);
 
   return io;
 };

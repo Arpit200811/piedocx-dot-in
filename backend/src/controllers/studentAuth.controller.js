@@ -326,7 +326,8 @@ export const getQuestions = async (req, res) => {
             const selectedQuestions = masterQuestions
                 .map(q => ({ q, sort: crypto.createHash('md5').update(seed + q._id).digest('hex') }))
                 .sort((a, b) => a.sort.localeCompare(b.sort))
-                .map(item => item.q);
+                .map(item => item.q)
+                .slice(0, 30); // LIMIT: Only 30 questions per student
 
             const questionsToSave = selectedQuestions
                 .map(q => ({ q, sort: crypto.createHash('md5').update(q._id + seed).digest('hex') }))
