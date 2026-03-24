@@ -51,38 +51,20 @@ export const adminRequestLogin = async (req, res) => {
     
     if (!admin) {
       console.warn(`[AUTH FAIL] Admin login failed for: ${normalizedEmail}`);
-      return res.status(401).json({ message: "Invalid credentials!" });
+      return res.status(401).json({ message: "Invalid email or password!" });
     }
 
-    // 2. Check if OTP is enabled for Admin portal
-    const isOtpRequired = process.env.ADMIN_OTP_ENABLED === 'true';
-
-    if (isOtpRequired) {
-        // Generate and Send OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        admin.otp = otp;
-        admin.otpExpires = new Date(Date.now() + 10 * 60000); // 10 mins
-        await admin.save();
-
-        console.log(`[AUTH-DEBUG] OTP for ${normalizedEmail}: ${otp}`);
-        const { success: emailSent } = await sendAdminOTP(admin.email, otp, 'login');
-
-        return res.status(200).json({ 
-            otpRequired: true, 
-            message: emailSent ? "OTP sent to your email!" : "OTP generated (Server simulation)."
-        });
-    }
-
-    // 3. Direct Login (Safe only if ADMIN_OTP_ENABLED is false)
-    if (!process.env.SECRET_KEY) {
+    // 2. Direct Login (Safe only if SECRET_KEY is present)
+    const secret = process.env.SECRET_KEY;
+    if (!secret) {
       console.error("SECRET_KEY missing in adminRequestLogin");
-      return res.status(500).json({ message: "Server configuration error." });
+      return res.status(500).json({ message: "Server configuration error. (SECRET_KEY missing)" });
     }
 
-    console.log(`[AUTH] Admin login successful for ${admin.email} (Direct Mode). Generating token...`);
+    console.log(`[AUTH] Admin login successful for ${admin.email}. Generating token...`);
     const token = jwt.sign(
       { id: admin._id, email: admin.email, role: 'admin' }, 
-      process.env.SECRET_KEY, 
+      secret, 
       { expiresIn: '7d' }
     );
 
@@ -94,7 +76,7 @@ export const adminRequestLogin = async (req, res) => {
     });
   } catch (error) {
     console.error("Login Controller Error:", error);
-    res.status(500).json({ message: "Internal server error!" });
+    res.status(500).json({ message: "Internal server error! " + (process.env.NODE_ENV !== 'production' ? error.message : "") });
   }
 };
 
