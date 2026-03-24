@@ -15,7 +15,7 @@ const AdminLogin = () => {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    console.log("AdminLogin Component Mounted - Version: NO-OTP");
+    console.log("AdminLogin Component Mounted - Version: ADM_SECURE_NODE_V2");
   }, []);
 
   const handleRequestLogin = async (e) => {
@@ -27,13 +27,14 @@ const AdminLogin = () => {
       const data = await api.post('/api/admin/request-login', { email: normalizedEmail, password });
       console.log("Login API Response:", data);
 
-      if (data.token) {
+      if (data.otpRequired) {
+        setStep(2);
+        setSuccess(data.message || 'OTP Sent.');
+      } else if (data.token) {
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('adminUser', JSON.stringify(data.admin));
-        console.log("Token stored, navigating to dashboard...");
         navigate('/admin-dashboard');
       } else {
-        console.error("No token in response!");
         setError("Invalid response from server.");
       }
     } catch (err) {
@@ -141,6 +142,45 @@ const AdminLogin = () => {
             </form>
           )}
 
+          {step === 2 && (
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setLoading(true); setError('');
+              try {
+                const data = await api.post('/api/admin/verify-otp', { email, otp });
+                localStorage.setItem('adminToken', data.token);
+                localStorage.setItem('adminUser', JSON.stringify(data.admin));
+                navigate('/admin-dashboard');
+              } catch (err) {
+                setError(err.response?.data?.message || 'Verification failed.');
+              } finally {
+                setLoading(false);
+              }
+            }} className="space-y-6">
+              <div className="text-center mb-8">
+                <div className="inline-block p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20 mb-4">
+                  <KeyRound className="w-8 h-8 text-blue-500" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-1">Verify Identity</h3>
+                <p className="text-slate-500 text-sm">Enter the code sent to {email}</p>
+              </div>
+              <input 
+                type="text" 
+                maxLength="6" 
+                required 
+                placeholder="000000" 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 text-center text-3xl font-black text-white tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" 
+                value={otp} 
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} 
+                autoFocus
+              />
+              <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-5 rounded-2xl font-black text-lg transition-all shadow-xl active:scale-95">
+                {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'VERIFY & ENTER'}
+              </button>
+              <button type="button" onClick={() => setStep(1)} className="w-full text-slate-500 text-xs font-black uppercase tracking-widest hover:text-white pt-4">← Return to Login</button>
+            </form>
+          )}
+
 
 
           {step === 3 && (
@@ -177,10 +217,9 @@ const AdminLogin = () => {
             </form>
           )}
 
-          {/* Version Indicator */}
           <div className="mt-8 pt-6 border-t border-white/5 text-center">
-            <span className="text-[9px] font-black text-blue-500/40 uppercase tracking-[0.3em]">
-              Security Protocol: DIRECT_AUTH_LEGACY_PASS
+            <span className="text-[9px] font-black text-blue-500/40 uppercase tracking-[0.3em] flex items-center justify-center gap-2">
+              <ShieldCheck size={10} /> Security Protocol: ADM_NODE_ENCRYPTED_V2
             </span>
           </div>
         </div>

@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import api from '../utils/api';
 import Swal from 'sweetalert2';
-import { Save, Plus, Trash2, Calendar, Clock, FileUp, XCircle } from 'lucide-react';
+import { Save, Plus, Trash2, Calendar, Clock, FileUp, XCircle, Sparkles } from 'lucide-react';
+import { translateText } from '../utils/translation';
 
 const AdminTestManager = () => {
     const [loading, setLoading] = useState(true);
@@ -176,6 +177,33 @@ const AdminTestManager = () => {
             } catch (err) {
                 // Global handler handles it
             }
+        }
+    };
+
+    const autoTranslateQuestion = async (index) => {
+        const q = getValues(`questions.${index}`);
+        if (!q.questionText) {
+            Swal.fire('Wait', 'Enter English text first!', 'warning');
+            return;
+        }
+
+        const btn = document.getElementById(`translate-btn-${index}`);
+        if (btn) btn.classList.add('animate-spin');
+
+        try {
+            const translatedText = await translateText(q.questionText, 'hi');
+            setValue(`questions.${index}.questionTextHindi`, translatedText);
+
+            const translatedOptions = await Promise.all(q.options.map(opt => translateText(opt, 'hi')));
+            translatedOptions.forEach((optH, i) => {
+                setValue(`questions.${index}.optionsHindi.${i}`, optH);
+            });
+
+            // Swal.fire({ title: 'Magic Applied!', icon: 'success', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+        } catch (err) {
+            Swal.fire('Magic Failed', 'Cloud translation is currently unavailable.', 'error');
+        } finally {
+            if (btn) btn.classList.remove('animate-spin');
         }
     };
 
@@ -360,12 +388,23 @@ const AdminTestManager = () => {
                                     <Trash2 size={20} />
                                 </button>
                                 <div className="mb-4 pr-8">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
-                                        Question {index + 1}
-                                        {watch(`questions`)?.filter((q, i) => q.questionText?.trim() === watch(`questions.${index}.questionText`)?.trim() && i !== index && q.questionText !== "").length > 0 && (
-                                            <span className="ml-3 text-[10px] text-red-500 font-black animate-pulse">[ DUPLICATE QUESTION DETECTED ]</span>
-                                        )}
-                                    </label>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                            Question {index + 1}
+                                            {watch(`questions`)?.filter((q, i) => q.questionText?.trim() === watch(`questions.${index}.questionText`)?.trim() && i !== index && q.questionText !== "").length > 0 && (
+                                                <span className="ml-3 text-[10px] text-red-500 font-black animate-pulse">[ DUPLICATE QUESTION DETECTED ]</span>
+                                            )}
+                                        </label>
+                                        <button 
+                                            type="button" 
+                                            id={`translate-btn-${index}`}
+                                            onClick={() => autoTranslateQuestion(index)}
+                                            className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-100"
+                                            title="Auto-translate to Hindi"
+                                        >
+                                            <Sparkles size={10} /> Magic Translate
+                                        </button>
+                                    </div>
                                     <input
                                         {...register(`questions.${index}.questionText`, { required: true })}
                                         placeholder="Enter question text (English)..."

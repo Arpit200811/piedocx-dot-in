@@ -16,8 +16,6 @@ export const StudentAuthProvider = ({ children }) => {
                 try {
                     const parsedStudent = JSON.parse(savedStudent);
                     setStudent(parsedStudent);
-
-                    // Verify session with backend
                     const updatedData = await api.get('/api/student-auth/profile');
                     if (updatedData) {
                         if (!updatedData.firstName && updatedData.fullName) {
@@ -29,8 +27,8 @@ export const StudentAuthProvider = ({ children }) => {
                     }
                 } catch (err) {
                     console.error("Auth verification failed:", err);
-                    // Only logout if token is explicitly invalid (401)
-                    if (err.response && err.response.status === 401) {
+                    // Log out on explicitly invalid credentials (401) OR role mismatch (403)
+                    if (err.response && (err.response.status === 401 || err.response.status === 403)) {
                         logout();
                     } else {
                         // Network error or server downtime? proper session remains valid locally

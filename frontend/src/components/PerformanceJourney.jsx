@@ -50,26 +50,26 @@ const PerformanceJourney = () => {
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl overflow-hidden relative group"
+            className="bg-white rounded-[2.5rem] p-6 md:p-10 border border-slate-100 shadow-xl overflow-hidden relative group"
         >
             {/* Animated background gradient */}
             <div className="absolute top-0 right-0 w-full h-full opacity-0 group-hover:opacity-[0.03] transition-opacity duration-700 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600"></div>
             
-            <div className="flex items-center justify-between mb-10 relative z-10">
+            <div className="flex items-center justify-between mb-8 md:mb-10 relative z-10">
                 <div>
-                    <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mb-2 flex items-center gap-2 italic">
-                        <Activity size={14} /> Progress Engine
+                    <h3 className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mb-2 flex items-center gap-2 italic">
+                        <Activity size={12} className="md:w-[14px] md:h-[14px]" /> Progress Engine
                     </h3>
-                    <h2 className="text-2xl font-black text-slate-900 italic uppercase tracking-tighter">
+                    <h2 className="text-xl md:text-2xl font-black text-slate-900 italic uppercase tracking-tighter">
                         Performance <span className="text-blue-600">Journey</span>
                     </h2>
                 </div>
-                <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl">
-                    <TrendingUp size={24} />
+                <div className="p-3 md:p-4 bg-blue-50 text-blue-600 rounded-xl md:rounded-2xl">
+                    <TrendingUp size={20} className="md:w-6 md:h-6" />
                 </div>
             </div>
 
-            <div className="relative mb-10 h-[220px] z-10 flex items-center justify-center">
+            <div className="relative mb-8 md:mb-10 h-[180px] md:h-[220px] z-10 flex items-center justify-center">
                 {history.length > 1 ? (
                     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
                         {/* Grid Lines */}
@@ -118,25 +118,25 @@ const PerformanceJourney = () => {
                         </defs>
                     </svg>
                 ) : (
-                    <div className="flex flex-col items-center justify-center gap-4 text-center">
-                         <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
-                             <Award size={32} />
+                    <div className="flex flex-col items-center justify-center gap-4 text-center p-4">
+                         <div className="w-12 h-12 md:w-16 md:h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                             <Award size={24} className="md:w-8 md:h-8" />
                          </div>
-                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Single Data Point Recorded.<br/><span className="text-blue-600 underline">Complete more tests to unlock trends.</span></p>
+                         <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Single Data Point Recorded.<br/><span className="text-blue-600 underline">Complete more tests to unlock trends.</span></p>
                     </div>
                 )}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 z-10 relative">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 z-10 relative">
                 {history.slice(-4).reverse().map((item, idx) => (
-                    <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-lg transition-all">
+                    <div key={idx} className="p-3 md:p-4 rounded-2xl md:rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-lg transition-all group/item">
                         <div className="flex items-center gap-2 mb-2">
-                            <Calendar size={10} className="text-slate-400" />
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{item.date}</span>
+                            <Calendar size={10} className="text-slate-400 group-hover/item:text-blue-400" />
+                            <span className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest">{item.date}</span>
                         </div>
                         <div className="flex justify-between items-end">
-                            <h4 className="text-xl font-black text-slate-900 tracking-tighter">{item.percentage}%</h4>
-                            <ChevronRight size={14} className="text-blue-600" />
+                            <h4 className="text-lg md:text-xl font-black text-slate-900 tracking-tighter tabular-nums">{item.percentage}%</h4>
+                            <ChevronRight size={14} className="text-blue-600 opacity-0 group-hover/item:opacity-100 group-hover/item:translate-x-1 transition-all" />
                         </div>
                     </div>
                 ))}
