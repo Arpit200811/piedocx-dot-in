@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 // Admin Authentication Middleware
-export const adminAuth = (req, res, next) => {
+export const adminAuth = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
@@ -18,8 +18,8 @@ export const adminAuth = (req, res, next) => {
     const decoded = jwt.verify(token, secret);
     
     if (decoded.role !== 'admin') {
-      console.warn(`[Auth] Admin Access Forbidden for user: ${decoded.email}`);
-      return res.status(403).json({ message: 'Access denied. Administrator privileges required.' });
+      console.warn(`[Auth] Admin Access Forbidden for user: ${decoded.email}. Role found: ${decoded.role}`);
+      return res.status(403).json({ message: `Access denied. Administrator privileges required. Found role: ${decoded.role}` });
     }
 
     req.admin = decoded;
@@ -31,7 +31,7 @@ export const adminAuth = (req, res, next) => {
 };
 
 // Student Authentication Middleware
-export const studentAuth = (req, res, next) => {
+export const studentAuth = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
@@ -46,10 +46,22 @@ export const studentAuth = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, secret);
+    console.log(`[Auth-Debug] Student Auth Decoded: ID=${decoded.id}, Role=${decoded.role}, Email=${decoded.email}`);
     if (decoded.role !== 'student') {
-        console.warn(`[Auth] Student Access Forbidden for user: ${decoded.email}`);
-        return res.status(403).json({ message: 'Access denied.' });
+        console.warn(`[Auth] Student Access Forbidden for user: ${decoded.email}. Role found: ${decoded.role}`);
+        return res.status(403).json({ message: `Access denied. Role: ${decoded.role}` });
     }
+
+    // Verify student exists and is active in DB
+    const ExamStudent = (await import('../models/ExamStudent.js')).default;
+    const student = await ExamStudent.findById(decoded.id).select('status');
+    if (!student) {
+        return res.status(401).json({ message: 'User record not found.' });
+    }
+    if (student.status === 'revoked') {
+        return res.status(403).json({ message: 'Access revoked. Contact administrator.' });
+    }
+
     req.student = decoded;
     next();
   } catch (error) {

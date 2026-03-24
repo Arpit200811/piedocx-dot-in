@@ -42,39 +42,43 @@ export const adminRequestLogin = async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
     const hashedPassword = hashPassword(password);
     
-    // 1. Try exact email match + hashed password (Case-insensitive via normalized)
-    let admin = await Admin.findOne({ 
+    // 1. Strict hashed password check only
+    const admin = await Admin.findOne({ 
       email: normalizedEmail,
       password: hashedPassword 
     });
-    
-    // 2. Fallback for legacy plain-text password with exact email
-    if (!admin) {
-        admin = await Admin.findOne({ 
-            email: normalizedEmail,
-            password: password 
-        });
-    }
-
-    // 3. Last resort: Case-insensitive search via regex if they used different casing in DB
-    if (!admin) {
-        admin = await Admin.findOne({ 
-          email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }, 
-          $or: [{ password: hashedPassword }, { password: password }]
-        });
-    }
     
     if (!admin) {
       console.warn(`[AUTH FAIL] Admin login failed for: ${normalizedEmail}`);
       return res.status(401).json({ message: "Invalid credentials!" });
     }
 
+    // 2. Check if OTP is enabled for Admin portal
+    const isOtpRequired = process.env.ADMIN_OTP_ENABLED === 'true';
+
+    if (isOtpRequired) {
+        // Generate and Send OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        admin.otp = otp;
+        admin.otpExpires = new Date(Date.now() + 10 * 60000); // 10 mins
+        await admin.save();
+
+        console.log(`[AUTH-DEBUG] OTP for ${normalizedEmail}: ${otp}`);
+        const { success: emailSent } = await sendAdminOTP(admin.email, otp, 'login');
+
+        return res.status(200).json({ 
+            otpRequired: true, 
+            message: emailSent ? "OTP sent to your email!" : "OTP generated (Server simulation)."
+        });
+    }
+
+    // 3. Direct Login (Safe only if ADMIN_OTP_ENABLED is false)
     if (!process.env.SECRET_KEY) {
       console.error("SECRET_KEY missing in adminRequestLogin");
       return res.status(500).json({ message: "Server configuration error." });
     }
 
-    console.log(`[AUTH] Admin login successful for ${admin.email}. Generating token...`);
+    console.log(`[AUTH] Admin login successful for ${admin.email} (Direct Mode). Generating token...`);
     const token = jwt.sign(
       { id: admin._id, email: admin.email, role: 'admin' }, 
       process.env.SECRET_KEY, 
@@ -82,6 +86,7 @@ export const adminRequestLogin = async (req, res) => {
     );
 
     res.status(200).json({ 
+      otpRequired: false,
       message: "Login successful!", 
       token,
       admin: { name: admin.name, email: admin.email }
