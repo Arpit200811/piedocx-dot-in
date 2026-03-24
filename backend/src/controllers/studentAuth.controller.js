@@ -109,7 +109,7 @@ export const googleLogin = async (req, res) => {
                 year: student.year
             },
             process.env.JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '7d' }
         );
 
         res.json({

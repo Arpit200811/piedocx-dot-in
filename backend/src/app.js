@@ -135,8 +135,17 @@ app.use("/api/tasks", taskRoutes);
 
 app.use(errorHandler);
 
+app.get("/api/health-check", (req, res) => {
+  res.json({ 
+    status: "alive", 
+    version: "2.1.0-AUTH-FIX", 
+    timestamp: new Date(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 app.get("/", (req, res) => {
-  res.send("API is running...");
+  res.send("API is running... Version: 2.1.0-AUTH-FIX");
 });
 
 const PORT = process.env.PORT || 5002;
@@ -158,5 +167,5 @@ httpServer.listen(PORT, "0.0.0.0", async () => {
     console.error(`[STARTUP] WhatsApp Initialization Error:`, err.message);
   }
 
-  console.log(`🚀 PIEDOCX Backend Active on Port ${PORT}`);
+  console.log(`🚀 PIEDOCX Backend Active on Port ${PORT} | VERSION: 2.1.0-AUTH-FIX`);
 });

@@ -6,13 +6,24 @@ import TestConfig from '../models/TestConfig.js';
 import TestResult from '../models/TestResult.js';
 import { generateAIAnalysis } from '../utils/aiAnalyzer.js';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+const REDIS_URL = process.env.REDIS_URL;
 
-const connection = new IORedis(REDIS_URL, {
-    maxRetriesPerRequest: null,
-});
+let connection;
+let submissionWorker;
 
-export const submissionWorker = new Worker('test-submission-spike', async (job) => {
+if (REDIS_URL) {
+    connection = new IORedis(REDIS_URL, {
+        maxRetriesPerRequest: null,
+        retryStrategy: (times) => Math.min(times * 5000, 30000),
+    });
+
+    connection.on('error', (err) => {
+        if (err.code === 'ECONNREFUSED') {
+            // Silently wait for reconnect
+        }
+    });
+
+    submissionWorker = new Worker('test-submission-spike', async (job) => {
     const { studentId, testId, answers, submissionType, reason } = job.data;
     console.log(`🚀 Processing Submission for Student: ${studentId}`);
 
@@ -93,3 +104,4 @@ export const submissionWorker = new Worker('test-submission-spike', async (job) 
 }, { connection, concurrency: 5 }); // Process 5 submissions at a time
 
 console.log('⚡ BullMQ: Submission Worker Active');
+}

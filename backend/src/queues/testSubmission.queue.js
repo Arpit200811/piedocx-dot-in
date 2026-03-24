@@ -1,25 +1,30 @@
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+const REDIS_URL = process.env.REDIS_URL;
 
-// Connection shared by queue
-const connection = new IORedis(REDIS_URL, {
-    maxRetriesPerRequest: null, // Critical for BullMQ
-});
+let connection;
+export let submissionQueue = {
+    add: async () => { /* Fallback Noop */ }
+};
 
-// Create a new queue for test submissions
-export const submissionQueue = new Queue('test-submission-spike', {
-    connection,
-    defaultJobOptions: {
-        attempts: 3, // Retry if DB is busy
-        backoff: {
-            type: 'exponential',
-            delay: 1000,
-        },
-        removeOnComplete: true, // Clean up to save Redis memory
-        removeOnFail: false, // Keep failed for manual review
-    }
-});
+if (REDIS_URL) {
+    connection = new IORedis(REDIS_URL, {
+        maxRetriesPerRequest: null,
+    });
+    
+    connection.on('error', () => { /* Quiet */ });
 
-console.log('📦 BullMQ: Submission Queue Initialized');
+    submissionQueue = new Queue('test-submission-spike', {
+        connection,
+        defaultJobOptions: {
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 1000 },
+            removeOnComplete: true,
+            removeOnFail: false,
+        }
+    });
+    console.log('📦 BullMQ: Submission Queue Initialized');
+} else {
+    console.warn('⚠️  Redis missing: Submission Queue in Fallback Mode (Synchronous)');
+}

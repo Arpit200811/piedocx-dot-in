@@ -58,11 +58,16 @@ export const initRedis = () => {
         redisClient = new Redis(REDIS_URL, {
             keyPrefix: 'piedocx:', 
             retryStrategy: (times) => {
-                return Math.min(times * 5000, 30000);
+                // If it's a default local connection and fails once, stop retrying or slow down massively
+                if (!process.env.REDIS_URL && times > 1) {
+                    return null; // Stop retrying local redis if not found
+                }
+                return Math.min(times * 10000, 60000); // Slower retry for cloud
             },
             maxRetriesPerRequest: 0,
             enableOfflineQueue: false,
-            connectTimeout: 10000
+            connectTimeout: 5000,
+            showFriendlyErrorStack: false
         });
 
         redisClient.on('connect', () => {

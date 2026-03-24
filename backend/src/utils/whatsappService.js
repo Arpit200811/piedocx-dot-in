@@ -11,10 +11,13 @@ let lastQrTime = 0;
 
 export const getWhatsAppStatus = () => ({ status, qr: lastQr });
 
+let lastLoggedStatus = null;
+let lastLoggedTime = 0;
+
 const updateStatus = (newStatus, qr = null) => {
-    // Only update QR if 30 seconds have passed, or if it's the first one
-    // This stops the rapid refresh flickering
     const now = Date.now();
+    
+    // QR Throttling (Keep it for Internal Logic)
     if (qr && (now - lastQrTime < 30000)) {
         return; 
     }
@@ -29,7 +32,16 @@ const updateStatus = (newStatus, qr = null) => {
     if (io) {
         io.emit('whatsapp-status', { status, qr: lastQr });
     }
-    console.log(`[WhatsApp] Status Update: ${status}`);
+
+    // LOGGING REDUCTION: Only log if status changed, or if it's QR_READY and 5 mins passed
+    const shouldLog = (newStatus !== lastLoggedStatus) || 
+                      (newStatus === 'QR_READY' && (now - lastLoggedTime > 300000));
+
+    if (shouldLog) {
+        console.log(`[WhatsApp] Status: ${status}${newStatus === 'QR_READY' ? ' (Check Admin Panel for QR)' : ''}`);
+        lastLoggedStatus = newStatus;
+        lastLoggedTime = now;
+    }
 };
 
 export const initializeWhatsApp = async (isAuto = false) => {

@@ -25,7 +25,7 @@ export const adminAuth = async (req, res, next) => {
     req.admin = decoded;
     next();
   } catch (error) {
-    console.error(`[Auth] Admin JWT Error: ${error.message}`);
+    console.warn(`[Auth] Admin Session Info: ${error.message}`);
     res.status(401).json({ message: 'Invalid or expired token.' });
   }
 };
@@ -65,7 +65,7 @@ export const studentAuth = async (req, res, next) => {
     req.student = decoded;
     next();
   } catch (error) {
-    console.error(`[Auth] Student JWT Error: ${error.message}`);
+    console.warn(`[Auth] Student Session Info: ${error.message}`);
     res.status(401).json({ message: 'Session expired or invalid. Please relogin.' });
   }
 };

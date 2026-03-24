@@ -35,6 +35,7 @@ const hashPassword = (password) => {
 };
 
 export const adminRequestLogin = async (req, res) => {
+  console.log(`[AUTH-DEBUG] Admin Login POST Received at: ${new Date().toISOString()} for: ${req.body?.email}`);
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: "Credentials required" });
@@ -82,7 +83,7 @@ export const adminRequestLogin = async (req, res) => {
     const token = jwt.sign(
       { id: admin._id, email: admin.email, role: 'admin' }, 
       process.env.SECRET_KEY, 
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     res.status(200).json({ 
@@ -124,7 +125,7 @@ export const verifyAdminOTP = async (req, res) => {
     const token = jwt.sign(
       { id: admin._id, email: admin.email, role: 'admin' }, 
       process.env.SECRET_KEY, 
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     res.status(200).json({ 
