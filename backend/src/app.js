@@ -40,7 +40,8 @@ const allowedOrigins = [
   "https://piedocx.in",
   "https://www.piedocx.in",
   "https://api.piedocx.in",
-];
+  process.env.FRONTEND_URL
+].filter(Boolean);
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -49,12 +50,12 @@ const corsOptions = {
     
     const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
     
-    // Check if origin is in allowed list
-    const isAllowed = allowedOrigins.some(ao => ao.toLowerCase() === normalizedOrigin);
-    
-    // Safety check: Allow any subdomain of piedocx.in as a fallback
-    const isDomainMatch = normalizedOrigin.endsWith("piedocx.in") || normalizedOrigin.includes("piedocx-dot-in");
+    // Safety check: Allow any subdomain of piedocx.in
+    const isDomainMatch = normalizedOrigin.endsWith("piedocx.in");
 
+    // Check if origin is in allowed list
+    const isAllowed = allowedOrigins.some(ao => ao?.toLowerCase() === normalizedOrigin);
+    
     if (isAllowed || isDomainMatch) {
       return callback(null, true);
     } else {
