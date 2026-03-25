@@ -65,7 +65,7 @@ api.interceptors.response.use(
             'published',
             '404',
             '401', // Silent redirect handles this
-            '403'  // Silent redirect handles this
+            'Session expired'
         ];
         
         const isSilent = silentErrors.some(s => 
@@ -73,13 +73,13 @@ api.interceptors.response.use(
             (statusCode?.toString() === s)
         );
 
-        // Handle Session Expiry (401/403) - Forces a clean login
-        if (statusCode === 401 || statusCode === 403) {
+        // Handle Session Expiry (401 ONLY) - 403 might be a valid business rejection (late submission)
+        if (statusCode === 401) {
             const isStudentDashboard = window.location.hash.toLowerCase().includes('student') || 
                                        window.location.hash.toLowerCase().includes('dashboard');
             
             if (isStudentDashboard) {
-                localStorage.clear(); // Clear all to avoid stale tokens
+                localStorage.removeItem('studentToken'); // Clear student token
                 window.location.href = '#/student-login'; // Use relative hash for stability
                 return new Promise(() => {}); // Stop error propagation to avoid further UI breaks
             }

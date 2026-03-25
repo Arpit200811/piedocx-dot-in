@@ -550,7 +550,7 @@ const AdminHome = () => {
                   <div className="space-y-1 text-right">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Score / Safety</p>
                     <div className="flex items-center justify-end gap-2">
-                      <span className="font-black text-sm text-blue-600">{student.score || 0}</span>
+                      <span className="font-black text-sm text-blue-600">{student.score || 0}{student.isDraft && <span className="text-[7px] ml-1 opacity-50 block font-normal tracking-widest not-italic">SYNCED</span>}</span>
                       <div 
                         onClick={() => handleShowViolations(student)}
                         className={`flex items-center gap-1 text-[10px] font-black cursor-pointer hover:underline ${student.violationCount > 0 ? 'text-red-600' : 'text-slate-300'}`}
@@ -633,7 +633,7 @@ const AdminHome = () => {
                             )}
                           </p>
                           <p className="text-[10px] font-medium text-slate-400 mb-1">{student.college}</p>
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex wrap gap-1">
                             <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-black uppercase tracking-tight border border-blue-100">{student.branch}</span>
                             <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[9px] font-black uppercase tracking-tight border border-slate-200">{student.year}</span>
                           </div>
@@ -677,7 +677,7 @@ const AdminHome = () => {
                     </td>
                     <td className="px-8 py-6 text-center">
                       <span className={`font-black text-lg ${student.testAttempted ? 'text-emerald-600' : 'text-blue-600 italic'}`}>
-                        {student.score || 0}
+                        {student.score || 0}{student.isDraft && <span className="text-[8px] ml-1 opacity-50 block font-normal tracking-widest not-italic">SYNCED</span>}
                       </span>
                     </td>
                     <td className="px-8 py-6 text-center font-mono font-bold">

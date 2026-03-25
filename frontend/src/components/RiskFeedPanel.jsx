@@ -50,9 +50,17 @@ const RiskFeedPanel = () => {
       }, ...prev].slice(0, 50));
     });
 
+    socket.on('batch_progress_update', (data) => {
+      if (data.stats) {
+        setLiveStats(data.stats);
+      }
+    });
+
     socketRef.current = socket;
     return () => socket.disconnect();
   }, []);
+
+  const [liveStats, setLiveStats] = useState({ onlineCount: 0 });
 
   const handleTerminate = (studentId, email) => {
     Swal.fire({
@@ -117,9 +125,15 @@ const RiskFeedPanel = () => {
            </h3>
            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Real-time Risk Analysis Engine</p>
         </div>
-        <span className={`text-[9px] font-black px-4 py-2 rounded-xl transition-all uppercase tracking-widest ${connectionStatus.includes('Active') ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
-          {connectionStatus}
-        </span>
+        <div className="flex items-center gap-4">
+            <div className={`text-[9px] font-black px-4 py-2 rounded-xl transition-all uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-2 shadow-lg shadow-blue-500/10`}>
+              <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping"></div>
+              <span>Live Participants: <span className="font-black text-xs ml-1">{liveStats.onlineCount}</span></span>
+            </div>
+            <span className={`text-[9px] font-black px-4 py-2 rounded-xl transition-all uppercase tracking-widest ${connectionStatus.includes('Active') ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
+              {connectionStatus}
+            </span>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-3 custom-scrollbar relative z-10">

@@ -89,6 +89,44 @@ export const SecurityWatermark = ({ studentProfile }) => {
     );
 };
 
+export const LiveProctorFeed = ({ videoRef, noiseViolation }) => {
+    return (
+        <div className="fixed bottom-6 right-6 z-[9000] group pointer-events-none">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={`relative w-40 h-28 md:w-52 md:h-36 bg-black rounded-3xl overflow-hidden border-2 transition-all duration-500 shadow-2xl ${noiseViolation ? 'border-red-600 scale-105 shadow-red-600/20' : 'border-white/10 group-hover:border-blue-600/50'}`}
+            >
+                <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    muted 
+                    playsInline 
+                    className={`w-full h-full object-cover transition-opacity duration-1000 ${noiseViolation ? 'opacity-50' : 'opacity-80'}`}
+                />
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-3">
+                    <div className="flex items-center gap-2">
+                        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${noiseViolation ? 'bg-red-500' : 'bg-blue-500'}`}></div>
+                        <span className="text-[8px] font-black text-white/60 uppercase tracking-[0.2em]">Secure Feed</span>
+                    </div>
+                </div>
+
+                <div className="absolute top-3 right-3 px-2 py-0.5 bg-black/50 backdrop-blur-md rounded-lg border border-white/10">
+                    <span className="text-[7px] font-black text-white uppercase tracking-widest">LIVE</span>
+                </div>
+
+                {noiseViolation && (
+                    <div className="absolute inset-0 bg-red-600/20 flex flex-col items-center justify-center text-center p-2 backdrop-blur-[2px]">
+                        <span className="text-[9px] font-black text-white uppercase italic tracking-tighter leading-none animate-bounce">Voice Detected</span>
+                    </div>
+                )}
+            </motion.div>
+            <p className="text-center mt-3 text-[7px] font-black text-white/20 uppercase tracking-[0.4em] italic group-hover:text-blue-500/40 transition-colors">AI Proctoring Active</p>
+        </div>
+    );
+};
+
 export const BackgroundEffects = () => (
     <>
         <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>

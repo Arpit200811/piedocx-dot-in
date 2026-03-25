@@ -22,7 +22,8 @@ import {
     ScreenshotBlocker, 
     FocusRestrictionLayer, 
     SecurityWatermark, 
-    BackgroundEffects 
+    BackgroundEffects,
+    LiveProctorFeed
 } from './TestInterface/SecurityLayer';
 
 const ConfettiLayer = () => {
@@ -459,7 +460,6 @@ const TestInterface = () => {
                 setIsOutOfSync(true);
             }
         };
-        /* 
         const startSonicProctor = async (stream) => {
             try {
                 if (!stream || stream.getAudioTracks().length === 0) return;
@@ -497,8 +497,7 @@ const TestInterface = () => {
                 console.error("Sonic Proctor Error:", e);
             }
         };
-        */
-        /*
+
         const initCamera = async () => {
             try {
                 // Request BOTH audio and video to enforce strict permission and deter cheating
@@ -520,11 +519,15 @@ const TestInterface = () => {
                 console.warn("Camera/Mic access denied or unavailable");
                 // Mandatory enforcement: if they block camera, we violate them instantly
                 handleViolation("Hardware Permissions Denied (Camera/Mic)");
-                Swal.fire('Device Error', 'Camera/Mic permissions are MANDATORY for AI Proctoring.', 'error');
+                Swal.fire({
+                    title: 'Security Requirement',
+                    text: 'Camera & Microphone access is mandatory for this AI-Proctored exam. Please enable permissions and refresh.',
+                    icon: 'error',
+                    confirmButtonColor: '#2563eb'
+                });
             }
         };
         initCamera();
-        */
         const detectScreenCapture = async () => {
             try {
                 // Modern Chrome/Edge expose a list of active capture sessions
@@ -840,9 +843,12 @@ const TestInterface = () => {
     useEffect(() => {
         if (!isStarted || submitting) return;
 
+        // --- WORLD-CLASS SCALING: Add 'Jitter' to avoid Thundering Herd Problem ---
+        // We stagger sync requests by adding a random delay (0-15s) to the 60s window
+        const syncJitter = Math.floor(Math.random() * 15000);
         const autoSync = setInterval(() => {
             syncProgress(stateRef.current.answers, stateRef.current.timeLeft, true);
-        }, 60000);
+        }, 60000 + syncJitter);
 
         const handleBeforeUnload = (e) => {
             if (isStarted && !submitting) {
@@ -1069,6 +1075,7 @@ const TestInterface = () => {
             <FocusRestrictionLayer isFocused={isFocused} />
             <BackgroundEffects />
             <SecurityWatermark studentProfile={studentProfile} />
+            <LiveProctorFeed videoRef={videoRef} noiseViolation={noiseViolation} />
             <AnimatePresence>
                 <SecurityAlert 
                     isOutOfSync={isOutOfSync} 
