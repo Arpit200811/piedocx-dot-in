@@ -14,8 +14,8 @@ export const updateProfileSchema = z.object({
 });
 
 export const syncProgressSchema = z.object({
-  // Limit to 200 answers using refine, because max() is only for strings/arrays
-  answers: z.record(z.string()).refine(obj => Object.keys(obj).length <= 200, 'Too many answers').default({}),
+  // Allows record where values can be string, null or undefined (for skipped questions)
+  answers: z.record(z.union([z.string(), z.null(), z.undefined()])).refine(obj => Object.keys(obj).length <= 200, 'Too many answers').default({}),
   testId: z.string().optional(),
   timeLeft: z.number().optional()
 });
@@ -25,8 +25,8 @@ export const logViolationSchema = z.object({
 });
 
 export const submitTestSchema = z.object({
-  answers: z.record(z.string()).refine(obj => Object.keys(obj).length <= 200, 'Too many answers').default({}),
+  answers: z.record(z.union([z.string(), z.null(), z.undefined()])).refine(obj => Object.keys(obj).length <= 200, 'Too many answers').default({}),
   testId: z.string().optional(),
-  submissionType: z.enum(['normal', 'terminated', 'system_closed', 'timeout']).optional(),
+  submissionType: z.enum(['normal', 'terminated', 'system_closed', 'timeout', 'Manual Submit']).optional(),
   reason: z.string().max(500, 'Reason too long').optional()
 });
