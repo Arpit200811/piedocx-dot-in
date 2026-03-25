@@ -29,6 +29,15 @@ const testConfigSchema = new mongoose.Schema({
   targetCollege: { type: String, default: 'All' },
   testAccessKey: { type: String, default: '' },
   questions: [questionSchema],
+  aiAnalysisTemplate: { 
+    type: String, 
+    default: "Great effort! Focus on the fundamentals and keep practicing your problem-solving skills to improve your score." 
+  },
+  recommendations: [{
+    title: { type: String, required: true },
+    link: { type: String, required: true },
+    type: { type: String, enum: ['VIDEO', 'ARTICLE', 'GUIDE'], default: 'VIDEO' }
+  }],
   isActive: { type: Boolean, default: true, index: true },
   resultsPublished: { type: Boolean, default: false, index: true }
 }, { timestamps: true });

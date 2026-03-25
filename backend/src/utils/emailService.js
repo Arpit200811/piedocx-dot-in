@@ -23,11 +23,30 @@ export const getTransporter = () => {
   return cachedTransporter;
 };
 
-export const sendCertificateEmail = async (studentEmail, studentName, certificateBase64, score = null) => {
+export const sendCertificateEmail = async (studentEmail, studentName, certificateBase64, score = null, certificateId = null, pdfBuffer = null) => {
   let status = 'sent';
   let errorMessage = '';
   try {
     const transporter = getTransporter();
+    const verificationUrl = certificateId 
+        ? `${process.env.FRONTEND_URL || 'https://piedocx.in'}/#/verify/${certificateId}`
+        : `${process.env.FRONTEND_URL || 'https://piedocx.in'}/#/student-login`;
+
+    const attachments = [];
+    if (pdfBuffer) {
+      attachments.push({
+        filename: `${studentName.replace(/\s+/g, '_')}_Certificate.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      });
+    } else if (certificateBase64) {
+      attachments.push({
+        filename: `${studentName.replace(/\s+/g, '_')}_Certificate.png`,
+        content: certificateBase64.split("base64,")[1],
+        encoding: 'base64'
+      });
+    }
+
     const mailOptions = {
       from: `"Piedocx Technologies" <${process.env.EMAIL_USER}>`,
       to: studentEmail,
@@ -43,24 +62,24 @@ export const sendCertificateEmail = async (studentEmail, studentName, certificat
             
             ${score !== null ? `
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
-              <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: bold; uppercase; tracking-wider;">Assessment Score</p>
+              <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; tracking-wider;">Assessment Score</p>
               <p style="margin: 5px 0 0 0; color: #0ea5e9; font-size: 32px; font-weight: 900;">${score}</p>
             </div>
             ` : ''}
 
-            <p>${certificateBase64 ? "Please find your digital certificate attached to this email." : `You can view and download your certificate anytime from your dashboard or this link: <a href="${process.env.FRONTEND_URL || 'https://piedocx.in'}/#/view-certificate/${studentEmail}">View Certificate</a>`}</p>
+            <p>${(pdfBuffer || certificateBase64) ? "Please find your digital certificate attached to this email." : `You can view and verify your certificate anytime using the link below: <br/><br/> <a href="${verificationUrl}" style="background: #0ea5e9; color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">View Verified Certificate</a>`}</p>
             
             <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 15px; margin: 20px 0;">
               <p style="margin: 0; font-weight: bold; color: #0369a1;">Code With Piedocx To Decode Your Future</p>
             </div>
+            
+            <p style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 30px;">
+              Verification Link: <a href="${verificationUrl}" style="color: #0ea5e9;">${verificationUrl}</a>
+            </p>
           </div>
         </div>
       `,
-      attachments: certificateBase64 ? [{
-        filename: `${studentName.replace(/\s+/g, '_')}_Certificate.png`,
-        content: certificateBase64.split("base64,")[1],
-        encoding: 'base64'
-      }] : []
+      attachments
     };
     await transporter.sendMail(mailOptions);
     return true;

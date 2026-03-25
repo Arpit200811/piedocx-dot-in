@@ -25,7 +25,8 @@ import errorHandler from "./middlewares/error.middleware.js";
 
 import { initSocket } from "./utils/socketService.js";
 import { initRedis } from "./utils/cacheService.js";
-import "./workers/testSubmission.worker.js"; // START THE BACKGROUND WORKER
+import "./workers/testSubmission.worker.js"; // START THE TEST SUBMISSION WORKER
+import "./workers/email.worker.js";         // START THE BULK EMAIL WORKER
 
 const app = express();
 const httpServer = createServer(app);
@@ -33,7 +34,6 @@ initSocket(httpServer);
 initRedis();
 app.set("trust proxy", 1);
 
-/* Restricted CORS List (Commented for now)
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
@@ -42,14 +42,30 @@ const allowedOrigins = [
   "https://api.piedocx.in",
   process.env.FRONTEND_URL
 ].filter(Boolean);
-*/
 
 const corsOptions = {
-  origin: true, // Temporarily Allow All for Debugging
+  origin: (origin, callback) => {
+    // 1. Allow mobile apps, curl, and backend-to-backend calls
+    if (!origin) return callback(null, true);
+
+    // 2. Comprehensive Domain Match (piedocx.in and all subdomains)
+    const domainRegex = /^(https?:\/\/)?([a-z0-9-]+\.)*piedocx\.in$/i;
+    const isMainDomain = allowedOrigins.includes(origin) || domainRegex.test(origin);
+
+    // 3. Fallback for Local Development & Main domain safety
+    if (isMainDomain || process.env.NODE_ENV !== 'production' || origin.includes('localhost')) {
+      callback(null, true);
+    } else {
+      // WORLD-CLASS LOGGING: Instead of crashing, let's log the attempt but deny gracefully
+      console.warn(`[CORS REJECT] ${origin} is not in allowed list.`);
+      callback(null, false); // Return false instead of Error to avoid crashing Preflight silently
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
-  optionsSuccessStatus: 204 // 204 is recommended for legacy browsers
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "token"],
+  exposedHeaders: ["set-cookie"],
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));

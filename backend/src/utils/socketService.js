@@ -237,9 +237,17 @@ export const initSocket = (server) => {
   // ADMIN MONITOR REFRESH LOOP (EVERY 5 SECONDS) - Moved outside connection for scalability
   // This ensures only ONE global timer exists rather than one per student
   const adminFlushInterval = setInterval(() => {
-    if (progressBatch.size > 0) {
+    if (progressBatch.size > 0 || activeSessions.size >= 0) {
       const updates = Array.from(progressBatch.values());
-      io.to('admin_monitor').emit('batch_progress_update', { updates });
+      const stats = {
+          onlineCount: activeSessions.size,
+          lastSync: new Date()
+      };
+      
+      io.to('admin_monitor').emit('batch_progress_update', { 
+          updates, 
+          stats 
+      });
       progressBatch.clear();
     }
   }, 5000);

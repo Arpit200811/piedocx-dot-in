@@ -167,6 +167,38 @@ export const sendBulkWhatsApp = async (req, res) => {
     });
 };
 
+export const sendCustomWhatsApp = async (req, res) => {
+    const { ids, message } = req.body;
+    const { status } = getWhatsAppStatus();
+
+    if (status !== 'CONNECTED') {
+        return res.status(503).json({ message: 'WhatsApp connection lost.' });
+    }
+
+    if (!Array.isArray(ids) || ids.length === 0 || !message) {
+        return res.status(400).json({ message: 'IDs and Message are required.' });
+    }
+
+    res.status(202).json({ message: 'Custom broadcast started.' });
+
+    setImmediate(async () => {
+        const students = await ExamStudent.find({ _id: { $in: ids } });
+        for (const student of students) {
+            if (!student.mobile) continue;
+            
+            // Personalize if placeholder exists
+            const personalizedMsg = message.replace(/{name}/g, student.fullName);
+            
+            try {
+                await sendWhatsAppMessage(student.mobile, personalizedMsg);
+                await new Promise(r => setTimeout(r, 2000)); // Anti-spam delay
+            } catch (err) {
+                console.error(`Custom WA fail for ${student.email}:`, err.message);
+            }
+        }
+    });
+};
+
 export const checkWhatsAppStatus = (req, res) => {
     const { status, qr } = getWhatsAppStatus();
     res.json({ status, qr, connected: status === 'CONNECTED' });

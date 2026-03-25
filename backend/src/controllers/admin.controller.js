@@ -189,11 +189,29 @@ export const getLiveTestMonitor = async (req, res) => {
 
         const internStudents = await InternStudent.find({}, 'name registration college branch year technology startDate endDate');
         
-        const mappedExam = examStudents.map(s => ({
-            ...s.toObject(),
-            totalQuestions: s.assignedQuestions?.length || 0,
-            assignedQuestions: undefined 
-        }));
+        const mappedExam = examStudents.map(s => {
+            const studentObj = s.toObject();
+            
+            // WORLD-CLASS: Calculate "Draft Score" for students who haven't submitted yet
+            // This ensures admins see actual progress even if completion fails.
+            if (!studentObj.testAttempted && studentObj.assignedQuestions?.length > 0) {
+                let draftScore = 0;
+                const answers = studentObj.savedAnswers || {};
+                studentObj.assignedQuestions.forEach(q => {
+                    if (answers[q.questionId] === q.correctAnswer) {
+                        draftScore++;
+                    }
+                });
+                studentObj.score = draftScore;
+                studentObj.isDraft = true; // Mark as draft so admin knows it's not final
+            }
+
+            return {
+                ...studentObj,
+                totalQuestions: s.assignedQuestions?.length || 0,
+                assignedQuestions: undefined 
+            };
+        });
 
         const mappedInterns = internStudents.map(s => ({
             fullName: s.name,

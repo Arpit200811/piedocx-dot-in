@@ -2,6 +2,7 @@
 import ExamStudent from '../models/ExamStudent.js';
 import { generateCertificateID, generateCertificateSignature, generateQR } from '../utils/certUtils.js';
 import { sendCertificateEmail } from '../utils/emailService.js';
+import { emailQueue } from '../queues/email.queue.js';
 
 
 const deriveTechnology = (branch, year) => {
@@ -419,34 +420,32 @@ export const bulkDelete = async (req, res) => {
 export const bulkSendCertificates = async (req, res) => {
     const { ids } = req.body; // Array of Mongo IDs
     if (!Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({ message: 'No students selected' });
+        return res.status(400).json({ message: 'No students selected for certificates.' });
     }
 
     try {
-        const students = await ExamStudent.find({ _id: { $in: ids } });
-        let successCount = 0;
-        let failCount = 0;
-
+        const students = await ExamStudent.find({ _id: { $in: ids } }).select('_id score email');
+        
+        // WORLD-CLASS RELIABILITY: Offload to Background Queue (BullMQ)
+        // This prevents request timeouts and allows throttling to stay safe with Gmail (SMTP Connection limits)
         for (const student of students) {
-            try {
-                await new Promise(r => setTimeout(r, 1000));
-                
-                const sent = await sendCertificateEmail(student.email, student.fullName, null, student.score); 
-                if (sent) successCount++;
-                else failCount++;
-            } catch (err) {
-                console.error(`[Bulk Mail] Failed for ${student.email}:`, err.message);
-                failCount++;
-            }
+            await emailQueue.add(`cert_${student._id}`, {
+                studentId: student._id,
+                score: student.score,
+                type: 'certificate'
+            }, {
+                jobId: `cert_${student._id}_${Date.now()}` // Allow re-sending if they click again
+            });
         }
 
         return res.status(200).json({ 
-            message: `Bulk processing complete.`, 
-            summary: { total: students.length, succeeded: successCount, failed: failCount } 
+            message: `Bulk enrollment started successfully for ${students.length} students.`, 
+            details: "Processing in background at 25 emails/minute to stay safe with Gmail SMTP Spam filters. Use Email Logs to track progress.",
+            limitNote: "⚠️ PLEASE NOTE: Personal Gmail accounts (Free) have a limit of 500 emails/day. Google Workspace limits are 2000/day."
         });
     } catch (error) {
         console.error("bulkSendCertificates error:", error);
-        res.status(500).json({ message: 'Bulk email process failed' });
+        res.status(500).json({ message: 'Background queue dispatch failed. Check Redis status.' });
     }
 };
 

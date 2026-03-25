@@ -62,7 +62,7 @@ export const timeCheck = async (req, res) => {
 };
 
 export const upsertConfig = async (req, res) => {
-    const { title, yearGroup, branchGroup, startDate, endDate, duration, questions, resultsPublished, testAccessKey } = req.body;
+    const { title, yearGroup, branchGroup, startDate, endDate, duration, questions, resultsPublished, testAccessKey, aiAnalysisTemplate, recommendations } = req.body;
     let { targetCollege } = req.body;
 
     if (targetCollege) targetCollege = targetCollege.trim().toLowerCase();
@@ -85,6 +85,8 @@ export const upsertConfig = async (req, res) => {
             config.targetCollege = targetCollege || 'all';
             config.testAccessKey = testAccessKey;
             config.isActive = true;
+            if (aiAnalysisTemplate !== undefined) config.aiAnalysisTemplate = aiAnalysisTemplate;
+            if (recommendations !== undefined) config.recommendations = recommendations;
             if (resultsPublished !== undefined) config.resultsPublished = resultsPublished;
             await config.save();
         } else {
@@ -95,7 +97,9 @@ export const upsertConfig = async (req, res) => {
                 duration, questions,
                 targetCollege: targetCollege || 'all',
                 testAccessKey, isActive: true,
-                resultsPublished: resultsPublished || false
+                resultsPublished: resultsPublished || false,
+                aiAnalysisTemplate: aiAnalysisTemplate || undefined,
+                recommendations: recommendations || []
             });
             await config.save();
             keyChanged = true;

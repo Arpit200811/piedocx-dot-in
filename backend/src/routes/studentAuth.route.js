@@ -49,13 +49,13 @@ const loginLimiter = rateLimit({
 
 const syncLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 100, // Max 100 syncs per minute per IP
+    max: 1000, // HIGH CONCURRENCY: Supports up to 1000 students on a single campus NAT/IP syncing every minute
     message: { message: "Sync frequency limit exceeded." }
 });
 
 const violationLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 50, // Allow more activity before rate-limiting
+    max: 500, // Safe for high-traffic proctoring logs
     message: { message: "Violation logging error: Request threshold exceeded." }
 });
 

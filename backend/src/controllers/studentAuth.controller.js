@@ -449,12 +449,9 @@ export const submitTest = async (req, res) => {
 
         const config = await TestConfig.findById(activeTestId);
 
-        // Security: Immediate rejection if session or global window is clearly closed
-        if (config && new Date() > new Date(config.endDate)) {
-             return res.status(403).json({ message: 'Submission Rejected: Exam window has closed.' });
-        }
+        // Security: Handled by student.testEndTime (with buffer) which includes config.endDate limit
         if (student.testEndTime) {
-            const bufferMs = 5 * 60 * 1000; // Increased buffer for network safety
+            const bufferMs = 15 * 60 * 1000; // Increased buffer to 15m to prevent false 403s on slow networks
             if (new Date() > new Date(student.testEndTime.getTime() + bufferMs)) {
                 return res.status(403).json({ message: 'Submission Failed: Exam session time limit exceeded.' });
             }
@@ -473,9 +470,15 @@ export const submitTest = async (req, res) => {
             });
 
             // Mark as attempted in API layer to prevent dual-submission
+            // CRITICAL: Ensure we don't overwrite existing 'savedAnswers' if the incoming 'answers' are empty
+            const studentInDB = await ExamStudent.findById(student._id);
+            const finalAnswersToStore = (Object.keys(answers || {}).length >= Object.keys(studentInDB.savedAnswers || {}).length)
+                ? answers 
+                : studentInDB.savedAnswers;
+
             await ExamStudent.findByIdAndUpdate(student._id, { 
                 testAttempted: true,
-                savedAnswers: answers 
+                savedAnswers: finalAnswersToStore 
             });
 
             return res.json({ 
@@ -530,13 +533,22 @@ export const getResults = async (req, res) => {
             score: { $gt: student.score } 
         }) + 1;
 
+        // WORLD-CLASS: Generate contextual "AI" message based on performance
+        let aiAnalysis = config.aiAnalysisTemplate || "Keep learning and practicing. You're on the right track!";
+        if (student.score > (config.questions?.length || 30) * 0.8) {
+            aiAnalysis = `🏆 EXCELLENT! ${aiAnalysis}`;
+        }
+
         res.json({
             score: student.score,
-            total: student.assignedQuestions?.length || 30,
+            total: lastResult?.totalQuestions || student.assignedQuestions?.length || config.questions?.length || 30,
             correctCount: student.correctCount,
             wrongCount: student.wrongCount,
             rank: rank,
-            title: config.title
+            title: config.title,
+            studentId: student.studentId,
+            aiAnalysis: aiAnalysis,
+            recommendations: config.recommendations || []
         });
     } catch (error) {
         console.error("getResults error:", error);

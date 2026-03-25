@@ -29,24 +29,42 @@ if (REDIS_URL) {
 
     try {
         const student = await ExamStudent.findById(studentId);
-        if (!student || student.testAttempted) return;
+        const alreadyGraded = await TestResult.exists({ 
+             student: student?._id || studentId, 
+             testConfig: testId 
+        });
+
+        if (!student || alreadyGraded) {
+            console.log(`⚠️  Skipping Job: Student ${studentId} already graded or not found.`);
+            return;
+        }
 
         const config = await TestConfig.findById(testId);
         const questionsToGrade = student.assignedQuestions;
+
+        // --- WORLD-CLASS DATA PROTECTION ---
+        // If the incoming 'answers' payload is empty or incomplete, 
+        // fall back to the student's last 'Auto-Save' (savedAnswers) from the database.
+        // This prevents students from getting 0 marks due to last-second network glitches.
+        let finalAnswers = answers || {};
+        if (Object.keys(finalAnswers).length === 0 && student.savedAnswers && Object.keys(student.savedAnswers).length > 0) {
+            console.log(`🛡️ Data Recovery: Using Auto-Saved answers for Student ${studentId}`);
+            finalAnswers = student.savedAnswers;
+        }
 
         if (!questionsToGrade || questionsToGrade.length === 0) throw new Error('No questions to grade');
 
         let score = 0, correctCount = 0, wrongCount = 0;
         const detailedAnswers = questionsToGrade.map(q => {
-            const isCorrect = answers[q.questionId] === q.correctAnswer;
-            if (answers[q.questionId]) {
+            const isCorrect = finalAnswers[q.questionId] === q.correctAnswer;
+            if (finalAnswers[q.questionId]) {
                 if (isCorrect) { score++; correctCount++; } 
                 else { wrongCount++; }
             }
             return {
                 questionId: q.questionId,
                 questionText: q.questionText,
-                studentAnswer: answers[q.questionId] || 'SKIPPED',
+                studentAnswer: finalAnswers[q.questionId] || 'SKIPPED',
                 correctAnswer: q.correctAnswer,
                 isCorrect
             };
