@@ -460,7 +460,7 @@ const TestInterface = () => {
                 setIsOutOfSync(true);
             }
         };
-        const startSonicProctor = async (stream) => {
+        /* const startSonicProctor = async (stream) => {
             try {
                 if (!stream || stream.getAudioTracks().length === 0) return;
 
@@ -496,7 +496,7 @@ const TestInterface = () => {
             } catch (e) {
                 console.error("Sonic Proctor Error:", e);
             }
-        };
+        }; */
 
         const initCamera = async () => {
             try {
@@ -513,7 +513,7 @@ const TestInterface = () => {
                 });
                 
                 // --- ONCE CAMERA/MIC IS READY, START AUDIO ANALYSIS ---
-                startSonicProctor(stream);
+                // startSonicProctor(stream);
 
             } catch (err) {
                 console.warn("Camera/Mic access denied or unavailable");
