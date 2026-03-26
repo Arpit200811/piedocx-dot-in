@@ -52,14 +52,23 @@ export const studentAuth = async (req, res, next) => {
         return res.status(403).json({ message: `Access denied. Role: ${decoded.role}` });
     }
 
-    // Verify student exists and is active in DB
+    // Verify student exists, is active, and session is valid (Item #11)
     const ExamStudent = (await import('../models/ExamStudent.js')).default;
-    const student = await ExamStudent.findById(decoded.id).select('status');
+    const student = await ExamStudent.findById(decoded.id).select('status currentSessionId');
     if (!student) {
         return res.status(401).json({ message: 'User record not found.' });
     }
     if (student.status === 'revoked') {
         return res.status(403).json({ message: 'Access revoked. Contact administrator.' });
+    }
+
+    // MULTI-DEVICE LOGIN PROTECTION: Kick oldest session if SID doesn't match
+    if (decoded.sid && student.currentSessionId && decoded.sid !== student.currentSessionId) {
+        console.warn(`[Auth] Session Overridden for: ${decoded.email}. New SID: ${student.currentSessionId}, Old SID: ${decoded.sid}`);
+        return res.status(401).json({ 
+            message: 'Session overtaken by another device. Only one device allowed.',
+            override: true
+        });
     }
 
     req.student = decoded;

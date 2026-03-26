@@ -839,16 +839,23 @@ const TestInterface = () => {
         return () => clearInterval(timerRef.current);
     }, [isStarted, submitting, timeLeft]);
 
-    // 5. Automatic Background Sync (Lower frequency - 60 Seconds - for 300+ users scaling)
+    const lastSyncedAnswersRef = useRef('{}');
     useEffect(() => {
         if (!isStarted || submitting) return;
 
-        // --- WORLD-CLASS SCALING: Add 'Jitter' to avoid Thundering Herd Problem ---
-        // We stagger sync requests by adding a random delay (0-15s) to the 60s window
-        const syncJitter = Math.floor(Math.random() * 15000);
+        // --- WORLD-CLASS SCALING: Adaptive Sync & Jitter ---
+        // Stagger sync requests (0-30s delay) and increase interval to 120s for 300+ users
+        const syncJitter = Math.floor(Math.random() * 30000);
         const autoSync = setInterval(() => {
-            syncProgress(stateRef.current.answers, stateRef.current.timeLeft, true);
-        }, 60000 + syncJitter);
+            const currentAnswersStr = JSON.stringify(stateRef.current.answers);
+            if (currentAnswersStr !== lastSyncedAnswersRef.current) {
+                console.log("[Sync Engine] Change detected. Syncing progress...");
+                syncProgress(stateRef.current.answers, stateRef.current.timeLeft, true);
+                lastSyncedAnswersRef.current = currentAnswersStr;
+            } else {
+                console.log("[Sync Engine] No changes since last sync. Skipping to save bandwidth.");
+            }
+        }, 120000 + syncJitter);
 
         const handleBeforeUnload = (e) => {
             if (isStarted && !submitting) {
@@ -968,6 +975,15 @@ const TestInterface = () => {
     };
     const handleSubmitTest = async (autoSubmit = false, submissionType = 'normal', reason = 'Manual Submit') => {
         if (submitting) return;
+
+        // --- SCALING FIX: Add 0-10s Jitter for Auto-Submissions ---
+        // Prevents 200+ clients hitting the server at the exact same millisecond when timer hits 0
+        if (autoSubmit) {
+            const jitterMs = Math.floor(Math.random() * 10000);
+            console.log(`[High-Concurrency] Staggering auto-submit by ${jitterMs}ms...`);
+            await new Promise(r => setTimeout(r, jitterMs));
+        }
+
         if (!autoSubmit) {
             const result = await Swal.fire({
                 title: 'Submit Assessment?',
@@ -980,47 +996,53 @@ const TestInterface = () => {
             });
             if (!result.isConfirmed) return;
         }
+
         if (saveLockRef.current) return;
         saveLockRef.current = true;
         setSubmitting(true);
-        try {
-            const res = await api.post('/api/student-auth/submit-test', {
-                testId: testInfo?.id,
-                answers,
-                submissionType,
-                reason
-            }, { timeout: 30000 }); // 30s timeout for peace of mind under load
 
-            const localKey = `answers_${studentProfile?.studentId}_${testInfo?.id}`;
-            localStorage.removeItem(localKey);
-            setCelebrate(true);
-            playSound('success');
+        // --- RELIABILITY ENGINE: Recursive Retry with Exponential Backoff ---
+        const attemptSubmit = async (attempt = 1) => {
+            try {
+                const res = await api.post('/api/student-auth/submit-test', {
+                    testId: testInfo?.id,
+                    answers,
+                    submissionType,
+                    reason
+                }, { timeout: 45000 }); // Robust 45s timeout for high-load handling
 
-            if (res.status === 'processing' || res.message?.includes('received')) {
+                const localKey = `answers_${studentProfile?.studentId}_${testInfo?.id}`;
+                localStorage.removeItem(localKey);
+                setCelebrate(true);
+                playSound('success');
+
+                const isAsync = res.status === 'processing' || res.message?.includes('received');
+                
                 Swal.fire({
-                    title: 'Submission Received!',
-                    text: 'Your test is being processed securely. You can safely close the window.',
+                    title: isAsync ? 'Submission Received!' : 'Test Submitted!',
+                    text: isAsync ? 'Securely saved to cloud. Redirecting...' : 'Redirecting to feedback...',
                     icon: 'success',
                     timer: 3000,
                     showConfirmButton: false,
                     willClose: () => navigate('/feedback')
                 });
-            } else {
-                Swal.fire({
-                    title: 'Test Submitted!',
-                    text: 'Redirecting to feedback...',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false,
-                    willClose: () => navigate('/feedback')
-                });
+            } catch (err) {
+                console.error(`Submission Attempt #${attempt} Failed:`, err);
+                if (attempt < 5) { // Try up to 5 times (1s, 2s, 4s, 8s, 16s)
+                    const backoffMs = Math.pow(2, attempt) * 1000;
+                    console.warn(`[Network Resilience] Retrying in ${backoffMs}ms...`);
+                    await new Promise(r => setTimeout(r, backoffMs));
+                    return attemptSubmit(attempt + 1);
+                }
+
+                const errorMsg = err.response?.data?.message || 'Heavy server load. Please dont close windows. Retrying failed.';
+                Swal.fire('Extreme Sync Delay', errorMsg, 'error');
+                setSubmitting(false);
+                saveLockRef.current = false;
             }
-        } catch (err) {
-            const errorMsg = err.response?.data?.message || 'Submission failed. Please check internet and try again.';
-            Swal.fire('Submission Error', errorMsg, 'error');
-            setSubmitting(false);
-            saveLockRef.current = false;
-        }
+        };
+
+        await attemptSubmit();
     };
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;

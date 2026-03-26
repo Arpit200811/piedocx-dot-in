@@ -50,16 +50,33 @@ if (REDIS_URL) {
         if (!questionsToGrade || questionsToGrade.length === 0) throw new Error('No questions to grade');
 
         let score = 0, correctCount = 0, wrongCount = 0;
+        
+        console.log(`📊 Grading Student ${studentId}: Found ${questionsToGrade.length} assigned questions and ${Object.keys(finalAnswers).length} answers.`);
+
         const detailedAnswers = questionsToGrade.map(q => {
-            const isCorrect = finalAnswers[q.questionId] === q.correctAnswer;
-            if (finalAnswers[q.questionId]) {
-                if (isCorrect) { score++; correctCount++; } 
-                else { wrongCount++; }
+            const qId = q.questionId || q._id?.toString();
+            // Get student answer (check both possible ID keys for safety)
+            let studentAnswerRaw = finalAnswers[qId] || finalAnswers[q.questionId] || finalAnswers[q._id];
+            
+            const studentAnswer = String(studentAnswerRaw || '').trim();
+            const correctAnswer = String(q.correctAnswer || '').trim();
+            
+            // Robust Case-Insensitive Comparison
+            const isCorrect = studentAnswer.toLowerCase() === correctAnswer.toLowerCase();
+            
+            if (studentAnswerRaw) {
+                if (isCorrect) { 
+                    score++; 
+                    correctCount++; 
+                } else { 
+                    wrongCount++; 
+                }
             }
+            
             return {
-                questionId: q.questionId,
+                questionId: qId,
                 questionText: q.questionText,
-                studentAnswer: finalAnswers[q.questionId] || 'SKIPPED',
+                studentAnswer: studentAnswer || 'SKIPPED',
                 correctAnswer: q.correctAnswer,
                 isCorrect
             };

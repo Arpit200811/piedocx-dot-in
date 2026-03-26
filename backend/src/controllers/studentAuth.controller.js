@@ -100,9 +100,20 @@ export const googleLogin = async (req, res) => {
             return res.status(403).json({ message: 'Access revoked. Contact administrator.' });
         }
 
+        const currentSessionId = crypto.randomBytes(16).toString('hex');
+        
+        // Update Session ID and IP for single-device locking
+        await ExamStudent.findByIdAndUpdate(student._id, { 
+            $set: { 
+                currentSessionId,
+                lastIp: req.ip || req.headers['x-forwarded-for'] || 'unknown'
+            } 
+        });
+
         const sessionToken = jwt.sign(
             { 
                 id: student._id, 
+                sid: currentSessionId, // FEATURE #11: Session Invalidation Signature
                 email: student.email, 
                 role: 'student',
                 branch: student.branch,
@@ -302,7 +313,9 @@ export const getQuestions = async (req, res) => {
             finalQuestions = student.assignedQuestions.map(q => ({
                 _id: q.questionId, 
                 questionText: q.questionText,
-                options: q.options
+                questionTextHindi: q.questionTextHindi || null,
+                options: q.options,
+                optionsHindi: q.optionsHindi || []
             }));
         } else {
             const seed = req.student.id;
@@ -438,7 +451,12 @@ export const submitTest = async (req, res) => {
         if (!student) return res.status(404).json({ message: 'Student not found' });
 
         if (student.testAttempted) {
-             return res.status(400).json({ message: 'You have already submitted this test.' });
+            // SCALING FIX: If already submitted, return success instead of error 
+            // to avoid student panic on double-submit / network retries.
+            return res.json({ 
+                message: 'Your test was already received and is being processed.',
+                status: 'processing'
+            });
         }
 
         const studentYearGroup = getYearGroup(student.year);
@@ -459,8 +477,6 @@ export const submitTest = async (req, res) => {
         }
 
         // --- WORLD CLASS RELIABILITY: OFF-LOAD TO BACKGROUND QUEUE ---
-        // This ensures the student gets a "Success" response immediately, 
-        // while the heavy scoring and DB history happens safely in the background.
         try {
             await submissionQueue.add(`submit_${student._id}`, {
                 studentId: student._id,
@@ -471,11 +487,13 @@ export const submitTest = async (req, res) => {
             });
 
             // Mark as attempted in API layer to prevent dual-submission
-            // CRITICAL: Ensure we don't overwrite existing 'savedAnswers' if the incoming 'answers' are empty
-            const studentInDB = await ExamStudent.findById(student._id);
-            const finalAnswersToStore = (Object.keys(answers || {}).length >= Object.keys(studentInDB.savedAnswers || {}).length)
-                ? answers 
-                : studentInDB.savedAnswers;
+            // Use existing student object to save a DB roundtrip
+            const currentAnswers = answers || {};
+            const savedAnswersInDB = student.savedAnswers || {};
+            
+            const finalAnswersToStore = (Object.keys(currentAnswers).length >= Object.keys(savedAnswersInDB).length)
+                ? currentAnswers 
+                : savedAnswersInDB;
 
             await ExamStudent.findByIdAndUpdate(student._id, { 
                 testAttempted: true,
@@ -483,7 +501,7 @@ export const submitTest = async (req, res) => {
             });
 
             return res.json({ 
-                message: 'Test received and is being processed. You can now close the window.',
+                message: 'Test received and is being processed.',
                 status: 'processing'
             });
         } catch (queueErr) {
@@ -664,27 +682,35 @@ export const getLeaderboard = async (req, res) => {
         
         let filter = { testAttempted: true };
         
-        // If we can identify the student, filter to their group
         if (student) {
             const { getBranchGroup, getYearGroup } = await import('../utils/branchMapping.js');
             const yearGroup = getYearGroup(student.year);
             const branchGroup = getBranchGroup(student.branch);
             
+            const type = req.query.type || 'group'; // Default to group-wise for relevance
+            
+            let query = {};
+            if (type === 'group') {
+                query = { 
+                    yearGroup,
+                    branchGroup
+                };
+            }
+
             // Feature #10 Fix: Use TestResult for accurate scores (not stale ExamStudent.score)
             const topResults = await TestResult
-                .find({})
+                .find(query)
                 .sort({ score: -1, createdAt: 1 })
-                .limit(10);
+                .limit(20);
 
             // Get unique students from results (in case of multiple attempts)
             const seenStudents = new Set();
-            const uniqueTopResults = topResults.filter(r => {
+            const filteredResults = topResults.filter(r => {
                 if (seenStudents.has(r.studentId)) return false;
                 seenStudents.add(r.studentId);
                 return true;
             });
-
-            const leaderboard = uniqueTopResults.map((r, index) => ({
+            const leaderboard = filteredResults.map((r, index) => ({
                 rank: index + 1,
                 name: r.fullName,
                 college: r.college,

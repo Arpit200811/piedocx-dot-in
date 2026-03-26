@@ -42,7 +42,9 @@ const schema = new mongoose.Schema({
   // Real-time Status for Admin Dashboard (Item 6)
   isOnline: { type: Boolean, default: false },
   lastSeen: { type: Date, default: Date.now },
-  deviceInfo: { type: Object, default: {} }
+  deviceInfo: { type: Object, default: {} },
+  currentSessionId: { type: String, index: true }, // SESSION LOCK FOR SECURITY
+  lastIp: { type: String }
 });
 
 // Compound index for search optimization in admin panel

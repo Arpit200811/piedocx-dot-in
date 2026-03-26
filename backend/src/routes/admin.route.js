@@ -24,7 +24,8 @@ import {
   deleteFeedback,
   getAuditLogs,
   getStudentDetailedAnswers,
-  getQuestionAnalytics
+  getQuestionAnalytics,
+  recalculateAllScores
 } from "../controllers/admin.controller.js";
 import { adminAuth } from "../middlewares/auth.middleware.js";
 
@@ -56,6 +57,7 @@ router.delete("/feedbacks/:id", adminAuth, deleteFeedback);
 router.get("/audit-logs", adminAuth, getAuditLogs);
 router.get("/student-test-detail/:id", adminAuth, getStudentDetailedAnswers);
 router.get("/question-analytics/:testConfigId", adminAuth, getQuestionAnalytics);
+router.get("/re-grade-all", adminAuth, recalculateAllScores);
 
 export default router;
 

@@ -248,8 +248,10 @@ const AdminResultArchives = () => {
                             onChange={(e) => setYearGroup(e.target.value)}
                             className="bg-transparent border-none outline-none text-[11px] font-black uppercase text-slate-700 cursor-pointer"
                         >
-                            <option value="1-2">1st & 2nd Year</option>
-                            <option value="3-4">3rd & 4th Year</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
                         </select>
                     </div>
 

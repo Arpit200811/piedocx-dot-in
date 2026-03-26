@@ -3,14 +3,14 @@ import api from '../../utils/api';
 import { Trophy, Medal, Crown, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const Leaderboard = () => {
+const Leaderboard = ({ type = 'global', currentStudentId = null }) => {
     const [leaders, setLeaders] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchLeaderboard = async () => {
             try {
-                const data = await api.get('/api/student-auth/leaderboard');
+                const data = await api.get(`/api/student-auth/leaderboard?type=${type}`);
                 setLeaders(data);
             } catch (err) {
                 console.error("Leaderboard fetch failed", err);
@@ -19,7 +19,7 @@ const Leaderboard = () => {
             }
         };
         fetchLeaderboard();
-    }, []);
+    }, [type]);
 
     if (loading) return (
         <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm animate-pulse">
@@ -60,6 +60,7 @@ const Leaderboard = () => {
                         transition={{ delay: index * 0.1 }}
                         key={student.id} 
                         className={`flex items-center gap-3 md:gap-4 p-3 md:p-4 rounded-2xl md:rounded-3xl transition-all border ${
+                            student.id === currentStudentId ? 'bg-blue-50 border-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.15)] ring-2 ring-blue-500/10' :
                             index === 0 ? 'bg-amber-50/50 border-amber-100 shadow-md scale-[1.02]' : 
                             index === 1 ? 'bg-slate-50 border-slate-200' :
                             index === 2 ? 'bg-orange-50/30 border-orange-100' : 'bg-transparent border-transparent hover:bg-slate-50'

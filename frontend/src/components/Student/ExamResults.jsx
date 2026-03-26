@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import Swal from 'sweetalert2';
+import Leaderboard from './Leaderboard';
 
 const ExamResults = () => {
     const navigate = useNavigate();
@@ -255,6 +256,22 @@ const ExamResults = () => {
                         </div>
                     </motion.div>
                 )}
+
+                {/* FEATURE #10: Batch Leaderboard on Result Page */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="space-y-6"
+                >
+                    <div className="flex items-center justify-between px-4">
+                        <div>
+                            <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">Batch <span className="text-amber-500">Standings_</span></h3>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 italic opacity-60">Rankings for {results.branch} - {results.year}</p>
+                        </div>
+                    </div>
+                    <Leaderboard currentStudentId={results.studentId} type="group" />
+                </motion.div>
 
                 {/* Footer Actions */}
                 <div className="grid md:grid-cols-2 gap-6 pb-12">

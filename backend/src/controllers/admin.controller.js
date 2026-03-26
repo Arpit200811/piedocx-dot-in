@@ -198,7 +198,13 @@ export const getLiveTestMonitor = async (req, res) => {
                 let draftScore = 0;
                 const answers = studentObj.savedAnswers || {};
                 studentObj.assignedQuestions.forEach(q => {
-                    if (answers[q.questionId] === q.correctAnswer) {
+                    const qId = q.questionId || q._id?.toString();
+                    const studentAnswerRaw = answers[qId] || answers[q.questionId] || answers[q._id];
+                    
+                    const studentAnswer = String(studentAnswerRaw || '').trim();
+                    const correctAnswer = String(q.correctAnswer || '').trim();
+
+                    if (studentAnswerRaw && studentAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
                         draftScore++;
                     }
                 });
@@ -754,5 +760,61 @@ export const getQuestionAnalytics = async (req, res) => {
     } catch (err) {
         console.error("getQuestionAnalytics error:", err);
         res.status(500).json({ message: "Analytics engine failure" });
+    }
+};
+
+export const recalculateAllScores = async (req, res) => {
+    try {
+        console.log("🚀 Emergency Re-grading started...");
+        const students = await ExamStudent.find({ testAttempted: true });
+        let summary = [];
+
+        for (const student of students) {
+            const questions = student.assignedQuestions || [];
+            const answers = student.savedAnswers || {};
+            
+            if (questions.length === 0) continue;
+
+            let score = 0, correctCount = 0, wrongCount = 0;
+            questions.forEach(q => {
+                const qId = q.questionId || q._id?.toString();
+                const studentAnswerRaw = answers[qId] || answers[q.questionId] || answers[q._id];
+                const studentAnswer = String(studentAnswerRaw || '').trim().toLowerCase();
+                const correctAnswer = String(q.correctAnswer || '').trim().toLowerCase();
+
+                if (studentAnswerRaw) {
+                    if (studentAnswer === correctAnswer) {
+                        score++;
+                        correctCount++;
+                    } else {
+                        wrongCount++;
+                    }
+                }
+            });
+
+            // Update Student
+            const oldScore = student.score;
+            student.score = score;
+            student.correctCount = correctCount;
+            student.wrongCount = wrongCount;
+            await student.save();
+
+            // Update corresponding TestResult records
+            await TestResult.updateMany(
+                { student: student._id },
+                { $set: { score, correctCount, wrongCount } }
+            );
+            
+            summary.push({ name: student.fullName, oldScore, newScore: score });
+        }
+
+        console.log(`✅ Re-grading complete. Recovered ${summary.length} students.`);
+        res.json({ 
+            message: `Successfully recalculated scores for ${summary.length} students.`, 
+            summary 
+        });
+    } catch (error) {
+        console.error("recalculateAllScores error:", error);
+        res.status(500).json({ message: "Error during recalculation" });
     }
 };
