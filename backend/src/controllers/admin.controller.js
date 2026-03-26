@@ -184,7 +184,7 @@ export const getStudentDetailedAnswers = async (req, res) => {
 
 export const getLiveTestMonitor = async (req, res) => {
     try {
-        const examStudents = await ExamStudent.find({}, 'fullName email college branch year testAttempted testStartTime testEndTime attemptedCount score violationCount violationHistory assignedQuestions isOnline lastSeen testId')
+        const examStudents = await ExamStudent.find({}, 'fullName email college branch year testAttempted testStartTime testEndTime attemptedCount score violationCount violationHistory assignedQuestions isOnline lastSeen testId savedAnswers')
             .sort({ testAttempted: 1, testStartTime: -1 });
 
         const internStudents = await InternStudent.find({}, 'name registration college branch year technology startDate endDate');

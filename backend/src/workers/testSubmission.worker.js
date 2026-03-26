@@ -29,13 +29,8 @@ if (REDIS_URL) {
 
     try {
         const student = await ExamStudent.findById(studentId);
-        const alreadyGraded = await TestResult.exists({ 
-             student: student?._id || studentId, 
-             testConfig: testId 
-        });
-
-        if (!student || alreadyGraded) {
-            console.log(`⚠️  Skipping Job: Student ${studentId} already graded or not found.`);
+        if (!student) {
+            console.log(`⚠️  Skipping Job: Student ${studentId} not found.`);
             return;
         }
 
