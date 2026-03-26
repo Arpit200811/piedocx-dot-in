@@ -100,6 +100,7 @@ const StudentDashboard = () => {
 
                 if (data.yearGroup === myYear && data.branchGroup === myBranch) {
                     fetchTestInfo();
+                    fetchProfile();
                     Swal.fire({
                         title: data.resultsPublished ? 'Results Published!' : 'Exam Updated',
                         text: data.resultsPublished ? `Results for ${data.title} are now live.` : `New exam settings: ${data.title}`,

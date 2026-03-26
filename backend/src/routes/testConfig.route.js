@@ -4,6 +4,7 @@ import TestConfig from '../models/TestConfig.js';
 import ExamStudent from '../models/ExamStudent.js';
 import { adminAuth } from '../middlewares/auth.middleware.js';
 import { getIO } from '../utils/socketService.js';
+import { delCache } from '../utils/cacheService.js';
 
 const router = express.Router();
 
@@ -77,7 +78,7 @@ router.get('/time-check', async (req, res) => {
 
 // Create or Update Test Config (Group Specific)
 router.post('/', adminAuth, async (req, res) => {
-    const { title, yearGroup, branchGroup, startDate, endDate, duration, questions, resultsPublished, testAccessKey } = req.body;
+    const { title, yearGroup, branchGroup, startDate, endDate, duration, questions, resultsPublished, testAccessKey, resetProgress } = req.body;
     let { targetCollege } = req.body;
 
     if (targetCollege) {
@@ -97,7 +98,7 @@ router.post('/', adminAuth, async (req, res) => {
         
         if (config) {
             console.log(`[TestConfig] Found existing config to update: ${config._id}`);
-            if (config.testAccessKey !== testAccessKey) {
+            if (config.testAccessKey !== testAccessKey || resetProgress) {
                 keyChanged = true;
             }
             config.title = title;
@@ -134,27 +135,20 @@ router.post('/', adminAuth, async (req, res) => {
 
         // If Key is changed or newly created, reset student attempts for this group
         if (keyChanged) {
-            console.log(`[TestConfig] Access Key changed for ${yearGroup}/${branchGroup}. Resetting student attempts...`);
+            console.log(`[TestConfig] Resetting student attempts for ${yearGroup}/${branchGroup}...`);
             
-            // Comprehensive branch list matching branchMapping.js
-            const csItBranches = ['CSE', 'IT', 'Computer Science', 'Information Technology', 'CS', 'Software Engineering', 'AI', 'Data Science', 'DS'];
-            const coreBranches = ['ECE', 'EE', 'ME', 'Civil', 'Auto', 'Automobile', 'Electronics', 'Electrical', 'Mechanical'];
-
+            const csItRegex = /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS)\b/i;
             const branchFilter = branchGroup === 'CS-IT' 
-                ? { $in: csItBranches.map(b => new RegExp(b, 'i')) }
-                : { $in: coreBranches.map(b => new RegExp(b, 'i')) };
+                ? { $regex: csItRegex }
+                : { $not: { $regex: csItRegex } };
 
-            const yearPrefixes = yearGroup.split('-'); // ['1', '2'] or ['3']
+            const yearFilter = yearGroup === '3-4'
+                ? { year: { $regex: /3|4|3rd|4th|third|fourth|final|graduated/i } }
+                : { year: { $not: { $regex: /3|4|3rd|4th|third|fourth|final|graduated/i } } };
 
             await ExamStudent.updateMany(
                 { 
-                    $or: [
-                        { year: { $in: yearPrefixes } },
-                        { year: { $in: yearPrefixes.map(y => `${y}st`) } },
-                        { year: { $in: yearPrefixes.map(y => `${y}nd`) } },
-                        { year: { $in: yearPrefixes.map(y => `${y}rd`) } },
-                        { year: { $in: yearPrefixes.map(y => `${y}th`) } }
-                    ],
+                    ...yearFilter,
                     branch: branchFilter 
                 }, 
                 { 
@@ -167,10 +161,21 @@ router.post('/', adminAuth, async (req, res) => {
                         savedAnswers: {},
                         testStartTime: null,
                         testEndTime: null,
-                        violationCount: 0
+                        violationCount: 0,
+                        testId: null
                     } 
                 }
             );
+        }
+
+        // Cache Clearing to ensure students can see the new test immediately
+        try {
+            const cacheKeyBase = `test_info_${yearGroup}_${branchGroup}_`;
+            await delCache(`${cacheKeyBase}all`);
+            // We can't easily clear all college-specific caches without pattern matching (which Redis supports)
+            // but clearing 'all' covers the most common case for 300+ students.
+        } catch (err) {
+             console.error("Cache Clear Error:", err);
         }
         
         const io = getIO();

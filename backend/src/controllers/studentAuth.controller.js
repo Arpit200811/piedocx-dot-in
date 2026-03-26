@@ -177,7 +177,8 @@ export const getTestInfo = async (req, res) => {
         };
 
         if (studentCollege) {
-            query.$or.unshift({ targetCollege: { $regex: new RegExp(`^${studentCollege}$`, "i") } });
+            const escapedCollege = studentCollege.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            query.$or.unshift({ targetCollege: { $regex: new RegExp(`^${escapedCollege}$`, "i") } });
         }
 
         const cacheKey = `test_info_${studentYearGroup}_${studentBranchGroup}_${studentCollege || 'all'}`;
