@@ -14,7 +14,6 @@ export const updateProfileSchema = z.object({
 });
 
 export const syncProgressSchema = z.object({
-  // Allows record where values can be string, null or undefined (for skipped questions)
   answers: z.record(z.union([z.string(), z.null(), z.undefined()])).refine(obj => Object.keys(obj).length <= 200, 'Too many answers').default({}),
   testId: z.string().optional(),
   timeLeft: z.number().optional()
