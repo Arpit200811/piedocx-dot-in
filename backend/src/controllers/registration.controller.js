@@ -129,16 +129,23 @@ export const getAllStudents = async (req, res) => {
             if (endDate) query.createdAt.$lte = new Date(new Date(endDate).setHours(23, 59, 59));
         }
 
-        const students = await ExamStudent.find(query, {
-            profilePicture: 0,
-            qrCode: 0,
-            signature: 0,
-            assignedQuestions: 0,
-            savedAnswers: 0
-        })
-        .sort({ createdAt: -1 })
-        .skip(skipCount)
-        .limit(limit);
+        // USE AGGREGATION TO GET TOTAL QUESTIONS COUNT WITHOUT LOADING THE FULL ARRAY
+        const students = await ExamStudent.aggregate([
+            { $match: query },
+            { $addFields: { 
+                totalQuestions: { $size: { $ifNull: ["$assignedQuestions", []] } } 
+            }},
+            { $project: {
+                profilePicture: 0,
+                qrCode: 0,
+                signature: 0,
+                assignedQuestions: 0,
+                savedAnswers: 0
+            }},
+            { $sort: { createdAt: -1 } },
+            { $skip: skipCount },
+            { $limit: limit }
+        ]);
 
         if (isExport) {
             return res.json(students);

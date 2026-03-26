@@ -96,9 +96,7 @@ const AdminResultDetails = () => {
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">
-                {/* Left Column: Stats & Timeline */}
                 <div className="space-y-6">
-                    {/* Detailed Stats */}
                     <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
                         <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
                             <Activity size={16} className="text-blue-500" /> Performance Metrics
@@ -115,9 +113,9 @@ const AdminResultDetails = () => {
                             <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 col-span-2">
                                 <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest mb-1">Accuracy Rate</p>
                                 <div className="flex items-center justify-between">
-                                    <p className="text-2xl font-black text-amber-700">{Math.round((data.score / data.totalQuestions) * 100)}%</p>
+                                    <p className="text-2xl font-black text-amber-700">{data.totalQuestions > 0 ? Math.round((data.score / data.totalQuestions) * 100) : 0}%</p>
                                     <div className="w-24 h-2 bg-amber-200 rounded-full overflow-hidden">
-                                        <div className="h-full bg-amber-500" style={{ width: `${(data.score / data.totalQuestions) * 100}%` }}></div>
+                                        <div className="h-full bg-amber-500" style={{ width: `${data.totalQuestions > 0 ? (data.score / data.totalQuestions) * 100 : 0}%` }}></div>
                                     </div>
                                 </div>
                             </div>

@@ -76,14 +76,24 @@ if (REDIS_URL) {
             return {
                 questionId: qId,
                 questionText: q.questionText,
+                questionTextHindi: q.questionTextHindi || q.questionText,
                 studentAnswer: studentAnswer || 'SKIPPED',
                 correctAnswer: q.correctAnswer,
                 isCorrect
             };
         });
 
-        // 1. Update Student Record
+        // 1. Update Student Record & Regenerate Signature (Feature #15 Fix)
         const analysisData = generateAIAnalysis(score, questionsToGrade.length, correctCount, wrongCount, student.violationCount);
+        
+        // --- NEW: RE-SIGN CERTIFICATE WITH FINAL SCORE ---
+        const { generateCertificateSignature } = await import('../utils/certUtils.js');
+        const finalSignature = generateCertificateSignature({
+            studentId: student.studentId,
+            course: student.branch,
+            issueDate: new Date(student.createdAt || Date.now()).toISOString().split('T')[0],
+            score: score
+        });
 
         await ExamStudent.findByIdAndUpdate(studentId, {
             $set: {
@@ -91,7 +101,8 @@ if (REDIS_URL) {
                 score,
                 correctCount,
                 wrongCount,
-                savedAnswers: answers
+                savedAnswers: answers,
+                signature: finalSignature // Ensure cryptographic integrity
             }
         });
 
@@ -117,21 +128,15 @@ if (REDIS_URL) {
             submissionReason: reason || 'Batched Worker Process',
             answers: detailedAnswers,
             testDate: todayStr,
-            
-            // FEATURE #1: AI Results Doctor analysis results
             aiAnalysis: analysisData.analysis,
             recommendations: analysisData.recommendations
         });
-
-        // 3. Update Global Stats (Optional: could be another queue)
         await TestConfig.findByIdAndUpdate(testId, { $inc: { appearedCount: 1 } });
-
         console.log(`✅ Submission Success: ${student.email} | Score: ${score}`);
     } catch (err) {
         console.error(`❌ Worker Error for Student ${studentId}:`, err.message);
-        throw err; // Allow BullMQ to retry
+        throw err; 
     }
-}, { connection, concurrency: 5 }); // Process 5 submissions at a time
-
+}, { connection, concurrency: 5 });     
 console.log('⚡ BullMQ: Submission Worker Active');
 }

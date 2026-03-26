@@ -313,19 +313,17 @@ export const getQuestions = async (req, res) => {
             finalQuestions = student.assignedQuestions.map(q => ({
                 _id: q.questionId, 
                 questionText: q.questionText,
-                questionTextHindi: q.questionTextHindi || null,
+                questionTextHindi: q.questionTextHindi || q.questionText, // Fallback to English if missing
                 options: q.options,
                 optionsHindi: q.optionsHindi || []
             }));
         } else {
             const seed = req.student.id;
             
-            // CACHE OPTIMIZATION: Cache the master question list for this config
             const configCacheKey = `config_q_${config._id}`;
             let masterQuestions = await getCache(configCacheKey);
             
             if (!masterQuestions) {
-                // Filter unique questions by trimmed text
                 const seen = new Set();
                 masterQuestions = config.questions.filter(q => {
                     const text = q.questionText.trim().toLowerCase();
@@ -333,7 +331,6 @@ export const getQuestions = async (req, res) => {
                     seen.add(text);
                     return true;
                 });
-                // Cache questions for 10 minutes
                 await setCache(configCacheKey, masterQuestions, 600);
             }
 
@@ -341,7 +338,7 @@ export const getQuestions = async (req, res) => {
                 .map(q => ({ q, sort: crypto.createHash('md5').update(seed + q._id).digest('hex') }))
                 .sort((a, b) => a.sort.localeCompare(b.sort))
                 .map(item => item.q)
-                .slice(0, 30); // LIMIT: Only 30 questions per student
+                .slice(0, 30);
 
             const questionsToSave = selectedQuestions
                 .map(q => ({ q, sort: crypto.createHash('md5').update(q._id + seed).digest('hex') }))
@@ -356,7 +353,9 @@ export const getQuestions = async (req, res) => {
                     return {
                         questionId: item.q._id.toString(),
                         questionText: item.q.questionText,
+                        questionTextHindi: item.q.questionTextHindi || item.q.questionText,
                         options: originalOptions,
+                        optionsHindi: item.q.optionsHindi || [],
                         correctAnswer: item.q.correctAnswer
                     };
                 });
@@ -396,7 +395,7 @@ export const getQuestions = async (req, res) => {
                 finalQuestions = freshStudent.assignedQuestions.map(q => ({
                     _id: q.questionId,
                     questionText: q.questionText,
-                    questionTextHindi: q.questionTextHindi || null,
+                    questionTextHindi: q.questionTextHindi || q.questionText,
                     options: q.options,
                     optionsHindi: q.optionsHindi || []
                 }));
@@ -426,9 +425,6 @@ export const syncProgress = async (req, res) => {
     try {
         const { answers, testId } = req.body;
         const attemptedCount = Object.keys(answers || {}).length;
-
-        // SCALING OPTIMIZATION: Do not calculate score during sync. 
-        // Sync is just for persistence of answers. Grading happens only at final submission.
         await ExamStudent.findByIdAndUpdate(req.student.id, { 
             $set: { 
                 attemptedCount,
@@ -451,8 +447,6 @@ export const submitTest = async (req, res) => {
         if (!student) return res.status(404).json({ message: 'Student not found' });
 
         if (student.testAttempted) {
-            // SCALING FIX: If already submitted, return success instead of error 
-            // to avoid student panic on double-submit / network retries.
             return res.json({ 
                 message: 'Your test was already received and is being processed.',
                 status: 'processing'
@@ -461,22 +455,16 @@ export const submitTest = async (req, res) => {
 
         const studentYearGroup = getYearGroup(student.year);
         const studentBranchGroup = getBranchGroup(student.branch);
-        
-        // Find the specific config for this attempt
         const activeTestId = testId || student.testId;
         if (!activeTestId) return res.status(400).json({ message: 'No active test associated with this session.' });
 
         const config = await TestConfig.findById(activeTestId);
-
-        // Security: Handled by student.testEndTime (with buffer) which includes config.endDate limit
         if (student.testEndTime) {
-            const bufferMs = 15 * 60 * 1000; // Increased buffer to 15m to prevent false 403s on slow networks
+            const bufferMs = 15 * 60 * 1000;
             if (new Date() > new Date(student.testEndTime.getTime() + bufferMs)) {
                 return res.status(403).json({ message: 'Submission Failed: Exam session time limit exceeded.' });
             }
         }
-
-        // --- WORLD CLASS RELIABILITY: OFF-LOAD TO BACKGROUND QUEUE ---
         try {
             await submissionQueue.add(`submit_${student._id}`, {
                 studentId: student._id,
@@ -485,28 +473,22 @@ export const submitTest = async (req, res) => {
                 submissionType: submissionType || 'normal',
                 reason: reason || 'Manual Submit'
             });
-
-            // Mark as attempted in API layer to prevent dual-submission
-            // Use existing student object to save a DB roundtrip
             const currentAnswers = answers || {};
             const savedAnswersInDB = student.savedAnswers || {};
             
             const finalAnswersToStore = (Object.keys(currentAnswers).length >= Object.keys(savedAnswersInDB).length)
                 ? currentAnswers 
                 : savedAnswersInDB;
-
             await ExamStudent.findByIdAndUpdate(student._id, { 
                 testAttempted: true,
                 savedAnswers: finalAnswersToStore 
             });
-
             return res.json({ 
                 message: 'Test received and is being processed.',
                 status: 'processing'
             });
         } catch (queueErr) {
             console.error("Queue Error:", queueErr);
-            // Fallback: If Redis/Queue fails, try to save minimal state to avoid data loss
             await ExamStudent.findByIdAndUpdate(student._id, { 
                 testAttempted: true,
                 savedAnswers: answers 
@@ -518,8 +500,6 @@ export const submitTest = async (req, res) => {
         res.status(500).json({ message: 'Submission server error' });
     }
 };
-
-
 export const getResults = async (req, res) => {
     try {
         const student = await ExamStudent.findById(req.student.id);
@@ -527,16 +507,12 @@ export const getResults = async (req, res) => {
 
         const studentYearGroup = getYearGroup(student.year);
         const studentBranchGroup = getBranchGroup(student.branch);
-
-        // In getResults, we want to find the test results even if the configuration is no longer 'active'
-        // First, see if we have a recorded TestResult for this student
         const lastResult = await TestResult.findOne({ student: student._id }).sort({ createdAt: -1 });
         
         let config = null;
         if (lastResult) {
             config = await TestConfig.findById(lastResult.testConfig);
         } else {
-            // Fallback to searching by group if no result record found yet (legacy or in-flight)
             config = await TestConfig.findOne({
                 yearGroup: studentYearGroup,
                 branchGroup: studentBranchGroup
@@ -546,18 +522,14 @@ export const getResults = async (req, res) => {
         if (!config || !config.resultsPublished) {
             return res.status(403).json({ message: 'Results are not published yet.' });
         }
-
         const rank = await TestResult.countDocuments({ 
             testConfig: config._id, 
             score: { $gt: student.score } 
         }) + 1;
-
-        // WORLD-CLASS: Generate contextual "AI" message based on performance
         let aiAnalysis = config.aiAnalysisTemplate || "Keep learning and practicing. You're on the right track!";
         if (student.score > (config.questions?.length || 30) * 0.8) {
             aiAnalysis = `🏆 EXCELLENT! ${aiAnalysis}`;
         }
-
         res.json({
             score: student.score,
             total: lastResult?.totalQuestions || student.assignedQuestions?.length || config.questions?.length || 30,
@@ -574,7 +546,6 @@ export const getResults = async (req, res) => {
         res.status(500).json({ message: 'Error fetching results' });
     }
 };
-
 export const logViolation = async (req, res) => {
     try {
         const { reason } = req.body;
@@ -585,7 +556,6 @@ export const logViolation = async (req, res) => {
             reason: reason || 'Unknown violation',
             timestamp: new Date()
         };
-
         const updatedStudent = await ExamStudent.findByIdAndUpdate(
             req.student.id,
             { 
@@ -605,7 +575,6 @@ export const logViolation = async (req, res) => {
         res.status(500).json({ message: 'Failed to log violation' });
     }
 };
-
 export const submitFeedback = async (req, res) => {
     try {
         const { responses, testId } = req.body;
@@ -614,7 +583,6 @@ export const submitFeedback = async (req, res) => {
             testId,
             responses
         });
-
         await newFeedback.save();
         await ExamStudent.findByIdAndUpdate(req.student.id, { feedbackSubmitted: true });
         res.json({ message: 'Feedback submitted successfully' });
@@ -623,13 +591,11 @@ export const submitFeedback = async (req, res) => {
         res.status(500).json({ message: 'Feedback submission failed' });
     }
 };
-
 export const getActiveBulletins = async (req, res) => {
     try {
         const cacheKey = 'active_bulletins';
         const cachedData = await getCache(cacheKey);
         if (cachedData) return res.json(cachedData);
-
         const bulletins = await Bulletin.find({ isActive: true }).sort({ createdAt: -1 });
         await setCache(cacheKey, bulletins, 300); // 5 mins
         res.json(bulletins);
@@ -637,7 +603,6 @@ export const getActiveBulletins = async (req, res) => {
         res.status(500).json({ message: "Error fetching bulletins" });
     }
 };
-
 export const getActiveResources = async (req, res) => {
     try {
         const cacheKey = 'active_resources';

@@ -1063,6 +1063,8 @@ const AdminCertificateManager = () => {
                     studentId: selectedStudent.studentId,
                     certificateId: selectedStudent.certificateId,
                     _id: selectedStudent._id,
+                    score: selectedStudent.score || 0,
+                    totalQuestions: selectedStudent.totalQuestions || 30
                   }}
                   userEmail={selectedStudent.email}
                   autoSend={false}
@@ -1085,6 +1087,8 @@ const AdminCertificateManager = () => {
               certificateId: sharingStudent.certificateId,
               _id: sharingStudent._id,
               technology: sharingStudent.technology,
+              score: sharingStudent.score || 0,
+              totalQuestions: sharingStudent.totalQuestions || 30
             }}
             userEmail={sharingStudent.email}
             autoSend={false}

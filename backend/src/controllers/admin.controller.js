@@ -327,7 +327,9 @@ export const closeGroupSession = async (req, res) => {
         const todayStr = new Date().toISOString().split('T')[0];
         const studentIds = targetedStudents.map(s => s._id);
 
-        const resultsToCreate = targetedStudents.map(s => {
+        const resultsToCreate = targetedStudents
+            .filter(s => s.assignedQuestions && s.assignedQuestions.length > 0)
+            .map(s => {
             let score = 0;
             let correctCount = 0;
             let wrongCount = 0;
@@ -336,9 +338,12 @@ export const closeGroupSession = async (req, res) => {
 
             if (questions.length > 0) {
                 questions.forEach(q => {
-                    const studentAnswer = answers[q.questionId];
+                    const qId = q.questionId || q._id?.toString(); // Added safety for qId
+                    const studentAnswer = answers[qId] || answers[q.questionId] || answers[q._id]; // Added robustness
                     if (studentAnswer) {
-                        if (studentAnswer === q.correctAnswer) {
+                        const sAns = String(studentAnswer).trim().toLowerCase();
+                        const cAns = String(q.correctAnswer).trim().toLowerCase();
+                        if (sAns === cAns) {
                             score++;
                             correctCount++;
                         } else {
@@ -370,14 +375,17 @@ export const closeGroupSession = async (req, res) => {
             };
         });
 
-        await TestResult.insertMany(resultsToCreate);
+        if (resultsToCreate.length > 0) {
+            await TestResult.insertMany(resultsToCreate);
+        }
+
+        const closedStudentIds = resultsToCreate.map(r => r.student);
 
         await ExamStudent.updateMany(
-            { _id: { $in: studentIds } },
+            { _id: { $in: closedStudentIds } },
             { $set: { testAttempted: true } } 
         );
-        // Note: Students now have their calculated scores in TestResult, 
-        // and we could also update ExamStudent scores here if needed:
+
         for (const res of resultsToCreate) {
              await ExamStudent.findByIdAndUpdate(res.student, {
                  $set: { 

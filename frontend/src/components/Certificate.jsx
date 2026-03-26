@@ -268,7 +268,16 @@ const Certificate = ({ student, userEmail, autoSend }) => {
                               return isJunior ? "Automation controlling Rover" : "Placement Drive Assessment";
                            }
                            return student.branch;
-                        })()} ({student.branch}, {student.year}) With "A++" Grade.
+                        })()} ({student.branch}, {student.year}) With "{(() => {
+                           const score = student.score || 0;
+                           const total = student.totalQuestions || 30;
+                           const pct = total > 0 ? (score / total) * 100 : 0;
+                           if (pct >= 85) return "A++";
+                           if (pct >= 75) return "A+";
+                           if (pct >= 60) return "A";
+                           if (pct >= 45) return "B+";
+                           return "C";
+                        })()}" Grade.
                      </p>
                   </div>
 

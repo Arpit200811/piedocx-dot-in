@@ -362,7 +362,9 @@ const StudentDashboard = () => {
                                         year: student.year,
                                         studentId: student.studentId,
                                         certificateId: student.certificateId || student.studentId,
-                                        _id: student._id
+                                        _id: student._id,
+                                        score: student.score || 0,
+                                        totalQuestions: student.totalQuestions || 30
                                     }}
                                     userEmail={student.email}
                                     autoSend={false}

@@ -390,12 +390,12 @@ const AdminResultArchives = () => {
                                     <div className="flex flex-col gap-1 w-2/3">
                                         <div className="flex justify-between items-center text-[9px] font-black uppercase">
                                             <span className="text-slate-400">Accuracy</span>
-                                            <span className="text-blue-600">{Math.round((row.score / row.totalQuestions) * 100)}%</span>
+                                            <span className="text-blue-600">{row.totalQuestions > 0 ? Math.round((row.score / row.totalQuestions) * 100) : 0}%</span>
                                         </div>
                                         <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                             <div
                                                 className="h-full bg-blue-600 rounded-full"
-                                                style={{ width: `${(row.score / row.totalQuestions) * 100}%` }}
+                                                style={{ width: `${row.totalQuestions > 0 ? (row.score / row.totalQuestions) * 100 : 0}%` }}
                                             ></div>
                                         </div>
                                     </div>
@@ -471,12 +471,12 @@ const AdminResultArchives = () => {
                                             <div className="flex flex-col items-end gap-1.5">
                                                 <div className="flex justify-between w-32 items-center text-[9px] font-black uppercase">
                                                     <span className="text-slate-400">Accuracy</span>
-                                                    <span className="text-blue-600">{Math.round((row.score / row.totalQuestions) * 100)}%</span>
+                                                    <span className="text-blue-600">{row.totalQuestions > 0 ? Math.round((row.score / row.totalQuestions) * 100) : 0}%</span>
                                                 </div>
                                                 <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                     <div
                                                         className="h-full bg-blue-600 rounded-full group-hover:bg-blue-500 transition-all duration-1000"
-                                                        style={{ width: `${(row.score / row.totalQuestions) * 100}%` }}
+                                                        style={{ width: `${row.totalQuestions > 0 ? (row.score / row.totalQuestions) * 100 : 0}%` }}
                                                     ></div>
                                                 </div>
                                             </div>
