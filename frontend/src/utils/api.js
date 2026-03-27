@@ -95,9 +95,12 @@ api.interceptors.response.use(
         if (!isSilent) {
             Swal.fire({
                 icon: 'error',
-                title: 'Access Denied',
+                title: error.response ? 'Access Denied' : 'Connection Issue',
                 text: finalMessage,
-                confirmButtonColor: '#2563eb'
+                confirmButtonColor: '#2563eb',
+                toast: !error.response,
+                position: error.response ? 'center' : 'top-end',
+                timer: error.response ? undefined : 3000
             });
         }
 
