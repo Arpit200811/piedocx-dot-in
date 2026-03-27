@@ -14,7 +14,7 @@ export const updateProfileSchema = z.object({
 });
 
 export const syncProgressSchema = z.object({
-  answers: z.record(z.union([z.string(), z.null(), z.undefined()])).refine(obj => Object.keys(obj).length <= 200, 'Too many answers').default({}),
+  answers: z.record(z.union([z.string(), z.number(), z.null(), z.undefined()])).default({}),
   testId: z.string().optional(),
   timeLeft: z.number().optional()
 });
@@ -24,8 +24,9 @@ export const logViolationSchema = z.object({
 });
 
 export const submitTestSchema = z.object({
-  answers: z.record(z.union([z.string(), z.null(), z.undefined()])).refine(obj => Object.keys(obj).length <= 200, 'Too many answers').default({}),
+  answers: z.record(z.union([z.string(), z.number(), z.null(), z.undefined()])).default({}),
   testId: z.string().optional(),
-  submissionType: z.enum(['normal', 'terminated', 'system_closed', 'timeout', 'Manual Submit']).optional(),
-  reason: z.string().max(500, 'Reason too long').optional()
+  submissionType: z.string().optional(),
+  reason: z.string().max(1000, 'Reason too long').optional(),
+  timeLeft: z.number().optional()
 });
