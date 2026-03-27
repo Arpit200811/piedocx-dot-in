@@ -489,11 +489,9 @@ export const submitTest = async (req, res) => {
             });
         } catch (queueErr) {
             console.error("Queue Error:", queueErr);
-            await ExamStudent.findByIdAndUpdate(student._id, { 
-                testAttempted: true,
-                savedAnswers: answers 
+            return res.status(503).json({ 
+                message: 'Submission processing failed. Please retry in a few seconds.' 
             });
-            return res.json({ message: 'Test submitted (fallback mode).' });
         }
     } catch (error) {
         console.error("submitTest error:", error);
@@ -526,10 +524,12 @@ export const getResults = async (req, res) => {
             testConfig: config._id, 
             score: { $gt: student.score } 
         }) + 1;
-        let aiAnalysis = config.aiAnalysisTemplate || "Keep learning and practicing. You're on the right track!";
-        if (student.score > (config.questions?.length || 30) * 0.8) {
-            aiAnalysis = `🏆 EXCELLENT! ${aiAnalysis}`;
-        }
+        // FEATURE #1 FIX: Use personalized 'AI Results Doctor' analysis if available in results record
+        const aiAnalysisResult = lastResult?.aiAnalysis || config.aiAnalysisTemplate || "Exam completed. Keep working on your core skills.";
+        const finalRecommendations = (lastResult?.recommendations && lastResult.recommendations.length > 0) 
+            ? lastResult.recommendations 
+            : (config.recommendations || []);
+
         res.json({
             score: student.score,
             total: lastResult?.totalQuestions || student.assignedQuestions?.length || config.questions?.length || 30,
@@ -538,8 +538,8 @@ export const getResults = async (req, res) => {
             rank: rank,
             title: config.title,
             studentId: student.studentId,
-            aiAnalysis: aiAnalysis,
-            recommendations: config.recommendations || []
+            aiAnalysis: aiAnalysisResult,
+            recommendations: finalRecommendations
         });
     } catch (error) {
         console.error("getResults error:", error);

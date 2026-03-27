@@ -5,8 +5,36 @@ import ExamStudent from '../models/ExamStudent.js';
 import { adminAuth } from '../middlewares/auth.middleware.js';
 import { getIO } from '../utils/socketService.js';
 import { delCache } from '../utils/cacheService.js';
+import { z } from 'zod';
 
 const router = express.Router();
+const yearGroupSchema = z.enum(['1-2', '3-4', 'unknown']);
+const branchGroupSchema = z.enum(['CS-IT', 'CORE', 'unknown']);
+const configPayloadSchema = z.object({
+    title: z.string().trim().min(1),
+    yearGroup: yearGroupSchema,
+    branchGroup: branchGroupSchema,
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date(),
+    duration: z.number().int().positive(),
+    questions: z.array(z.any()),
+    resultsPublished: z.boolean().optional(),
+    testAccessKey: z.string().trim().min(1).optional(),
+    resetProgress: z.boolean().optional(),
+    targetCollege: z.string().trim().optional()
+}).refine((data) => data.endDate > data.startDate, {
+    message: 'endDate must be after startDate',
+    path: ['endDate']
+});
+const toggleResultsSchema = z.object({
+    yearGroup: yearGroupSchema.optional(),
+    branchGroup: branchGroupSchema.optional()
+});
+const bulkUploadSchema = z.object({
+    yearGroup: yearGroupSchema,
+    branchGroup: branchGroupSchema,
+    questions: z.union([z.array(z.any()), z.string()])
+});
 
 // Get Current Test Config (Specific or Latest)
 router.get('/', adminAuth, async (req, res) => {
@@ -53,7 +81,6 @@ router.get('/time-check', async (req, res) => {
         }).sort({ createdAt: -1 });
         
         if (!config) {
-            console.log(`[TimeCheck] No ACTIVE config found for ${yearGroup}/${branchGroup}. Checked at: ${now.toISOString()}`);
             return res.status(404).json({ message: 'No live or upcoming config found' });
         }
         
@@ -61,8 +88,6 @@ router.get('/time-check', async (req, res) => {
         const end = new Date(config.endDate);
         
         const isLive = now >= start && now <= end && config.isActive;
-
-        console.log(`[TimeCheck] Using Config ID: ${config._id}, Title: ${config.title}, Live: ${isLive}`);
 
         res.json({
             serverTime: now,
@@ -78,26 +103,22 @@ router.get('/time-check', async (req, res) => {
 
 // Create or Update Test Config (Group Specific)
 router.post('/', adminAuth, async (req, res) => {
-    const { title, yearGroup, branchGroup, startDate, endDate, duration, questions, resultsPublished, testAccessKey, resetProgress } = req.body;
-    let { targetCollege } = req.body;
+    const parsed = configPayloadSchema.safeParse(req.body);
+    if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.issues[0]?.message || 'Invalid payload' });
+    }
+    const { title, yearGroup, branchGroup, startDate, endDate, duration, questions, resultsPublished, testAccessKey, resetProgress } = parsed.data;
+    let { targetCollege } = parsed.data;
 
     if (targetCollege) {
         targetCollege = targetCollege.trim().toLowerCase();
     }
     
-    if (!yearGroup || !branchGroup) {
-        return res.status(400).json({ message: 'Year Group and Branch Group are required.' });
-    }
-
     try {
-        console.log(`[TestConfig] POST Request Received. Body:`, JSON.stringify(req.body, null, 2));
-        
-        // Check if config exists for this SPECIFIC group combo - pick LATEST
         let config = await TestConfig.findOne({ yearGroup, branchGroup }).sort({ createdAt: -1 });
         let keyChanged = false;
         
         if (config) {
-            console.log(`[TestConfig] Found existing config to update: ${config._id}`);
             if (config.testAccessKey !== testAccessKey || resetProgress) {
                 keyChanged = true;
             }
@@ -111,10 +132,8 @@ router.post('/', adminAuth, async (req, res) => {
             config.isActive = true; // Force active
             if (resultsPublished !== undefined) config.resultsPublished = resultsPublished;
             
-            console.log(`[TestConfig] Saving updated config. New Dates: ${config.startDate} to ${config.endDate}`);
             await config.save();
         } else {
-            console.log(`[TestConfig] No existing config found for ${yearGroup}/${branchGroup}. Creating NEW.`);
             config = new TestConfig({ 
                 title, 
                 yearGroup,
@@ -128,15 +147,11 @@ router.post('/', adminAuth, async (req, res) => {
                 isActive: true,
                 resultsPublished: resultsPublished || false
             });
-            console.log(`[TestConfig] Saving NEW config. Dates: ${config.startDate} to ${config.endDate}`);
             await config.save();
             keyChanged = true; // New test count as key changed
         }
 
-        // If Key is changed or newly created, reset student attempts for this group
         if (keyChanged) {
-            console.log(`[TestConfig] Resetting student attempts for ${yearGroup}/${branchGroup}...`);
-            
             const csItRegex = /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS)\b/i;
             const branchFilter = branchGroup === 'CS-IT' 
                 ? { $regex: csItRegex }
@@ -172,8 +187,6 @@ router.post('/', adminAuth, async (req, res) => {
         try {
             const cacheKeyBase = `test_info_${yearGroup}_${branchGroup}_`;
             await delCache(`${cacheKeyBase}all`);
-            // We can't easily clear all college-specific caches without pattern matching (which Redis supports)
-            // but clearing 'all' covers the most common case for 300+ students.
         } catch (err) {
              console.error("Cache Clear Error:", err);
         }
@@ -185,7 +198,6 @@ router.post('/', adminAuth, async (req, res) => {
                 branchGroup, 
                 title: config.title 
             });
-            console.log(`[Socket] Emitted test_config_updated for ${yearGroup}/${branchGroup}`);
         }
 
         res.json({ message: `Test configuration for ${yearGroup} / ${branchGroup} saved successfully ${keyChanged ? '(Attempts Reset)' : ''}`, config });
@@ -198,8 +210,11 @@ router.post('/', adminAuth, async (req, res) => {
 // Toggle Results Publication (Group Specific)
 router.patch('/toggle-results', adminAuth, async (req, res) => {
     try {
-        const { yearGroup, branchGroup } = req.body;
-        // Default to finding the latest if not specified (legacy support) but prefer specific
+        const parsed = toggleResultsSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({ message: parsed.error.issues[0]?.message || 'Invalid payload' });
+        }
+        const { yearGroup, branchGroup } = parsed.data;
         let query = {};
         if (yearGroup && branchGroup) {
             query = { yearGroup, branchGroup };
@@ -229,14 +244,12 @@ router.patch('/toggle-results', adminAuth, async (req, res) => {
 // Bulk Upload Questions
 router.post('/bulk-upload-questions', adminAuth, async (req, res) => {
     try {
-        const { yearGroup, branchGroup } = req.body;
-        let { questions } = req.body;
-        
-        console.log(`[Bulk Upload] Request received for ${yearGroup}/${branchGroup}`);
-
-        if (!yearGroup || !branchGroup) {
-            return res.status(400).json({ message: 'Missing group identifiers (yearGroup/branchGroup)' });
+        const parsed = bulkUploadSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({ message: parsed.error.issues[0]?.message || 'Invalid payload' });
         }
+        const { yearGroup, branchGroup } = parsed.data;
+        let { questions } = parsed.data;
 
         if (!questions || !Array.isArray(questions)) {
              if (typeof questions === 'string') {
@@ -346,7 +359,6 @@ router.post('/bulk-upload-questions', adminAuth, async (req, res) => {
         let config = await TestConfig.findOne({ yearGroup, branchGroup }).sort({ createdAt: -1 });
         
         if (!config) {
-             console.log(`[Bulk Upload] Config not found. Creating new skeleton for ${yearGroup}/${branchGroup}`);
              config = new TestConfig({
                  title: `Assessment for ${yearGroup} - ${branchGroup}`,
                  yearGroup,
@@ -382,8 +394,6 @@ router.post('/bulk-upload-questions', adminAuth, async (req, res) => {
         }
 
         await config.save();
-        
-        console.log(`[Bulk Upload] Processed ${validatedQuestions.length} questions. Added: ${addedCount}, Duplicates ignored: ${validatedQuestions.length - addedCount}`);
         res.json({ 
             message: `${addedCount} new questions uploaded. ${validatedQuestions.length - addedCount} duplicates were skipped.`, 
             totalQuestions: config.questions.length 

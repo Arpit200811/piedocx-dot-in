@@ -21,26 +21,63 @@ export const getDeepAnalytics = async (req, res) => {
         // Note: ExamStudent doesn't have a direct test link, so we approximate or skip test-specific filtering for it.
         const matchStageStudents = {}; 
 
-        // 1. Completion & Drop-off Stats
-        const totalStudents = await ExamStudent.countDocuments(matchStageStudents);
-        const completedTests = await TestResult.countDocuments(matchStageResults);
-        const startedSessions = await ExamSession.distinct('studentId', matchStageSessions).then(ids => ids.length);
-        
+        // 1. Concurrent Fetching (Total, Completed, Sessions, Risk, Scores, Metrics)
+        const [
+            totalStudents,
+            completedTests,
+            startedSessionsIds,
+            riskDistribution,
+            scoreDistribution,
+            opsMetrics
+        ] = await Promise.all([
+            ExamStudent.countDocuments(matchStageStudents),
+            TestResult.countDocuments(matchStageResults),
+            ExamSession.distinct('studentId', matchStageSessions),
+            ExamSession.aggregate([
+                { $match: matchStageSessions },
+                { 
+                    $bucket: {
+                        groupBy: "$riskScore",
+                        boundaries: [0, 40, 80, 1000],
+                        default: "Unknown",
+                        output: { count: { $sum: 1 } }
+                    }
+                }
+            ]),
+            TestResult.aggregate([
+                { $match: matchStageResults },
+                { 
+                    $bucket: {
+                        groupBy: "$score",
+                        boundaries: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 101],
+                        default: "Unknown",
+                        output: { count: { $sum: 1 } }
+                    }
+                }
+            ]),
+            ExamSession.aggregate([
+                { $match: { ...matchStageSessions, status: 'completed', endTime: { $exists: true } } },
+                {
+                    $project: {
+                        durationMinutes: { 
+                            $divide: [{ $subtract: ["$endTime", "$startTime"] }, 60000] 
+                        },
+                        disconnectCount: 1
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        avgTimePerExam: { $avg: "$durationMinutes" },
+                        avgReconnects: { $avg: "$disconnectCount" }
+                    }
+                }
+            ])
+        ]);
+
+        const startedSessions = startedSessionsIds.length;
         const completionRate = totalStudents ? ((completedTests / totalStudents) * 100).toFixed(1) : 0;
         const dropOffRate = startedSessions ? (((startedSessions - completedTests) / startedSessions) * 100).toFixed(1) : 0;
-
-        // 2. Risk Distribution (Aggregation)
-        const riskDistribution = await ExamSession.aggregate([
-            { $match: matchStageSessions },
-            { 
-                $bucket: {
-                    groupBy: "$riskScore",
-                    boundaries: [0, 40, 80, 1000],
-                    default: "Unknown",
-                    output: { count: { $sum: 1 } }
-                }
-            }
-        ]);
 
         const riskStats = {
             low: riskDistribution.find(r => r._id === 0)?.count || 0,     // 0-39
@@ -48,40 +85,6 @@ export const getDeepAnalytics = async (req, res) => {
             high: riskDistribution.find(r => r._id === 80)?.count || 0    // 80+
         };
         
-        // 3. Score Distribution (Performance Aggregation)
-        const scoreDistribution = await TestResult.aggregate([
-            { $match: matchStageResults },
-            { 
-                $bucket: {
-                    groupBy: "$score",
-                    boundaries: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 101],
-                    default: "Unknown",
-                    output: { count: { $sum: 1 } }
-                }
-            }
-        ]);
-
-        // 4. Operational Metrics (Avg Time, Reconnects)
-        // Note: For avgTime, we use endTime - startTime from sessions that are 'completed'
-        const opsMetrics = await ExamSession.aggregate([
-            { $match: { ...matchStageSessions, status: 'completed', endTime: { $exists: true } } },
-            {
-                $project: {
-                    durationMinutes: { 
-                        $divide: [{ $subtract: ["$endTime", "$startTime"] }, 60000] 
-                    },
-                    disconnectCount: 1
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    avgTimePerExam: { $avg: "$durationMinutes" },
-                    avgReconnects: { $avg: "$disconnectCount" }
-                }
-            }
-        ]);
-
         const analyticsData = {
             overview: {
                 totalStudents,

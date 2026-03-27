@@ -33,7 +33,7 @@ class ErrorBoundary extends Component {
           const cacheKeys = await caches.keys();
           await Promise.all(cacheKeys.map(key => caches.delete(key)));
         }
-      } catch (e) { }
+      } catch (e) { void e; }
 
       const url = new URL(window.location.href);
       url.searchParams.set('retry_ts', Date.now().toString());

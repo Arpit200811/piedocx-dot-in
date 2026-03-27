@@ -27,7 +27,7 @@ const lazyWithRetry = (componentImport) =>
             const cacheKeys = await caches.keys();
             await Promise.all(cacheKeys.map(key => caches.delete(key)));
           }
-        } catch (swErr) { }
+        } catch (swErr) { void swErr; }
 
         // A temporary load error, try refreshing the page once with a cache-buster
         window.localStorage.setItem('page-has-been-force-refreshed', 'true');

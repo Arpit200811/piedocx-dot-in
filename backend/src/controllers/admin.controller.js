@@ -2,6 +2,7 @@ import Admin from "../models/admin.model.js";
 import ExamStudent from "../models/ExamStudent.js";
 import InternStudent from "../models/InternStudent.js";
 import Employee from "../models/employee.model.js";
+import { generateAIAnalysis } from "../utils/aiAnalyzer.js";
 import EmailLog from "../models/EmailLog.js";
 import User from "../models/user.model.js";
 import TestResult from "../models/TestResult.js";
@@ -17,6 +18,7 @@ import { sendAdminOTP } from "../utils/emailService.js";
 import { logAdminAction } from "../utils/auditLogger.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { promisify } from "util";
 
 
 export const getEmailLogs = async (req, res) => {
@@ -30,38 +32,63 @@ export const getEmailLogs = async (req, res) => {
 };
 
 
-const hashPassword = (password) => {
-  return crypto.createHash('sha256').update(password).digest('hex');
+const scryptAsync = promisify(crypto.scrypt);
+
+const generatePasswordHash = async (password) => {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const keyLength = 64;
+  const key = await scryptAsync(password, salt, keyLength);
+  return `scrypt$${salt}$${Buffer.from(key).toString("hex")}`;
+};
+
+const isLegacySha256Hash = (storedHash) => /^[a-f0-9]{64}$/i.test(storedHash || "");
+
+const verifyPassword = async (password, storedHash) => {
+  if (!storedHash) {
+    return false;
+  }
+
+  if (isLegacySha256Hash(storedHash)) {
+    const legacyHash = crypto.createHash("sha256").update(password).digest("hex");
+    return legacyHash === storedHash;
+  }
+
+  const [algorithm, salt, hashHex] = String(storedHash).split("$");
+  if (algorithm !== "scrypt" || !salt || !hashHex) {
+    return false;
+  }
+
+  const keyLength = Buffer.from(hashHex, "hex").length;
+  const derived = await scryptAsync(password, salt, keyLength);
+  return crypto.timingSafeEqual(Buffer.from(hashHex, "hex"), Buffer.from(derived));
 };
 
 export const adminRequestLogin = async (req, res) => {
-  console.log(`[AUTH-DEBUG] Admin Login POST Received at: ${new Date().toISOString()} for: ${req.body?.email}`);
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: "Credentials required" });
     
     const normalizedEmail = email.trim().toLowerCase();
-    const hashedPassword = hashPassword(password);
-    
-    // 1. Strict hashed password check only
-    const admin = await Admin.findOne({ 
-      email: normalizedEmail,
-      password: hashedPassword 
-    });
+    const admin = await Admin.findOne({ email: normalizedEmail });
     
     if (!admin) {
-      console.warn(`[AUTH FAIL] Admin login failed for: ${normalizedEmail}`);
       return res.status(401).json({ message: "Invalid email or password!" });
     }
 
-    // 2. Direct Login (Safe only if SECRET_KEY is present)
-    const secret = process.env.SECRET_KEY;
-    if (!secret) {
-      console.error("SECRET_KEY missing in adminRequestLogin");
-      return res.status(500).json({ message: "Server configuration error. (SECRET_KEY missing)" });
+    const passwordMatched = await verifyPassword(password, admin.password);
+    if (!passwordMatched) {
+      return res.status(401).json({ message: "Invalid email or password!" });
     }
 
-    console.log(`[AUTH] Admin login successful for ${admin.email}. Generating token...`);
+    if (isLegacySha256Hash(admin.password)) {
+      admin.password = await generatePasswordHash(password);
+      await admin.save();
+    }
+
+    // OTP BYPASS (Permanently Disabled as per User Request)
+    const secret = process.env.SECRET_KEY;
+    if (!secret) return res.status(500).json({ message: "Server configuration error. (SECRET_KEY missing)" });
+
     const token = jwt.sign(
       { id: admin._id, email: admin.email, role: 'admin' }, 
       secret, 
@@ -123,24 +150,36 @@ export const verifyAdminOTP = async (req, res) => {
 
 export const getAdminStats = async (req, res) => {
   try {
-    const legacyStudentsCount = await InternStudent.countDocuments();
-    const newStudentsCount = await ExamStudent.countDocuments();
-    
-    const activeCertificates = await ExamStudent.countDocuments({ status: "active" });
-    const revokedCertificates = await ExamStudent.countDocuments({ status: "revoked" });
-    const totalEmployees = await Employee.countDocuments();
-
-    // User Data Hub Aggregates
-    const contactCount = await User.countDocuments({ source: "contact" });
-    const newsletterCount = await User.countDocuments({ source: "newsletter" });
-    const workshopCount = await User.countDocuments({ source: "workshop" });
-
-    const feedbackCount = await Feedback.countDocuments();
+    const [
+      legacyStudentsCount,
+      newStudentsCount,
+      activeCertificates,
+      revokedCertificates,
+      totalEmployees,
+      contactCount,
+      newsletterCount,
+      workshopCount,
+      feedbackCount,
+      appearedCount,
+      liveTakingCount
+    ] = await Promise.all([
+      InternStudent.countDocuments(),
+      ExamStudent.countDocuments(),
+      ExamStudent.countDocuments({ status: "active" }),
+      ExamStudent.countDocuments({ status: "revoked" }),
+      Employee.countDocuments(),
+      User.countDocuments({ source: "contact" }),
+      User.countDocuments({ source: "newsletter" }),
+      User.countDocuments({ source: "workshop" }),
+      Feedback.countDocuments(),
+      ExamStudent.countDocuments({ testAttempted: true }),
+      ExamStudent.countDocuments({ testStartTime: { $exists: true }, testAttempted: false })
+    ]);
 
     res.status(200).json({
       totalStudents: legacyStudentsCount + newStudentsCount,
-      appearedCount: await ExamStudent.countDocuments({ testAttempted: true }),
-      liveTakingCount: await ExamStudent.countDocuments({ testStartTime: { $exists: true }, testAttempted: false }),
+      appearedCount,
+      liveTakingCount,
       activeCertificates: activeCertificates + legacyStudentsCount, // Implicitly active
       revokedCertificates,
       totalEmployees,
@@ -353,27 +392,49 @@ export const closeGroupSession = async (req, res) => {
                 });
             }
 
-            return {
-                student: s._id,
-                fullName: s.fullName,
-                email: s.email,
-                branch: s.branch,
-                year: s.year,
-                studentId: s.studentId,
-                college: s.college,
-                mobile: s.mobile,
-                yearGroup,
-                branchGroup,
-                testConfig: testConfig._id, // LINK TO THE CORRECT TEST CONFIG
-                score: score,
-                correctCount: correctCount,
-                wrongCount: wrongCount,
-                totalQuestions: questions.length,
-                submissionType: 'system_closed',
-                submissionReason: 'Exam Window Closed by Admin',
-                testDate: todayStr
-            };
-        });
+                const detailedAnswers = questions.map(q => {
+                    const qId = q.questionId || q._id?.toString();
+                    const studentAnswerRaw = answers[qId] || answers[q.questionId] || answers[q._id];
+                    const studentAnswer = String(studentAnswerRaw || '').trim();
+                    const correctAnswer = String(q.correctAnswer || '').trim();
+                    const isCorrect = studentAnswer.toLowerCase() === correctAnswer.toLowerCase();
+                    return {
+                        questionId: qId,
+                        questionText: q.questionText,
+                        studentAnswer: studentAnswer || 'SKIPPED',
+                        correctAnswer: q.correctAnswer,
+                        isCorrect
+                    };
+                });
+
+                const analysisData = generateAIAnalysis(score, questions.length, correctCount, wrongCount, s.violationCount || 0);
+
+                return {
+                    student: s._id,
+                    fullName: s.fullName,
+                    email: s.email,
+                    branch: s.branch,
+                    year: s.year,
+                    studentId: s.studentId,
+                    college: s.college,
+                    mobile: s.mobile,
+                    yearGroup,
+                    branchGroup,
+                    testConfig: testConfig._id, // LINK TO THE CORRECT TEST CONFIG
+                    score: score,
+                    correctCount: correctCount,
+                    wrongCount: wrongCount,
+                    totalQuestions: questions.length,
+                    submissionType: 'system_closed',
+                    submissionReason: 'Exam Window Closed by Admin',
+                    testDate: todayStr,
+                    violationCount: s.violationCount || 0,
+                    violationHistory: s.violationHistory || [],
+                    answers: detailedAnswers,
+                    aiAnalysis: analysisData.analysis,
+                    recommendations: analysisData.recommendations
+                };
+            });
 
         if (resultsToCreate.length > 0) {
             await TestResult.insertMany(resultsToCreate);
@@ -533,24 +594,18 @@ export const forgotPassword = async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log(otp);
     const otpExpires = new Date(Date.now() + 10 * 60000); // 10 mins
 
     admin.otp = otp;
     admin.otpExpires = otpExpires;
     await admin.save();
-    console.log(`[AUTH-DEBUG] OTP for ${normalizedEmail}: ${otp}`);
 
     const { success: emailSent, error: smtpError } = await sendAdminOTP(admin.email, otp, 'reset');
     if (emailSent) {
       res.status(200).json({ message: "Reset OTP sent to your email!" });
     } else {
       console.error(`[SMTP-FAILURE] Target: ${admin.email}, Error: ${smtpError}`);
-      res.status(500).json({ 
-        message: "Failed to send reset OTP.", 
-        error: smtpError,
-        tip: "Check terminal for [AUTH-DEBUG] OTP if this is a test."
-      });
+      res.status(500).json({ message: "Failed to send reset OTP." });
     }
   } catch (error) {
     console.error("forgotPassword error:", error);
@@ -561,6 +616,9 @@ export const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
     if (!email || !otp || !newPassword) return res.status(400).json({ message: "Required fields missing" });
+    if (String(newPassword).length < 10) {
+      return res.status(400).json({ message: "Password must be at least 10 characters long" });
+    }
 
     const normalizedEmail = email.trim().toLowerCase();
     const admin = await Admin.findOne({ 
@@ -572,7 +630,7 @@ export const resetPassword = async (req, res) => {
       return res.status(401).json({ message: "Invalid or expired OTP!" });
     }
 
-    admin.password = hashPassword(newPassword);
+    admin.password = await generatePasswordHash(newPassword);
     admin.otp = null;
     admin.otpExpires = null;
     await admin.save();
@@ -656,6 +714,9 @@ export const registerAdmin = async (req, res) => {
     if (!name || !email || !password) {
         return res.status(400).json({ message: "All fields (name, email, password) are required" });
     }
+    if (String(password).length < 10) {
+        return res.status(400).json({ message: "Password must be at least 10 characters long" });
+    }
 
     const normalizedEmail = email.trim().toLowerCase();
     
@@ -664,7 +725,7 @@ export const registerAdmin = async (req, res) => {
         return res.status(400).json({ message: "Admin with this email already exists" });
     }
 
-    const hashedPassword = hashPassword(password);
+    const hashedPassword = await generatePasswordHash(password);
 
     const newAdmin = await Admin.create({
       name,
@@ -783,22 +844,34 @@ export const recalculateAllScores = async (req, res) => {
             
             if (questions.length === 0) continue;
 
-            let score = 0, correctCount = 0, wrongCount = 0;
+            const detailedAnswers = [];
             questions.forEach(q => {
                 const qId = q.questionId || q._id?.toString();
                 const studentAnswerRaw = answers[qId] || answers[q.questionId] || answers[q._id];
-                const studentAnswer = String(studentAnswerRaw || '').trim().toLowerCase();
-                const correctAnswer = String(q.correctAnswer || '').trim().toLowerCase();
+                const studentAnswer = String(studentAnswerRaw || '').trim();
+                const correctAnswer = String(q.correctAnswer || '').trim();
+                const isCorrect = studentAnswer.toLowerCase() === correctAnswer.toLowerCase();
 
                 if (studentAnswerRaw) {
-                    if (studentAnswer === correctAnswer) {
+                    if (isCorrect) {
                         score++;
                         correctCount++;
                     } else {
                         wrongCount++;
                     }
                 }
+                
+                detailedAnswers.push({
+                    questionId: qId,
+                    questionText: q.questionText,
+                    studentAnswer: studentAnswer || 'SKIPPED',
+                    correctAnswer: q.correctAnswer,
+                    isCorrect
+                });
             });
+
+            // 5. REGENERATE AI ANALYSIS (AI Results Doctor integration)
+            const analysisData = generateAIAnalysis(score, questions.length, correctCount, wrongCount, student.violationCount || 0);
 
             // Update Student
             const oldScore = student.score;
@@ -810,10 +883,19 @@ export const recalculateAllScores = async (req, res) => {
             // Update corresponding TestResult records
             await TestResult.updateMany(
                 { student: student._id },
-                { $set: { score, correctCount, wrongCount } }
+                { 
+                    $set: { 
+                        score, 
+                        correctCount, 
+                        wrongCount,
+                        answers: detailedAnswers,
+                        aiAnalysis: analysisData.analysis,
+                        recommendations: analysisData.recommendations 
+                    } 
+                }
             );
             
-            summary.push({ name: student.fullName, oldScore, newScore: score });
+            summary.push({ name: student.fullName, oldScore, newScore: score, aiAnalysis: analysisData.analysis });
         }
 
         console.log(`✅ Re-grading complete. Recovered ${summary.length} students.`);

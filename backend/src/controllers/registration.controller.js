@@ -2,7 +2,8 @@
 import ExamStudent from '../models/ExamStudent.js';
 import { generateCertificateID, generateCertificateSignature, generateQR } from '../utils/certUtils.js';
 import { sendCertificateEmail } from '../utils/emailService.js';
-import { emailQueue } from '../queues/email.queue.js';
+import { emailQueue, isEmailQueueFallback } from '../queues/email.queue.js';
+import { z } from 'zod';
 
 
 const deriveTechnology = (branch, year) => {
@@ -21,26 +22,24 @@ const deriveTechnology = (branch, year) => {
     return branch;
 };
 
+const registerStudentSchema = z.object({
+    fullName: z.string().trim().min(2),
+    branch: z.string().trim().min(2),
+    year: z.string().trim().min(2),
+    mobile: z.string().trim().min(8),
+    email: z.string().trim().email(),
+    college: z.string().trim().min(2),
+    profilePicture: z.string().optional(),
+    technology: z.string().optional()
+});
+
 export const registerStudent = async (req, res) => {
     try {
-        const { fullName, branch, year, mobile, email, college, profilePicture } = req.body;
-
-        const validBranches = [
-            'Computer Science & Engineering (CSE)',
-            'Information Technology (IT)',
-            'Artificial Intelligence & Data Science (AI & DS)',
-            'Electronics & Communication (ECE)',
-            'Electrical Engineering (EE)',
-            'Mechanical Engineering (ME)',
-            'Civil Engineering',
-            'Automobile Engineering',
-            'Other'
-        ];
-        const validYears = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Graduated'];
-
-        if (!fullName || !mobile || !email || !college || !branch || !year) {
-            return res.status(400).json({ message: 'All mandatory fields (Full Name, Branch, Year, Mobile, College) are required.' });
+        const parsed = registerStudentSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({ message: parsed.error.issues[0]?.message || 'Invalid registration payload' });
         }
+        const { fullName, branch, year, mobile, email, college, profilePicture } = parsed.data;
 
         const salt = Math.floor(1000 + Math.random() * 9000);
         const studentId = `PDCX-S${Date.now().toString().slice(-6)}${salt}`;
@@ -48,7 +47,7 @@ export const registerStudent = async (req, res) => {
         const currentYear = new Date().getFullYear();
         const certId = generateCertificateID(currentYear);
 
-        const tech = req.body.technology || deriveTechnology(branch, year);
+        const tech = parsed.data.technology || deriveTechnology(branch, year);
 
         const signature = generateCertificateSignature({
             studentId,
@@ -435,14 +434,28 @@ export const bulkSendCertificates = async (req, res) => {
         
         // WORLD-CLASS RELIABILITY: Offload to Background Queue (BullMQ)
         // This prevents request timeouts and allows throttling to stay safe with Gmail (SMTP Connection limits)
-        for (const student of students) {
-            await emailQueue.add(`cert_${student._id}`, {
-                studentId: student._id,
-                score: student.score,
-                type: 'certificate'
-            }, {
-                jobId: `cert_${student._id}_${Date.now()}` // Allow re-sending if they click again
-            });
+        if (isEmailQueueFallback) {
+            for (const student of students) {
+                Promise.resolve(
+                    emailQueue.add(`cert_${student._id}`, {
+                        studentId: student._id,
+                        score: student.score,
+                        type: 'certificate'
+                    }, {
+                        jobId: `cert_${student._id}_${Date.now()}`
+                    })
+                ).catch((err) => console.error(`bulkSendCertificates fallback error for ${student._id}:`, err.message));
+            }
+        } else {
+            for (const student of students) {
+                await emailQueue.add(`cert_${student._id}`, {
+                    studentId: student._id,
+                    score: student.score,
+                    type: 'certificate'
+                }, {
+                    jobId: `cert_${student._id}_${Date.now()}`
+                });
+            }
         }
 
         return res.status(200).json({ 

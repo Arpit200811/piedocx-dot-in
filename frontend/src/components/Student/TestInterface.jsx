@@ -535,14 +535,12 @@ const TestInterface = () => {
                     const _orig = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
                     navigator.mediaDevices.getDisplayMedia = async (...args) => {
                         handleViolation('Screen Recording / Share Attempt Detected');
-                        try {
-                            const stream = await _orig(...args);
-                            stream.getTracks().forEach(t => t.stop());
-                            return stream;
-                        } catch (e) { throw e; }
+                        const stream = await _orig(...args);
+                        stream.getTracks().forEach(t => t.stop());
+                        return stream;
                     };
                 }
-            } catch (e) { }
+            } catch (e) { void e; }
         };
         detectScreenCapture();
 

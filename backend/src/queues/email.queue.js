@@ -1,11 +1,16 @@
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
+import { processEmailJob } from '../workers/email.worker.js';
 
 const REDIS_URL = process.env.REDIS_URL;
 
 let connection;
+export let isEmailQueueFallback = true;
 export let emailQueue = {
-    add: async () => { /* Fallback Noop */ }
+    add: async (_name, data) => {
+        await processEmailJob({ data });
+        return { id: `fallback_email_${Date.now()}` };
+    }
 };
 
 if (REDIS_URL) {
@@ -24,6 +29,7 @@ if (REDIS_URL) {
             removeOnFail: false,
         }
     });
+    isEmailQueueFallback = false;
     console.log('📬 BullMQ: Email Delivery Queue Initialized');
 } else {
     console.warn('⚠️  Redis missing: Bulk Email will run Synchronously (Slow)');

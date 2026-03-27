@@ -71,8 +71,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
+const isVerboseRequestLog = process.env.NODE_ENV !== 'production' || process.env.ENABLE_REQUEST_LOGS === 'true';
 app.use((req, res, next) => {
-  if (req.method !== 'OPTIONS') {
+  if (isVerboseRequestLog && req.method !== 'OPTIONS') {
     console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.get('origin') || 'no-origin'} | IP: ${req.ip}`);
   }
   next();

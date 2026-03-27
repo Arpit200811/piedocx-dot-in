@@ -11,19 +11,7 @@ const REDIS_URL = process.env.REDIS_URL;
 let connection;
 let submissionWorker;
 
-if (REDIS_URL) {
-    connection = new IORedis(REDIS_URL, {
-        maxRetriesPerRequest: null,
-        retryStrategy: (times) => Math.min(times * 5000, 30000),
-    });
-
-    connection.on('error', (err) => {
-        if (err.code === 'ECONNREFUSED') {
-            // Silently wait for reconnect
-        }
-    });
-
-    submissionWorker = new Worker('test-submission-spike', async (job) => {
+export const processSubmissionJob = async (job) => {
     const { studentId, testId, answers, submissionType, reason } = job.data;
     console.log(`🚀 Processing Submission for Student: ${studentId}`);
 
@@ -137,6 +125,20 @@ if (REDIS_URL) {
         console.error(`❌ Worker Error for Student ${studentId}:`, err.message);
         throw err; 
     }
-}, { connection, concurrency: 5 });     
-console.log('⚡ BullMQ: Submission Worker Active');
+};
+
+if (REDIS_URL) {
+    connection = new IORedis(REDIS_URL, {
+        maxRetriesPerRequest: null,
+        retryStrategy: (times) => Math.min(times * 5000, 30000),
+    });
+
+    connection.on('error', (err) => {
+        if (err.code !== 'ECONNREFUSED') {
+            console.error('Submission worker Redis error:', err.message);
+        }
+    });
+
+    submissionWorker = new Worker('test-submission-spike', processSubmissionJob, { connection, concurrency: 5 });     
+    console.log('⚡ BullMQ: Submission Worker Active');
 }

@@ -2,20 +2,32 @@ import mongoose from 'mongoose';
 import Admin from './src/models/admin.model.js';
 import crypto from 'crypto';
 import { config } from 'dotenv';
+import { promisify } from 'util';
 
 config();
 
-const MONGO_URI = "mongodb+srv://piedocxtechnologies:PiedocxTechnologies3174@piedocx.cuusxds.mongodb.net/Piedocx_in?retryWrites=true&w=majority&appName=piedocx";
+const scryptAsync = promisify(crypto.scrypt);
+
+const generatePasswordHash = async (password) => {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = await scryptAsync(password, salt, 64);
+  return `scrypt$${salt}$${Buffer.from(derived).toString('hex')}`;
+};
 
 const createAdmin = async () => {
   try {
-    await mongoose.connect(MONGO_URI);
-    
-    const email = "admin@piedocx.in";
-    const password = "admin123"; 
-    const name = "Piedocx Admin";
+    const MONGO_URI = process.env.MONGO_URI;
+    const email = process.env.ADMIN_EMAIL;
+    const password = process.env.ADMIN_PASSWORD;
+    const name = process.env.ADMIN_NAME || "Piedocx Admin";
 
-    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+    if (!MONGO_URI || !email || !password) {
+      throw new Error('MONGO_URI, ADMIN_EMAIL and ADMIN_PASSWORD are required');
+    }
+
+    await mongoose.connect(MONGO_URI);
+
+    const hashedPassword = await generatePasswordHash(password);
 
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
@@ -29,7 +41,6 @@ const createAdmin = async () => {
 
     console.log("----------------------------");
     console.log("Admin Email: " + email);
-    console.log("Admin Password: " + password);
     console.log("----------------------------");
     
     process.exit(0);

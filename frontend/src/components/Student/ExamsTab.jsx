@@ -113,8 +113,6 @@ const ExamsTab = ({ isExamsLoading, testInfo, student, onNavigate }) => {
                             </div>
                         </div>
                     </div>
-iv>
-
                     {/* Decorative Corner Element */}
                     <div className="absolute top-10 right-10 w-24 h-24 pointer-events-none opacity-10 filter invert hiden lg:block">
                         <QrCode size={96} className="text-white" />

@@ -8,9 +8,17 @@ import { calculateRiskScore, RISK_THRESHOLDS } from '../utils/riskEngine.js';
 let io;
 
 export const initSocket = (server) => {
+  const configuredOrigins = (process.env.SOCKET_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const allowedOrigins = configuredOrigins.length > 0
+    ? configuredOrigins
+    : ['http://localhost:5173', 'http://localhost:3000', 'https://piedocx.in', 'https://www.piedocx.in'];
+
   io = new Server(server, {
     cors: {
-      origin: "*",
+      origin: allowedOrigins,
       methods: ["GET", "POST"],
       credentials: true
     },
@@ -166,6 +174,9 @@ export const initSocket = (server) => {
         }
     });
     socket.on('join_admin_monitor', () => {
+        if (socket.role !== 'admin') {
+            return;
+        }
         socket.join('admin_monitor');
         console.log("👀 Admin joined monitor");
     });
@@ -200,6 +211,7 @@ export const initSocket = (server) => {
     });
 
     socket.on('send_broadcast', ({ testId, yearGroup, message, type }) => {
+        if (socket.role !== 'admin') return;
         const payload = { 
             message, 
             type: type || 'info', 

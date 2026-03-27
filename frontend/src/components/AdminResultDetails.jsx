@@ -148,11 +148,61 @@ const AdminResultDetails = () => {
                     </div>
                 </div>
 
-                {/* Right Column: Question Breakdown */}
-                <div className="lg:col-span-2 bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-                    <div className="p-6 border-b border-slate-50">
-                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Detailed Answer Sheet</h3>
-                    </div>
+
+                <div className="lg:col-span-2 space-y-6">
+                    {/* AI Results Doctor Card */}
+                    {data.aiAnalysis ? (
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 rounded-[2rem] p-6 sm:p-8 text-white relative overflow-hidden shadow-xl border border-blue-500/20"
+                        >
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px]"></div>
+                            
+                            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
+                                <div className="flex-1 space-y-4">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-500/20 border border-blue-400/30 rounded-full">
+                                        <ShieldAlert size={14} className="text-blue-400" />
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-200">AI Results Doctor</span>
+                                    </div>
+                                    <h3 className="text-2xl font-black italic uppercase tracking-tighter">Performance <span className="text-blue-400">Diagnosis_</span></h3>
+                                    <p className="text-blue-100/80 text-sm font-medium leading-relaxed italic border-l-2 border-blue-500 pl-4 py-1">
+                                        "{data.aiAnalysis}"
+                                    </p>
+                                </div>
+
+                                {data.recommendations?.length > 0 && (
+                                    <div className="w-full md:w-64 space-y-3">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-blue-300/60 px-1 italic">Prescribed Resources</p>
+                                        <div className="space-y-2">
+                                            {data.recommendations.map((rec, i) => (
+                                                <a 
+                                                    key={i}
+                                                    href={rec.link}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group"
+                                                >
+                                                    <div className="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                                        {rec.type === 'VIDEO' ? <Activity size={14} /> : <CheckCircle size={14} />}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-[9px] font-black uppercase tracking-widest truncate group-hover:text-white transition-colors">{rec.title}</p>
+                                                        <p className="text-[7px] font-bold text-blue-300 opacity-40 uppercase tracking-tighter mt-0.5">{rec.type} Guide</p>
+                                                    </div>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    ) : null}
+
+                    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-slate-50">
+                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Detailed Answer Sheet</h3>
+                        </div>
                     {answers.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
@@ -211,6 +261,7 @@ const AdminResultDetails = () => {
                             <p className="text-xs font-black uppercase tracking-widest text-slate-400">Detailed answer logs were not captured for this legacy session.</p>
                         </div>
                     )}
+                    </div>
                 </div>
             </div>
 

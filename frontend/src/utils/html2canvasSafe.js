@@ -37,7 +37,7 @@ export const html2canvasSafe = async (element, options = {}) => {
                     if (styleAttr && (styleAttr.includes('oklch') || styleAttr.includes('oklab'))) {
                         el.setAttribute('style', styleAttr.replace(/(oklch|oklab)\([^)]+\)/g, '#000000'));
                     }
-                } catch (e) { }
+                } catch (e) { void e; }
             }
 
             // 3. Call original onclone if provided

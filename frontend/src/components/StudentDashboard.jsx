@@ -147,7 +147,7 @@ const StudentDashboard = () => {
             setIsCertificatesLoading(true);
             const data = await api.get('/api/student-auth/test-info');
             setTestInfo(data);
-        } catch (err) { }
+        } catch (err) { void err; }
         finally {
             setIsExamsLoading(false);
             setIsCertificatesLoading(false);
@@ -168,7 +168,7 @@ const StudentDashboard = () => {
                 setStudent(merged);
                 localStorage.setItem('studentData', JSON.stringify(merged));
             }
-        } catch (err) { }
+        } catch (err) { void err; }
     };
 
     const handlePhotoUpload = async (e) => {
@@ -223,7 +223,7 @@ const StudentDashboard = () => {
                                     if (style.color?.includes('oklch')) item.style.color = '#000';
                                     if (style.backgroundColor?.includes('oklch')) item.style.backgroundColor = 'transparent';
                                     if (style.borderColor?.includes('oklch')) item.style.borderColor = 'transparent';
-                                } catch (e) { }
+                                } catch (e) { void e; }
                             });
                         }
                     }

@@ -45,8 +45,12 @@ const memoryCache = {
 let redisClient = null;
 let isRedisAvailable = false;
 let hasLoggedStatus = false;
+const isTestRuntime = process.env.NODE_ENV === 'test' || process.argv.includes('--test');
 
 export const initRedis = () => {
+    if (isTestRuntime) {
+        return memoryCache;
+    }
     const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 
     if (!redisClient) {
@@ -130,4 +134,4 @@ export const delCache = async (key) => {
     }
 };
 
-export default initRedis();
+export default isTestRuntime ? memoryCache : initRedis();

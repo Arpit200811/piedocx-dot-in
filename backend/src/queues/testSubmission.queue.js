@@ -1,11 +1,15 @@
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
+import { processSubmissionJob } from '../workers/testSubmission.worker.js';
 
 const REDIS_URL = process.env.REDIS_URL;
 
 let connection;
 export let submissionQueue = {
-    add: async () => { /* Fallback Noop */ }
+    add: async (_name, data) => {
+        await processSubmissionJob({ data });
+        return { id: `fallback_submit_${Date.now()}` };
+    }
 };
 
 if (REDIS_URL) {

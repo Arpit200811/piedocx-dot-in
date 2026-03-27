@@ -9,19 +9,7 @@ const REDIS_URL = process.env.REDIS_URL;
 let connection;
 let emailWorker;
 
-if (REDIS_URL) {
-    connection = new IORedis(REDIS_URL, {
-        maxRetriesPerRequest: null,
-        retryStrategy: (times) => Math.min(times * 5000, 30000),
-    });
-
-    connection.on('error', (err) => {
-        if (err.code === 'ECONNREFUSED') {
-            // Silently wait for reconnect
-        }
-    });
-
-    emailWorker = new Worker('bulk-email-delivery', async (job) => {
+export const processEmailJob = async (job) => {
         const { studentId, certificateImageUrl, score } = job.data;
         console.log(`📡 Processing Professional PDF Email for Student: ${studentId}`);
 
@@ -61,7 +49,21 @@ if (REDIS_URL) {
             console.error(`❌ Bulk Email Error for Student ${studentId}:`, err.message);
             throw err; // Trigger retry
         }
-    }, { 
+};
+
+if (REDIS_URL) {
+    connection = new IORedis(REDIS_URL, {
+        maxRetriesPerRequest: null,
+        retryStrategy: (times) => Math.min(times * 5000, 30000),
+    });
+
+    connection.on('error', (err) => {
+        if (err.code !== 'ECONNREFUSED') {
+            console.error('Email worker Redis error:', err.message);
+        }
+    });
+
+    emailWorker = new Worker('bulk-email-delivery', processEmailJob, { 
         connection, 
         concurrency: 1, // DO NOT PARALLEL GMAIL - they block multi-connections
         limiter: {

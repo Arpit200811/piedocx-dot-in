@@ -46,7 +46,6 @@ export const studentAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, secret);
-    console.log(`[Auth-Debug] Student Auth Decoded: ID=${decoded.id}, Role=${decoded.role}, Email=${decoded.email}`);
     if (decoded.role !== 'student') {
         console.warn(`[Auth] Student Access Forbidden for user: ${decoded.email}. Role found: ${decoded.role}`);
         return res.status(403).json({ message: `Access denied. Role: ${decoded.role}` });
