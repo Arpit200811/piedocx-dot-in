@@ -87,13 +87,13 @@ const FilterSection = ({ filters, colleges, branches, years, onExport }) => {
             >
               <Download size={14} /> Page
             </button>
-            <button
+            {/* <button
               onClick={() => filters.onBulkWhatsApp()}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-emerald-500/20"
               title="Send results to selected students via WhatsApp"
             >
               <MessageCircle size={14} /> Bulk WhatsApp
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -215,7 +215,7 @@ const StudentRow = ({ student: s, isSelected, onSelect, onView, onSendEmail, onW
       <div className="flex items-center justify-end gap-1.5">
         <ActionButton onClick={() => onManageProfile(s)} icon={Settings} color="slate" title="Edit Info" />
         <ActionButton onClick={() => onSendEmail(s)} icon={Mail} color="indigo" title="Send Email" />
-        <ActionButton onClick={() => onWhatsApp(s)} icon={MessageCircle} color="green" title="Send WhatsApp" />
+        {/* <ActionButton onClick={() => onWhatsApp(s)} icon={MessageCircle} color="green" title="Send WhatsApp" /> */}
         <ActionButton onClick={() => onView(s)} icon={Eye} color="blue" title="Check Certificate" />
         <ActionButton
           onClick={() => onStatusToggle(s._id, s.status)}
@@ -762,12 +762,12 @@ const AdminCertificateManager = () => {
               >
                 <Mail size={14} /> Send Email
               </button>
-              <button
+              {/* <button
                 onClick={handleBulkWhatsApp}
                 className="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2"
               >
                 <MessageCircle size={14} /> WhatsApp
-              </button>
+              </button> */}
               <button
                 onClick={bulkDelete}
                 className="p-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-all"

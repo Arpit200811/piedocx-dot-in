@@ -5,7 +5,7 @@ import { Users, ShieldCheck, ShieldAlert, BadgeCheck, Mail, ArrowRight, RotateCc
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { io } from 'socket.io-client';
-import WhatsAppAdminControl from './WhatsAppAdminControl';
+// import WhatsAppAdminControl from './WhatsAppAdminControl';
 
 const AdminHome = () => {
   const [stats, setStats] = useState({
@@ -445,8 +445,8 @@ const AdminHome = () => {
           <div className="absolute -right-16 -bottom-16 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] group-hover:bg-blue-600/20 transition-all duration-700"></div>
         </div>
 
-        {/* Right Column: WhatsApp Control */}
-        <WhatsAppAdminControl />
+        {/* WhatsApp Control Card Removed */}
+        {/* <WhatsAppAdminControl /> */}
       </div>
 
       {/* Live Monitor Table */}

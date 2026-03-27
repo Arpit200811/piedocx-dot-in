@@ -20,7 +20,7 @@ import studentAuthRoutes from "./routes/studentAuth.route.js";
 import testConfigRoutes from "./routes/testConfig.route.js";
 import analyticsRoutes from "./routes/analytics.route.js";
 import taskRoutes from "./routes/task.route.js";
-import whatsappRoutes from "./routes/whatsapp.route.js";
+// import whatsappRoutes from "./routes/whatsapp.route.js";
 import errorHandler from "./middlewares/error.middleware.js";
 
 import { initSocket } from "./utils/socketService.js";
@@ -134,7 +134,7 @@ app.use("/api/certificate", registerRoutes);
 app.use("/api/student-auth", studentAuthRoutes);
 app.use("/api/admin/test-config", testConfigRoutes);
 app.use("/api/admin/analytics", analyticsRoutes);
-app.use("/api/whatsapp", whatsappRoutes);
+// app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api/tasks", taskRoutes);
 
 app.use(errorHandler);
@@ -162,6 +162,7 @@ httpServer.listen(PORT, "0.0.0.0", async () => {
     console.error(`[STARTUP] MongoDB Connection Failed:`, err.message);
   }
 
+  /*
   try {
     console.log(`[STARTUP] Initializing WhatsApp Service (Auto Mode)...`);
     const { initializeWhatsApp } = await import("./utils/whatsappService.js");
@@ -170,6 +171,7 @@ httpServer.listen(PORT, "0.0.0.0", async () => {
   } catch (err) {
     console.error(`[STARTUP] WhatsApp Initialization Error:`, err.message);
   }
+  */
 
   console.log(`🚀 PIEDOCX Backend Active on Port ${PORT} | VERSION: 2.1.0-AUTH-FIX`);
 });

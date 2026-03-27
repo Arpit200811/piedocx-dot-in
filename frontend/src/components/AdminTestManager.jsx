@@ -91,13 +91,9 @@ const AdminTestManager = () => {
                 branchGroup: currentBranch
             });
             setResultsPublished(data.resultsPublished);
-            
-            if (data.resultsPublished && data.broadcast) {
-                Swal.fire({
-                    title: 'Success',
-                    text: `${data.message}. Starting WhatsApp broadcast to ${data.broadcast.targetCount} students.`,
-                    icon: 'success'
-                });
+
+            if (data.resultsPublished) {
+                Swal.fire('Success', data.message, 'success');
             } else {
                 Swal.fire('Success', data.message, 'success');
             }
@@ -305,15 +301,15 @@ const AdminTestManager = () => {
                             <input {...register("testAccessKey")} placeholder="e.g. 112233" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-amber-600 outline-none focus:border-blue-500 placeholder:text-slate-300" />
                             <p className="text-[9px] text-slate-400 mt-2 italic font-medium">* Share this code with students in the hall to unlock the test.</p>
                         </div>
-                        
+
                         <div className="bg-red-50 p-4 border border-red-100 rounded-xl mt-4">
-                             <label className="flex items-start gap-3 cursor-pointer">
-                                 <input type="checkbox" {...register("resetProgress")} className="mt-1 w-4 h-4 text-red-600 focus:ring-red-500 border-red-300 rounded" />
-                                 <div>
-                                     <span className="text-[11px] font-black uppercase tracking-widest text-red-700 block mb-1">Reset All Students (New Test)</span>
-                                     <span className="text-[9px] text-red-600/70 font-semibold leading-relaxed block">Check this if you are recycling this category for a NEW test. This clears all old student scores, blocked status, and timers. Leave it UNCHECKED if you are just fixing a typo or extending time for a current test.</span>
-                                 </div>
-                             </label>
+                            <label className="flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" {...register("resetProgress")} className="mt-1 w-4 h-4 text-red-600 focus:ring-red-500 border-red-300 rounded" />
+                                <div>
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-red-700 block mb-1">Reset All Students (New Test)</span>
+                                    <span className="text-[9px] text-red-600/70 font-semibold leading-relaxed block">Check this if you are recycling this category for a NEW test. This clears all old student scores, blocked status, and timers. Leave it UNCHECKED if you are just fixing a typo or extending time for a current test.</span>
+                                </div>
+                            </label>
                         </div>
 
                         <div className="pt-4 border-t border-slate-100">
@@ -395,8 +391,8 @@ const AdminTestManager = () => {
                                                 <span className="ml-3 text-[10px] text-red-500 font-black animate-pulse">[ DUPLICATE QUESTION DETECTED ]</span>
                                             )}
                                         </label>
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             id={`translate-btn-${index}`}
                                             onClick={() => autoTranslateQuestion(index)}
                                             className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-100"

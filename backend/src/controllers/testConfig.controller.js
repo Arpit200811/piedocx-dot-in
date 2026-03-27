@@ -2,7 +2,7 @@
 import TestConfig from '../models/TestConfig.js';
 import ExamStudent from '../models/ExamStudent.js';
 import { getIO } from '../utils/socketService.js';
-import { broadcastResultLink } from '../utils/whatsappService.js';
+// import { broadcastResultLink } from '../utils/whatsappService.js';
 
 export const getConfig = async (req, res) => {
     try {
@@ -162,6 +162,7 @@ export const toggleResults = async (req, res) => {
             });
         }
 
+        /* 
         // FEATURE #5: Automated Result Dispatch (Triggered when published)
         let broadcastStats = null;
         if (config.resultsPublished) {
@@ -179,6 +180,7 @@ export const toggleResults = async (req, res) => {
                 console.error("Broadcast Prep Fail:", err);
             }
         }
+        */
 
         res.json({ 
             message: `Results ${config.resultsPublished ? 'published' : 'hidden'}`, 
