@@ -115,16 +115,7 @@ httpServer.listen(PORT, "0.0.0.0", async () => {
     console.error(`[STARTUP] MongoDB Connection Failed:`, err.message);
   }
 
-  /*
-  try {
-    console.log(`[STARTUP] Initializing WhatsApp Service (Auto Mode)...`);
-    const { initializeWhatsApp } = await import("./utils/whatsappService.js");
-    const result = await initializeWhatsApp(true);
-    console.log(`[STARTUP] WhatsApp Service Result:`, result);
-  } catch (err) {
-    console.error(`[STARTUP] WhatsApp Initialization Error:`, err.message);
-  }
-  */
+  // WHATSAPP SERVICE REMOVED FOR SYSTEM STABILITY
 
   console.log(`🚀 PIEDOCX Backend Active on Port ${PORT} | VERSION: 2.1.0-AUTH-FIX`);
 });
