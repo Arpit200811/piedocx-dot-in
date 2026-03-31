@@ -1,4 +1,4 @@
-
+﻿
 import express from 'express';
 import TestConfig from '../models/TestConfig.js';
 import ExamStudent from '../models/ExamStudent.js';
@@ -152,7 +152,7 @@ router.post('/', adminAuth, async (req, res) => {
         }
 
         if (keyChanged) {
-            const csItRegex = /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS)\b/i;
+            const csItRegex = /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS|BCA|MCA|Computer Applications|BSCIT|MSCIT|PGDCA)\b/i;
             const branchFilter = branchGroup === 'CS-IT' 
                 ? { $regex: csItRegex }
                 : { $not: { $regex: csItRegex } };

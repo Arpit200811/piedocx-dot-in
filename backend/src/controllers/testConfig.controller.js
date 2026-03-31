@@ -2,6 +2,7 @@
 import TestConfig from '../models/TestConfig.js';
 import ExamStudent from '../models/ExamStudent.js';
 import { getIO } from '../utils/socketService.js';
+import { delCache } from '../utils/cacheService.js';
 // import { broadcastResultLink } from '../utils/whatsappService.js';
 
 export const getConfig = async (req, res) => {
@@ -106,14 +107,14 @@ export const upsertConfig = async (req, res) => {
         }
 
         if (keyChanged) {
-            const csItRegex = /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS)\b/i;
+            const csItRegex = /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS|BCA|MCA|Computer Applications|BSCIT|MSCIT|PGDCA)\b/i;
             const branchFilter = branchGroup === 'CS-IT' 
                 ? { $regex: csItRegex }
                 : { $not: { $regex: csItRegex } };
 
             const yearFilter = yearGroup === '3-4'
-                ? { year: { $regex: /3|4|3rd|4th|third|fourth|final|graduated/i } }
-                : { year: { $not: { $regex: /3|4|3rd|4th|third|fourth|final|graduated/i } } };
+                ? { year: { $regex: /3rd|4th|3|4|third|fourth|final|graduated/i } }
+                : { year: { $not: { $regex: /3rd|4th|3|4|third|fourth|final|graduated/i } } };
 
             await ExamStudent.updateMany(
                 { 
@@ -130,6 +131,11 @@ export const upsertConfig = async (req, res) => {
             );
         }
         
+        // CACHE INVALIDATION: Clear potentially cached test info
+        // Since we don't know all student-specific college keys, we clear the 'all' fallback
+        // which is the most common path. High-scale students will see 404/Null until refresh.
+        await delCache(`test_info_${yearGroup}_${branchGroup}_all`);
+
         const io = getIO();
         if (io) {
             io.emit('test_config_updated', { yearGroup, branchGroup, title: config.title });

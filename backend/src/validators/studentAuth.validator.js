@@ -1,3 +1,8 @@
+/** 
+ * 🔥 VERSION 2.1.1 - FIXED BY ANTIGRAVITY 
+ * 🚀 CHANGES: Relaxed submissionType and syncProgress constraints for 300+ students 
+ * 🧼 WHATSAPP REMOVED: All legacy messaging logic deleted.
+ */
 import { z } from 'zod';
 
 export const loginSchema = z.object({

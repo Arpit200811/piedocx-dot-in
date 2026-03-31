@@ -1,8 +1,8 @@
 export const getBranchGroup = (branch) => {
     if (!branch) return 'CORE';
     
-    const csItRegex = /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS)\b/i;
-    const coreRegex = /\b(ECE|EE|ME|Civil|Auto|Automobile|Electronics|Electrical|Mechanical)\b/i;
+    const csItRegex = /\b(CSE|IT|Computer Science|Information Technology|CS|Software Engineering|AI|Data Science|DS|BCA|MCA|Computer Applications|BSCIT|MSCIT|PGDCA)\b/i;
+    const coreRegex = /\b(ECE|EE|ME|Civil|Auto|Automobile|Electronics|Electrical|Mechanical|Civil Engineering|Mechanical Engineering|Electrical Engineering)\b/i;
     
     if (csItRegex.test(branch)) {
         return 'CS-IT';
