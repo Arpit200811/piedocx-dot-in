@@ -73,7 +73,7 @@ const InstructionScreen = ({
                     </div>
 
                     <form onSubmit={onStart} className="space-y-8 max-w-md mx-auto">
-                        {testInfo?.hasAccessKey && (
+                        {testInfo?.hasAccessKey && (!accessKey || accessKey.length < 4) && (
                             <div className="space-y-4">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 justify-center">
                                     <KeyRound size={12}/> Secure Access Key

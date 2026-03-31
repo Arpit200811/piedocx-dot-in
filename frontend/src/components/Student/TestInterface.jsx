@@ -853,7 +853,7 @@ const TestInterface = () => {
             } else {
                 console.log("[Sync Engine] No changes since last sync. Skipping to save bandwidth.");
             }
-        }, 120000 + syncJitter);
+        }, 30000 + (Math.random() * 5000));
 
         const handleBeforeUnload = (e) => {
             if (isStarted && !submitting) {

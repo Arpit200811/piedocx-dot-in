@@ -1,8 +1,8 @@
 // Branch mapping configuration for UI logic
 export const getBranchGroup = (branch) => {
     if (!branch) return 'CORE';
-    const csItBranches = ['CSE', 'IT', 'Computer Science', 'Information Technology', 'CS', 'Software Engineering', 'AI', 'Data Science', 'DS'];
-    const coreBranches = ['ECE', 'EE', 'ME', 'Civil', 'Auto', 'Automobile', 'Electronics', 'Electrical', 'Mechanical'];
+    const csItBranches = ['CSE', 'IT', 'Computer Science', 'Information Technology', 'CS', 'Software Engineering', 'AI', 'Data Science', 'DS', 'BCA', 'MCA', 'Computer Applications', 'BSCIT', 'MSCIT', 'PGDCA'];
+    const coreBranches = ['ECE', 'EE', 'ME', 'Civil', 'Auto', 'Automobile', 'Electronics', 'Electrical', 'Mechanical', 'Civil Engineering', 'Mechanical Engineering', 'Electrical Engineering'];
     
     const branchUpper = branch.toUpperCase();
     
