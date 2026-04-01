@@ -68,7 +68,7 @@ app.use((req, res, next) => {
 // WEAKENED HELMET FOR LOCAL DEVELOPMENT COMPATIBILITY (Item #9)
 app.use(
   helmet({
-    crossOriginOpenerPolicy: { policy: "unsafe-none" }, // MORE LENIENT FOR LOCAL WINDOW OPENING
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // BEST FOR GOOGLE SIGN-IN
     crossOriginEmbedderPolicy: false,
     referrerPolicy: { policy: "no-referrer-when-downgrade" },
     contentSecurityPolicy: false, // TEMPORARILY DISABLE CSP IF CONNECTION ISSUES PERSIST

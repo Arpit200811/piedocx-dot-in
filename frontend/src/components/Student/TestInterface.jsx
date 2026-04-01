@@ -561,7 +561,7 @@ const TestInterface = () => {
                 }
                 setIsFocused(true);
                 if (!document.fullscreenElement) {
-                    setTimeout(enterFullScreen, 200);
+                    // Removed for gesture compliance
                 }
             }
         };
@@ -578,7 +578,7 @@ const TestInterface = () => {
             if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
             setIsFocused(true);
             if (!document.fullscreenElement) {
-                setTimeout(enterFullScreen, 100);
+                // Removed for gesture compliance
             }
         };
 
@@ -608,7 +608,7 @@ const TestInterface = () => {
                 const widthRatio = window.innerWidth / screenW;
                 if (heightRatio < 0.50 || widthRatio < 0.50) {
                     handleViolation("Split Screen / Floating App Detected");
-                    setTimeout(enterFullScreen, 100);
+                    // Removed for gesture compliance
                 }
             }, 800);
         };

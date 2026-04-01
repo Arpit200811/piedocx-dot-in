@@ -67,7 +67,7 @@ router.get('/resources', getActiveResources);
 
 // Protected Routes (Student Only)
 router.post('/questions', studentAuth, getQuestions);
-router.post('/sync-progress', studentAuth, syncLimiter, validate(syncProgressSchema), syncProgress);
+router.post('/sync-progress', studentAuth, syncProgress);
 router.post('/submit-test', studentAuth, validate(submitTestSchema), submitTest);
 router.get('/results', studentAuth, getResults);
 router.post('/log-violation', studentAuth, violationLimiter, validate(logViolationSchema), logViolation);

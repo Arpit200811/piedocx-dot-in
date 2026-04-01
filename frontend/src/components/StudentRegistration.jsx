@@ -185,7 +185,6 @@ const StudentRegistration = () => {
                         <GoogleLogin
                            onSuccess={handleLoginSuccess}
                            onError={handleLoginError}
-                           useOneTap
                            shape="pill"
                            theme="filled_blue"
                            size="large"
